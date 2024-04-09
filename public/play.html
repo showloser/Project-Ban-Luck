@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Blackjack Game</title>
+    <link rel="stylesheet" href="play.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="dealer-hand">
+            <h2>Banker:</h2>
+            <div id="dealer-cards">
+                <!-- Dealer's cards will be appended here -->
+            </div>
+        </div>
+        <div id="player-hand">
+            <h2>Player:
+
+            </h2>
+            <div id="player-cards">
+                <!-- Player's cards will be appended here -->
+            </div>
+        </div>
+        <div id="buttons">
+            <button id="hit-button" onclick="playerHit()">Hit</button>
+            <button id="stand-button">Stand</button>
+        </div>
+        <div id="message">
+            <!-- Game messages will be displayed here -->
+        </div>
+    </div>
+
+    <div>
+        <button id="quit-button">Leave Game</button>
+    </div>
+
+
+
+
+
+    <!-- Connect to socket.io server -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+    <script src="play.js"></script>
+<!-- 
+    <script>
+        const socket = io(); // Connect to the server
+    </script> -->
+
+
+</body>
+</html>

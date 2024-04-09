@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Blackjack Game</title>
+    <link rel="stylesheet" href="/Client/css/play.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="dealer-hand">
+            <h2>Banker:</h2>
+            <div id="dealer-cards">
+                <!-- Dealer's cards will be appended here -->
+            </div>
+        </div>
+        <div id="player-hand">
+            <h2>Player:
+
+            </h2>
+            <div id="player-cards">
+                <!-- Player's cards will be appended here -->
+            </div>
+        </div>
+        <div id="buttons">
+            <button id="hit-button">Hit</button>
+            <button id="stand-button">Stand</button>
+        </div>
+        <div id="message">
+            <!-- Game messages will be displayed here -->
+        </div>
+    </div>
+
+
+
+    <!-- Connect to socket.io server -->
+    <script src="/Server/server.js"></script>
+    <script>
+        var socket = io();
+    </script>
+
+</body>
+</html>

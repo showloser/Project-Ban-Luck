@@ -1,0 +1,23 @@
+#game-container {
+    text-align: center;
+}
+
+#dealer-hand, #player-hand {
+    margin-bottom: 20px;
+}
+
+#dealer-cards, #player-cards {
+    display: flex;
+    justify-content: center;
+}
+
+#dealer-cards img, #player-cards img {
+    width: 100px; /* Adjust the width as needed */
+    height: auto; /* Maintain aspect ratio */
+    margin-right: 10px; /* Spacing between cards */
+}
+
+#quit-button{
+    display: block;
+    margin: 200px auto 0px auto;
+}
