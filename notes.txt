@@ -1,3 +1,0 @@
-animation: https://www.youtube.com/watch?v=Bj6lC93JMi0
-
-initial loading animation: https://github.com/ines/termynal
