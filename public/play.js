@@ -2,14 +2,12 @@ const socket = io(); // Connect to the server
 
 //  handle data recieved from server (dealt cards):
 socket.on('bankerCards', (cards, cardValue) => {
-    console.log(cardValue)
     updateDealerCards(cards);
     updateBankerCardValue(cardValue)
 });
 
 // Handle player cards received from the server
 socket.on('playerCards', (cards, cardValue) => {
-    console.log(cardValue)
     updatePlayerCards(cards);
     updatePlayerCardValue(cardValue);
 });

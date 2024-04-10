@@ -147,7 +147,7 @@ io.on('connection', (socket) => {
   socket.on('playerHit', ()=>{
     playerHit(socket)
     totalCardValue = CalculateValue(playerHand)
-    socket.emit('playerCards', (playerHand, totalCardValue))
+    socket.emit('playerCards', playerHand, totalCardValue)
   } )
 
     // Handle client disconnect
