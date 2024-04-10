@@ -1,13 +1,17 @@
 const socket = io(); // Connect to the server
 
 //  handle data recieved from server (dealt cards):
-socket.on('dealerCards', (cards) => {
+socket.on('bankerCards', (cards, cardValue) => {
+    console.log(cardValue)
     updateDealerCards(cards);
+    updateBankerCardValue(cardValue)
 });
 
 // Handle player cards received from the server
-socket.on('playerCards', (cards) => {
+socket.on('playerCards', (cards, cardValue) => {
+    console.log(cardValue)
     updatePlayerCards(cards);
+    updatePlayerCardValue(cardValue);
 });
 
 function updateDealerCards(cards) {
@@ -34,10 +38,21 @@ function updatePlayerCards(cards) {
     });
 }
 
+function updatePlayerCardValue(value){
+    const playerCardValueElement = document.getElementById('value_player')
+    playerCardValueElement.innerHTML = value; // Overwrite previous value
+}
+
+function updateBankerCardValue(value){
+    const playerCardValueElement = document.getElementById('value_banker')
+    playerCardValueElement.innerHTML = value; // Overwrite previous value
+}
+
 function playerHit(){
     socket.emit('playerHit') //send request to hit
-    socket.on('playerHit', (cards) => { //get data
+    socket.on('playerHit', (cards, cardValue) => { //get data
         updatePlayerCards(cards);
+        updatePlayerCardValue(cardValue)
     })
 
 }

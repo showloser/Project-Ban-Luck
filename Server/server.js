@@ -52,9 +52,11 @@ function startGame(socket) {
   playerHand = [dealCard(), dealCard()]
   bankerHand = [dealCard(), dealCard()]  
 
-  socket.emit('dealerCards', bankerHand);
-  socket.emit('playerCards', playerHand);
-  console.log(playerHand)
+  bankerCardValue = CalculateValue(bankerHand)
+  playerCardValue = CalculateValue(playerHand)
+
+  socket.emit('bankerCards', bankerHand, bankerCardValue);
+  socket.emit('playerCards', playerHand, playerCardValue);
 }
 
 function playerHit(){
@@ -144,11 +146,9 @@ io.on('connection', (socket) => {
   // Handle hit card requests
   socket.on('playerHit', ()=>{
     playerHit(socket)
-    socket.emit('playerCards', playerHand)
+    totalCardValue = CalculateValue(playerHand)
+    socket.emit('playerCards', (playerHand, totalCardValue))
   } )
-
-
-
 
     // Handle client disconnect
     socket.on('disconnect', (socket) => {
