@@ -46,15 +46,27 @@ function updateBankerCardValue(value){
     playerCardValueElement.innerHTML = value; // Overwrite previous value
 }
 
+
 function playerHit(){
-    socket.emit('playerHit') //send request to hit
+    socket.emit('playerHit') //send request to 'hit'
+
     socket.on('playerHit', (cards, cardValue) => { //get data
         updatePlayerCards(cards);
         updatePlayerCardValue(cardValue)
     })
 
+    socket.on('error_card_length_5', () => {
+        document.getElementById('message').innerHTML = "Max Cards allowed is 5"
+    })
 }
 
+function stand(){
+    socket.emit('playerStand') // send request to 'stand'
+    
+    socket.on('playerStand', () => {
+        console.log()
+    })
+}
 
 
 

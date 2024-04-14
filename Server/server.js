@@ -125,7 +125,7 @@ function CalculateValue(hand){
   }
   else{
       if (result[0] > 21){
-          return ['bust']
+          return ['Bust!']
       }
       else{
           return result
@@ -143,17 +143,32 @@ io.on('connection', (socket) => {
   // Deal initial cards when a client connects
   startGame(socket);
 
-  // Handle hit card requests
+  // Handle [Hit]  requests
   socket.on('playerHit', ()=>{
-    playerHit(socket)
-    totalCardValue = CalculateValue(playerHand)
-    socket.emit('playerCards', playerHand, totalCardValue)
+    // check card amount (card amount cannot > 5)
+    if (playerHand.length >= 5){
+      socket.emit('error_card_length_5')
+    }
+    else{
+      playerHit(playerHand)
+      totalCardValue = CalculateValue(playerHand)
+      socket.emit('playerCards', playerHand, totalCardValue)
+    }
   } )
 
-    // Handle client disconnect
-    socket.on('disconnect', (socket) => {
-      console.log('A client disconnected');
-  });
+  // Handle [Stand] requests
+socket.on('playerStand', () => {
+
+  //  testing
+  
+
+})
+
+
+  // Handle client disconnect
+  socket.on('disconnect', (socket) => {
+    console.log('A client disconnected');
+});
 
 })
 
