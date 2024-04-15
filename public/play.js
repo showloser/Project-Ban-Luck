@@ -63,8 +63,10 @@ function playerHit(){
 function stand(){
     socket.emit('playerStand') // send request to 'stand'
     
-    socket.on('playerStand', () => {
-        console.log()
+    socket.on('playerStand', (bankerHand, totalCardValue_banker) => {
+        updateDealerCards(bankerHand)
+        updateBankerCardValue(totalCardValue_banker)
+        document.getElementById('result').innerHTML = `Result = ${totalCardValue_banker}`
     })
 }
 

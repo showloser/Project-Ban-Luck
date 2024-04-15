@@ -63,6 +63,10 @@ function playerHit(){
   playerHand.push(dealCard())
 }
 
+function bankerHit(){
+  bankerHand.push(dealCard())
+}
+
 function CalculateValue(hand){
   // [Calculation formula: https://en.wikipedia.org/wiki/Chinese_Blackjack]
   // K, Q, J = 10
@@ -158,8 +162,28 @@ io.on('connection', (socket) => {
 
   // Handle [Stand] requests
 socket.on('playerStand', () => {
-
-  //  testing
+  while(true){
+    totalCardValue_banker = CalculateValue(bankerHand)
+    if (totalCardValue_banker.length == 2){
+      if (totalCardValue_banker[-1] >= 16){
+        socket.emit('playerStand', totalCardValue_banker[-1])
+        break
+      }
+      else{
+        bankerHit()
+      }
+    }
+    else if(totalCardValue_banker <= 16){
+      bankerHit()
+    }
+    else{
+      // send data over
+      socket.emit('playerStand', bankerHand, totalCardValue_banker)
+      break
+    }
+  }
+  
+  
   
 
 })

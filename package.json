@@ -1,7 +1,18 @@
 {
   "dependencies": {
     "express": "^4.19.2",
+    "firebase": "^10.11.0",
     "socket.io": "^4.7.5",
     "ws": "^8.16.0"
-  }
+  },
+  "name": "project-ban-luck",
+  "description": "Project BanLuck is a multiplayer blackjack game implemented using Node.js, Express, and Socket.io.",
+  "version": "1.0.0",
+  "main": "test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
