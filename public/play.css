@@ -1,3 +1,8 @@
+body{     /* applied background and set font to white */
+    background-image: url('images/blackjack_background.jpg');
+    color: white; 
+}
+
 #game-container {
     text-align: center;
 }
