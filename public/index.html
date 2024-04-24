@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackjack Game</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to Blackjack Game</h1>
+    <p>Click the button below to join the game:</p>
+    <button onclick="showUsernameForm()">Join Game</button>
+    <div id="usernameForm" style="display: none;">
+      <form onsubmit="return validateUsername()">
+        <input type="text" id="username" placeholder="Enter your username" required>
+        <button type="submit">Continue</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function showUsernameForm() {
+      document.getElementById("usernameForm").style.display = "block";
+    }
+
+    function validateUsername() {
+    event.preventDefault();
+      var username = document.getElementById("username").value;
+      if (!username.trim()) {
+        alert("Please enter a username.");
+        return false;
+      }
+      // Redirect user to play.html
+      window.location.href = "play.html";
+    //   return true;
+    }
+  </script>
+</body>
+</html>
