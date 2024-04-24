@@ -26,7 +26,7 @@ const db = getDatabase();
 
 function update_data_in_session(db, data){
   push(ref(db, '/project-bunluck/sessions/' + data.session_id), {
-    player_id : data.player_id,
+    userid : data.userid,
     username : data.username,
     current_hand : data.current_hand,
     value : data.value,
@@ -63,7 +63,27 @@ function delete_all_data_in_session(db, session_id){
 }
 
 
+function get_data_from_session_userid(db, session_id, player_userid){
 
+  const db_ref = ref(db, `/project-bunluck/sessions/${session_id}`)
+
+  get(db_ref).then((snapshot) => {
+    if (snapshot.exists()){
+      snapshot.forEach((childNode) => {
+
+        if (childNode.key == player_userid){
+          result = childNode.val()
+          console.log(result)
+        }
+      })
+    }
+    else{
+      console.log('SERVER_ERROR_404: Session does not exist')
+    }
+  }).catch((error) => {
+    console.log('Error retrieving data: ' + error.message)
+  })
+}
 
 
 
@@ -77,7 +97,7 @@ function delete_all_data_in_session(db, session_id){
 
 sample_data1_session1 = {
   session_id : '1cc4a70c68d7acd59a151eee752c0e17ff4b4e2fd96e12fa6645a8771f2675de',
-  player_id : 1,
+  userid : 1,
   username : 'showloser',
   current_hand: ['king_of_spades', '9_of_hearts'],
   value : 19,
@@ -86,7 +106,7 @@ sample_data1_session1 = {
 
 sample_data2_session1 = {
   session_id : '1cc4a70c68d7acd59a151eee752c0e17ff4b4e2fd96e12fa6645a8771f2675de',
-  player_id : 2,
+  userid : 2,
   username : 'yewtee',
   current_hand: ['3_of_spades', '9_of_diamond', '5_of_hearts'],
   value : 17,
@@ -96,7 +116,7 @@ sample_data2_session1 = {
 
 sample_data1_session2 = {
   session_id : 'bc48c1b3e2454adf0bd8b9c23f2bc125742b7a57377c3f8a36fb36cb9753c870',
-  player_id : 1,
+  userid : 1,
   username : 'showloser',
   current_hand: ['king_of_spades', '9_of_hearts'],
   value : 19,
@@ -105,7 +125,7 @@ sample_data1_session2 = {
 
 sample_data2_session2 = {
   session_id : 'bc48c1b3e2454adf0bd8b9c23f2bc125742b7a57377c3f8a36fb36cb9753c870',
-  player_id : 2,
+  userid : 2,
   username : 'yewtee',
   current_hand: ['3_of_spades', '9_of_diamond', '5_of_hearts'],
   value : 17,
@@ -114,24 +134,49 @@ sample_data2_session2 = {
 
 sample_data3_session2 = {
   session_id : 'bc48c1b3e2454adf0bd8b9c23f2bc125742b7a57377c3f8a36fb36cb9753c870',
-  player_id : 2,
+  userid : 2,
   username : 'yewtee',
   current_hand: ['3_of_spades', '9_of_diamond', '5_of_hearts'],
   value : 17,
   end_turn : false 
 }
 
-
+sample_data1_session3 = {
+  session_id : '076d364250f10e230a3a28b2a4175d7431b24bc290a8fe4f76f7c054',
+  userid : 1,
+  username : 'showloser',
+  current_hand: ['king_of_spades', '9_of_hearts'],
+  value : 19,
+  end_turn : true 
+}
 
 // DATABASE FUNCTION APIS
-// // get_all_data(db)
+// get_all_data(db)
 // update_data_in_session(db, sample_data1_session1)
 // update_data_in_session(db, sample_data2_session1)
 // update_data_in_session(db, sample_data1_session2)
 // update_data_in_session(db, sample_data2_session2)
 // update_data_in_session(db, sample_data3_session2)
+// update_data_in_session(db, sample_data1_session3)
 
 
 
 // delete_all_data_in_session(db,'bc48c1b3e2454adf0bd8b9c23f2bc125742b7a57377c3f8a36fb36cb9753c870')
 
+// get_data_from_session_userid(db, '1cc4a70c68d7acd59a151eee752c0e17ff4b4e2fd96e12fa6645a8771f2675de', '-NveF1uGN7j7Iar92N6r')
+
+
+
+
+
+
+
+
+
+//  export functions
+module.exports = {
+  update_data_in_session,
+  get_all_data,
+  delete_all_data_in_session,
+  get_data_from_session_userid
+}
