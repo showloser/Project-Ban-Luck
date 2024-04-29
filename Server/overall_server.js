@@ -139,7 +139,7 @@ app.get('/', (req, res) => {
 
 
 //  GAME LOGIC:
-function initializeDeck(){ // to be ran only ONCE
+function initializeDeck(sessionId){ // to be ran only ONCE
   const suits = ["hearts", "diamonds", "clubs", "spades"];
   const values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king", "ace"];
   deck = [];
@@ -150,6 +150,9 @@ function initializeDeck(){ // to be ran only ONCE
     }
   }
   deck = shuffleDeck(deck)
+
+  return deck
+
 } 
 
 function shuffleDeck(deck){ // using Fisher-Yates algorith, which is truly random (https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
@@ -164,9 +167,13 @@ function dealCard(){
   return deck.pop()
 }
 
-function startGame(socket, sampleData) {
+function startGame(socket, sessionId) {
   // deal initial cards to dealer and player
-  initializeDeck()
+  deck = initializeDeck(sessionId)
+
+  //write data to firebase
+  writeDeckToDatabase(sessionId, deck)
+
   playerHand = [dealCard(), dealCard()]
   bankerHand = [dealCard(), dealCard()]  
 
@@ -176,9 +183,6 @@ function startGame(socket, sampleData) {
   socket.emit('bankerCards', bankerHand, bankerCardValue);
   socket.emit('playerCards', playerHand, playerCardValue);
 
-
-  sampleData.current_hand = playerHand
-  update_data_in_session(db, sampleData)
 }
 
 function playerHit(){
@@ -266,17 +270,11 @@ function CalculateValue(hand){
 io.on('connection', (socket) => {
   console.log('a connection is established')
 
-  sampleData = {
-    session_id : '076d364250f10e230a3a28b2a4175d7431b24bc290a8fe4f76f7c054',
-    userid : 1,
-    username : 'showloser',
-    // current_hand: ['king_of_spades', '9_of_hearts'],
-    value : 19,
-    end_turn : true 
-  }
+  socket.on('sessionId', (sessionId) => {
+    const current_sessionId = sessionId
 
   // Deal initial cards when a client connects
-  startGame(socket, sampleData);
+  startGame(socket, current_sessionId);
 
   // Handle [Hit]  requests
   socket.on('playerHit', ()=>{
@@ -291,32 +289,29 @@ io.on('connection', (socket) => {
     }
   } )
 
-  // Handle [Stand] requests
-socket.on('playerStand', () => {
-  while(true){
-    totalCardValue_banker = CalculateValue(bankerHand)
-    if (totalCardValue_banker.length == 2){
-      if (totalCardValue_banker[-1] >= 16){
-        socket.emit('playerStand', totalCardValue_banker[-1])
-        break
+    // Handle [Stand] requests
+  socket.on('playerStand', () => {
+    while(true){
+      totalCardValue_banker = CalculateValue(bankerHand)
+      if (totalCardValue_banker.length == 2){
+        if (totalCardValue_banker[-1] >= 16){
+          socket.emit('playerStand', totalCardValue_banker[-1])
+          break
+        }
+        else{
+          bankerHit()
+        }
       }
-      else{
+      else if(totalCardValue_banker <= 16){
         bankerHit()
       }
+      else{
+        // send data over
+        socket.emit('playerStand', bankerHand, totalCardValue_banker)
+        break
+      }
     }
-    else if(totalCardValue_banker <= 16){
-      bankerHit()
-    }
-    else{
-      // send data over
-      socket.emit('playerStand', bankerHand, totalCardValue_banker)
-      break
-    }
-  }
-  
-  
-  
-
+  })
 })
 
 
@@ -331,63 +326,63 @@ socket.on('playerStand', () => {
 // handle data from index.html
 app.post('/form_createRoom', (req, res) => {
   const username = req.body.username;
-  const roomCode = req.body.roomCode;
+
+  try{
+    // create session and add player into current session
+    data = createSessionAndAddPlayer(username)
+
+    // send success response with generated session ID
+    res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId});
+  }
+  catch{
+    res.status(400).json({ success: false, message: 'Failed to create session.'})
+  }
 
 
-  //send success
-  res.status(200).json({ success: true, message: "Form data submitted successfully" });
 })
 
 app.post('/form_joinRoom', (req, res) => {
   const username = req.body.username;
   const roomCode = req.body.roomCode;
 
-
-
+  //to do 
   //send success
   res.status(200).json({ success: true, message: "Form data submitted successfully" });
 })
 
 
-
-
-
-function createNewSession() {
-  const db = getDatabase()
+function createSessionAndAddPlayer(username) {
+  const db = getDatabase();
   const sessionRef = push(ref(db, '/project-bunluck/sessions')); // Generate unique session ID
   const sessionId = sessionRef.key; // Get the generated session ID
 
-  // Store the session ID in the database
+  const playerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique player ID
+  const playerId = playerRef.key; // Get the generated player ID
+
+  // Store the session ID and player's username along with their player ID in the database
   set(sessionRef, {
     sessionId: sessionId,
     createdAt: new Date().toISOString() // Timestamp indicating when the session was created
   });
-
-  return sessionId;
-}
-
-function addPlayerToSession(sessionId, username){
-  const db = getDatabase();
-  const playerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique player ID
-  const playerId = playerRef.key; // Get the generated player ID
-  
-  // Store the player's username along with their player ID under the session ID in the database
   set(playerRef, {
-    playerId: playerId,
     username: username
   });
 
-  return playerId;
+  return { sessionId: sessionId, playerId: playerId };
+  }
 
+function writeDeckToDatabase(sessionId, deck) {
+  const db = getDatabase();
+  const deckRef = ref(db, `/project-bunluck/sessions/${sessionId}/deck`);
+
+  set(deckRef, deck)
+    .then(() => {
+      console.log('Deck data written to the database under session ID:', sessionId);
+    })
+    .catch((error) => {
+      console.error('Error writing deck data to the database:', error);
+    });
 }
-
-
-
-
-
-
-
-
 
 
 

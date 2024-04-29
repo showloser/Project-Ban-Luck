@@ -1,4 +1,10 @@
+const sessionId = localStorage.getItem('sessionId')
 const socket = io(); // Connect to the server
+
+socket.on('connect', () => {
+    console.log('Connected to server');
+    socket.emit('sessionId', sessionId); // Send sessionId to the server
+});
 
 //  handle data recieved from server (dealt cards):
 socket.on('bankerCards', (cards, cardValue) => {

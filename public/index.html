@@ -59,11 +59,19 @@
 
         success: function (res){
           console.log('Form submission success')
+
+          // Store sessionId in local storage
+          localStorage.setItem('sessionId', res.sessionId)
+          // Store username in local storage
+          localStorage.setItem('username', username)
+          //Store playerId in local storage
+          localStorage.setItem('playerId', res.playerId)
+
           // Redirect user to play.html
           window.location.href = "play.html";
         },
         error: function(xhr, status, error) {
-        console.error('Failed to submit form data:', error);
+        window.alert('Failed to submit form data:', error);
         } 
       })
     }
