@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const bodyParser = require('body-parser');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,16 +13,32 @@ const { start } = require('repl');
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!     [ FireBase ]     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+
+// Current json Firebase hierarchy  
+// - sessions
+//   - {sessionId}
+//     - players
+//       - {playerId}
+//         - username
+//         - currentHand
+//         - value
+//         - endTurn
+//     - gameStatus
+//       - gameState
+//       - currentPlayerId
+//       - winner
+//     - deck
+//       - {cardId}
+//         - suit
+//         - value
+//     - createdAt
+
+
 // Import the functions you need from the SDKs you need
 const { initializeApp, SDK_VERSION } = require('firebase/app');
 const { getDatabase, ref, get, child, set, update, remove, push } = require('firebase/database');
 const { create } = require('domain');
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyAlJ1gEXCOAIEN2Q1w69sKnzuxeUvpYge4",
   authDomain: "project-banluck.firebaseapp.com",
@@ -112,6 +129,7 @@ function get_data_from_session_userid(db, session_id, player_userid){
 
 const publicPath = path.join(__dirname, '../public')
 app.use(express.static(publicPath));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 
 // Serve the HTML page when accessing the root URL
@@ -310,11 +328,72 @@ socket.on('playerStand', () => {
 })
 
 
+// handle data from index.html
+app.post('/form_createRoom', (req, res) => {
+  const username = req.body.username;
+  const roomCode = req.body.roomCode;
+
+
+  //send success
+  res.status(200).json({ success: true, message: "Form data submitted successfully" });
+})
+
+app.post('/form_joinRoom', (req, res) => {
+  const username = req.body.username;
+  const roomCode = req.body.roomCode;
+
+
+
+  //send success
+  res.status(200).json({ success: true, message: "Form data submitted successfully" });
+})
+
+
+
+
+
+function createNewSession() {
+  const db = getDatabase()
+  const sessionRef = push(ref(db, '/project-bunluck/sessions')); // Generate unique session ID
+  const sessionId = sessionRef.key; // Get the generated session ID
+
+  // Store the session ID in the database
+  set(sessionRef, {
+    sessionId: sessionId,
+    createdAt: new Date().toISOString() // Timestamp indicating when the session was created
+  });
+
+  return sessionId;
+}
+
+function addPlayerToSession(sessionId, username){
+  const db = getDatabase();
+  const playerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique player ID
+  const playerId = playerRef.key; // Get the generated player ID
+  
+  // Store the player's username along with their player ID under the session ID in the database
+  set(playerRef, {
+    playerId: playerId,
+    username: username
+  });
+
+  return playerId;
+
+}
+
+
+
+
+
+
+
+
+
+
 
 // Start the server
 const PORT = process.env.PORT || 8888;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
 

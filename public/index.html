@@ -10,30 +10,91 @@
   <div class="container">
     <h1>Welcome to Blackjack Game</h1>
     <p>Click the button below to join the game:</p>
-    <button onclick="showUsernameForm()">Join Game</button>
-    <div id="usernameForm" style="display: none;">
-      <form onsubmit="return validateUsername()">
-        <input type="text" id="username" placeholder="Enter your username" required>
+
+
+    <button onclick="ShowCreateRoomForm()">Create Room</button>
+    <button onclick="ShowJoinRoomForm()">Join Room</button>
+
+    <div id="CreateRoomForm" style="display: none;">
+      <form onsubmit="return ValidateData_create()">
+        <input type="text" id="username_create" placeholder="Enter your username" required>
+        <button type="submit">Continue</button>
+      </form>
+    </div>
+
+    <div id="JoinRoomForm" style="display: none;">
+      <form onsubmit="return ValidateData_join()">
+        <input type="text" id="username_join" placeholder="Enter your username" required>
+        <input type="text" id="roomcode_join" placeholder="Enter your Room Code" required>
         <button type="submit">Continue</button>
       </form>
     </div>
   </div>
 
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    function showUsernameForm() {
-      document.getElementById("usernameForm").style.display = "block";
+    function ShowCreateRoomForm() {
+      document.getElementById("CreateRoomForm").style.display = "block";
     }
 
-    function validateUsername() {
+    function ShowJoinRoomForm() {
+      document.getElementById("JoinRoomForm").style.display = "block";
+    }
+
+    function ValidateData_create() {
     event.preventDefault();
-      var username = document.getElementById("username").value;
-      if (!username.trim()) {
+      var username = document.getElementById("username_create").value;
+      if (!username.trim() && !roomcode.trim()) {
         alert("Please enter a username.");
         return false;
       }
-      // Redirect user to play.html
-      window.location.href = "play.html";
-    //   return true;
+
+      // send data via ajax
+      $.ajax({
+        url: '/form_createRoom',
+        method: 'POST',
+        data: {
+        username: username,
+        },
+
+        success: function (res){
+          console.log('Form submission success')
+          // Redirect user to play.html
+          window.location.href = "play.html";
+        },
+        error: function(xhr, status, error) {
+        console.error('Failed to submit form data:', error);
+        } 
+      })
+    }
+
+    function ValidateData_join() {
+    event.preventDefault();
+      var username = document.getElementById("username_join").value;
+      var roomcode = document.getElementById('roomcode_join').value;
+      if (!username.trim() && !roomcode.trim()) {
+        alert("Please enter a username.");
+        return false;
+      }
+
+      // send data via ajax
+      $.ajax({
+        url: '/form_joinRoom',
+        method: 'POST',
+        data: {
+        username: username,
+        roomCode: roomcode
+        },
+
+        success: function (res){
+          console.log('Form submission success')
+          // Redirect user to play.html
+          window.location.href = "play.html";
+        },
+        error: function(xhr, status, error) {
+        console.error('Failed to submit form data:', error);
+        } 
+      })
     }
   </script>
 </body>
