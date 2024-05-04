@@ -12,8 +12,6 @@ const { start } = require('repl');
 
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!     [ FireBase ]     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
 // Current json Firebase hierarchy  
 // - sessions
 //   - {sessionId}
@@ -36,8 +34,9 @@ const { start } = require('repl');
 
 // Import the functions you need from the SDKs you need
 const { initializeApp, SDK_VERSION } = require('firebase/app');
-const { getDatabase, ref, get, child, set, update, remove, push } = require('firebase/database');
+const { getDatabase, ref, get, child, set, update, remove, push, onValue } = require('firebase/database');
 const { create } = require('domain');
+const { type } = require('os');
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlJ1gEXCOAIEN2Q1w69sKnzuxeUvpYge4",
@@ -53,12 +52,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase();
-
-
-function create_session(db, sessionId){
-  set(ref(db, '/project-bunluck/sessions/', sessionId))
-}
-
 
 function update_data_in_session(db, data){
   push(ref(db, '/project-bunluck/sessions/' + data.session_id), {
@@ -99,33 +92,7 @@ function delete_all_data_in_session(db, session_id){
 }
 
 
-function get_data_from_session_userid(db, session_id, player_userid){
-
-  const db_ref = ref(db, `/project-bunluck/sessions/${session_id}`)
-
-  get(db_ref).then((snapshot) => {
-    if (snapshot.exists()){
-      snapshot.forEach((childNode) => {
-
-        if (childNode.key == player_userid){
-          result = childNode.val()
-          console.log(result)
-        }
-      })
-    }
-    else{
-      console.log('SERVER_ERROR_404: Session does not exist')
-    }
-  }).catch((error) => {
-    console.log('Error retrieving data: ' + error.message)
-  })
-}
-
-// !!!!!!!!!!!!!!!!!!!!!!!!!     [ FireBase ]     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-
-
+// !!!!!!!!!!!!!!!!!!!!!!!!!     [ FireBase ] END    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 const publicPath = path.join(__dirname, '../public')
 app.use(express.static(publicPath));
@@ -185,8 +152,20 @@ function startGame(socket, sessionId) {
 
 }
 
-function playerHit(){
+async function playerHit(sessionId, playerId){
   playerHand.push(dealCard())
+
+  try{
+    const currentDeck = await fetchData(sessionId)
+    let dealtCard = currentDeck.shift()
+
+    // rewrite deck in database
+    writeDeckToDatabase(sessionId, currentDeck )
+
+  } catch (error){
+    console.error('Error: ', error)
+  }
+  
 }
 
 function bankerHit(){
@@ -277,20 +256,20 @@ io.on('connection', (socket) => {
   startGame(socket, current_sessionId);
 
   // Handle [Hit]  requests
-  socket.on('playerHit', ()=>{
+  socket.on('playerHit', (sessionId, playerId) => {
     // check card amount (card amount cannot > 5)
     if (playerHand.length >= 5){
       socket.emit('error_card_length_5')
     }
     else{
-      playerHit(playerHand)
+      playerHit(sessionId, playerId)
       totalCardValue = CalculateValue(playerHand)
       socket.emit('playerCards', playerHand, totalCardValue)
     }
   } )
 
     // Handle [Stand] requests
-  socket.on('playerStand', () => {
+  socket.on('playerStand', (sessionId, playerId) => {
     while(true){
       totalCardValue_banker = CalculateValue(bankerHand)
       if (totalCardValue_banker.length == 2){
@@ -321,7 +300,6 @@ io.on('connection', (socket) => {
 });
 
 })
-
 
 // handle data from index.html
 app.post('/form_createRoom', (req, res) => {
@@ -365,7 +343,10 @@ function createSessionAndAddPlayer(username) {
     createdAt: new Date().toISOString() // Timestamp indicating when the session was created
   });
   set(playerRef, {
-    username: username
+    username: username,
+    currentHand : 'undefined',
+    value : 'undefined',
+    endTurn: 'undefined'
   });
 
   return { sessionId: sessionId, playerId: playerId };
@@ -384,6 +365,30 @@ function writeDeckToDatabase(sessionId, deck) {
     });
 }
 
+async function getDeck(sessionId) {
+  // jibai firebase only can async. Need to use promise to wait for data to be resolved so that it is 'Synchronous' (refer to func [fetchData for usage])
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    const deck_ref = ref(db, `/project-bunluck/sessions/${sessionId}/deck`);
+
+    onValue(deck_ref, (snapshot) => {
+      const deck = snapshot.val();
+      resolve(deck);
+    }, (error) => {
+      console.error('Error fetching deck:', error);
+      reject(error);
+    });
+  });
+}
+
+async function fetchData(sessionId){
+  try{
+    const deck = await getDeck(sessionId);
+    return deck
+  } catch (error){
+    console.error('Error:', error);
+  }
+}
 
 
 // Start the server
@@ -391,4 +396,6 @@ const PORT = process.env.PORT || 8888;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+
 

@@ -1,4 +1,5 @@
 const sessionId = localStorage.getItem('sessionId')
+const playerId = localStorage.getItem('playerId')
 const socket = io(); // Connect to the server
 
 socket.on('connect', () => {
@@ -54,7 +55,7 @@ function updateBankerCardValue(value){
 
 
 function playerHit(){
-    socket.emit('playerHit') //send request to 'hit'
+    socket.emit('playerHit', sessionId, playerId ) //send request to 'hit'
 
     socket.on('playerHit', (cards, cardValue) => { //get data
         updatePlayerCards(cards);
@@ -67,7 +68,7 @@ function playerHit(){
 }
 
 function stand(){
-    socket.emit('playerStand') // send request to 'stand'
+    socket.emit('playerStand', sessionId, playerId) // send request to 'stand'
     
     socket.on('playerStand', (bankerHand, totalCardValue_banker) => {
         updateDealerCards(bankerHand)
