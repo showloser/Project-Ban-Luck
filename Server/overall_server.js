@@ -1,3 +1,8 @@
+// [TO DO]
+// remove all const db = getdatabase()
+  // to be removed
+  let bankerId;
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -37,6 +42,7 @@ const { initializeApp, SDK_VERSION } = require('firebase/app');
 const { getDatabase, ref, get, child, set, update, remove, push, onValue } = require('firebase/database');
 const { create } = require('domain');
 const { type } = require('os');
+const { error } = require('console');
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlJ1gEXCOAIEN2Q1w69sKnzuxeUvpYge4",
@@ -106,7 +112,7 @@ app.get('/', (req, res) => {
 
 
 //  GAME LOGIC:
-function initializeDeck(sessionId){ // to be ran only ONCE
+function initializeDeck(){ 
   const suits = ["hearts", "diamonds", "clubs", "spades"];
   const values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "jack", "queen", "king", "ace"];
   deck = [];
@@ -134,15 +140,26 @@ function dealCard(){
   return deck.pop()
 }
 
-function startGame(socket, sessionId) {
-  // deal initial cards to dealer and player
-  deck = initializeDeck(sessionId)
+async function startGame(socket, sessionId, playerId) {
+  deck = initializeDeck()
+
+  // playerHand = [dealCard(), dealCard()]
+  // bankerHand = [dealCard(), dealCard()]
 
   //write data to firebase
   writeDeckToDatabase(sessionId, deck)
 
-  playerHand = [dealCard(), dealCard()]
-  bankerHand = [dealCard(), dealCard()]  
+  playerHandCard1 = await playerHit(sessionId, playerId)
+  playerHandCard2 = await playerHit(sessionId, playerId)
+  bankerHandCard1 = await playerHit(sessionId, bankerId)
+  bankerHandCard2 = await playerHit(sessionId, bankerId)
+
+
+  writeHandToDatabase(sessionId, playerId, `${playerHandCard1}, ${playerHandCard2}`)
+  writeHandToDatabase(sessionId, bankerId, `${bankerHandCard1} ,${bankerHandCard2}`)
+
+  playerHand = [playerHandCard1, playerHandCard2]
+  bankerHand = [bankerHandCard1, bankerHandCard2]
 
   bankerCardValue = CalculateValue(bankerHand)
   playerCardValue = CalculateValue(playerHand)
@@ -153,19 +170,18 @@ function startGame(socket, sessionId) {
 }
 
 async function playerHit(sessionId, playerId){
-  playerHand.push(dealCard())
-
   try{
-    const currentDeck = await fetchData(sessionId)
+    const currentDeck = await getDeck(sessionId)
+    const playerCurrentHand = await getHand(sessionId, playerId)
+
     let dealtCard = currentDeck.shift()
 
     // rewrite deck in database
-    writeDeckToDatabase(sessionId, currentDeck )
+    writeDeckToDatabase(sessionId, currentDeck)
 
-  } catch (error){
-    console.error('Error: ', error)
-  }
-  
+    return dealtCard
+
+  } catch (error){console.error('[/playerHit] Error: ', error)}
 }
 
 function bankerHit(){
@@ -249,11 +265,12 @@ function CalculateValue(hand){
 io.on('connection', (socket) => {
   console.log('a connection is established')
 
-  socket.on('sessionId', (sessionId) => {
+  socket.on('sessionId', (sessionId, playerId) => {
     const current_sessionId = sessionId
+    const current_playerId = playerId
 
   // Deal initial cards when a client connects
-  startGame(socket, current_sessionId);
+  startGame(socket, current_sessionId, current_playerId);
 
   // Handle [Hit]  requests
   socket.on('playerHit', (sessionId, playerId) => {
@@ -304,7 +321,6 @@ io.on('connection', (socket) => {
 // handle data from index.html
 app.post('/form_createRoom', (req, res) => {
   const username = req.body.username;
-
   try{
     // create session and add player into current session
     data = createSessionAndAddPlayer(username)
@@ -312,7 +328,9 @@ app.post('/form_createRoom', (req, res) => {
     // send success response with generated session ID
     res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId});
   }
-  catch{
+  catch(e){
+    console.log(e)
+    
     res.status(400).json({ success: false, message: 'Failed to create session.'})
   }
 
@@ -342,6 +360,7 @@ function createSessionAndAddPlayer(username) {
     sessionId: sessionId,
     createdAt: new Date().toISOString() // Timestamp indicating when the session was created
   });
+  
   set(playerRef, {
     username: username,
     currentHand : 'undefined',
@@ -349,8 +368,20 @@ function createSessionAndAddPlayer(username) {
     endTurn: 'undefined'
   });
 
+
+  // dummy account
+  const bankerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique dummy ID
+  bankerId = bankerRef.key; 
+
+  set(bankerRef, {
+    username: 'MaoZeDong',
+    currentHand : 'undefined',
+    value : 'undefined',
+    endTurn: 'undefined'
+  });
+
   return { sessionId: sessionId, playerId: playerId };
-  }
+}
 
 function writeDeckToDatabase(sessionId, deck) {
   const db = getDatabase();
@@ -361,17 +392,31 @@ function writeDeckToDatabase(sessionId, deck) {
       console.log('Deck data written to the database under session ID:', sessionId);
     })
     .catch((error) => {
-      console.error('Error writing deck data to the database:', error);
+      console.error('[/playerHit] Error writing deck data to the database:', error);
     });
 }
+
+function writeHandToDatabase(sessionId, playerId, data){
+  const db = getDatabase()
+  const handRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/currentHand`)
+
+  set(handRef, data)
+    .then( () => {
+      console.log(`Data written to the database under: /${sessionId}/${playerId}`);
+    })
+    .catch( (error) => {
+      console.error('[/playerHit] Error writing hand data to the database:', error);
+    })
+}
+
 
 async function getDeck(sessionId) {
   // jibai firebase only can async. Need to use promise to wait for data to be resolved so that it is 'Synchronous' (refer to func [fetchData for usage])
   return new Promise((resolve, reject) => {
     const db = getDatabase();
-    const deck_ref = ref(db, `/project-bunluck/sessions/${sessionId}/deck`);
+    const deckRef = ref(db, `/project-bunluck/sessions/${sessionId}/deck`);
 
-    onValue(deck_ref, (snapshot) => {
+    onValue(deckRef, (snapshot) => {
       const deck = snapshot.val();
       resolve(deck);
     }, (error) => {
@@ -381,14 +426,21 @@ async function getDeck(sessionId) {
   });
 }
 
-async function fetchData(sessionId){
-  try{
-    const deck = await getDeck(sessionId);
-    return deck
-  } catch (error){
-    console.error('Error:', error);
-  }
+async function getHand(sessionId, playerId){
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    const handRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/currentHand`);
+
+    onValue(handRef, (snapshot) => {
+      const hand = snapshot.val();
+      resolve(hand);
+    }, (error) => {
+      console.error('Error fetching deck:', error);
+      reject(error);
+    });
+  });
 }
+
 
 
 // Start the server
@@ -396,6 +448,8 @@ const PORT = process.env.PORT || 8888;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+
 
 
 

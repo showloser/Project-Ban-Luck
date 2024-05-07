@@ -4,7 +4,7 @@ const socket = io(); // Connect to the server
 
 socket.on('connect', () => {
     console.log('Connected to server');
-    socket.emit('sessionId', sessionId); // Send sessionId to the server
+    socket.emit('sessionId', sessionId, playerId); // Send sessionId to the server
 });
 
 //  handle data recieved from server (dealt cards):
