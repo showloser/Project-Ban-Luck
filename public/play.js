@@ -19,6 +19,22 @@ socket.on('playerCards', (cards, cardValue) => {
     updatePlayerCardValue(cardValue);
 });
 
+socket.on('render', (playerCurrentHand, playerCurrentValue, bankerCurrentHand, bankerCurrentValue) => {
+    console.log(`playerCurrentHand: ${playerCurrentHand}`)
+    console.log(`playerCurrentValue: ${playerCurrentValue}`)
+    console.log(`bankerCurrentHand: ${bankerCurrentHand}`)
+    console.log(`bankerCurrentValue: ${bankerCurrentValue}`)
+
+    updatePlayerCards(playerCurrentHand);
+    updatePlayerCardValue(playerCurrentValue);
+
+    updateDealerCards(bankerCurrentHand);
+    updateBankerCardValue(bankerCurrentValue)
+
+
+})
+
+
 function updateDealerCards(cards) {
     const dealerCardsDiv = document.getElementById('dealer-cards');
     dealerCardsDiv.innerHTML = ''; // Clear previous cards
@@ -30,6 +46,8 @@ function updateDealerCards(cards) {
         dealerCardsDiv.appendChild(img);
     });
 }
+
+
 
 function updatePlayerCards(cards) {
     const playerCardsDiv = document.getElementById('player-cards');

@@ -143,43 +143,52 @@ function dealCard(){
 async function startGame(socket, sessionId, playerId) {
   deck = initializeDeck()
 
-  // playerHand = [dealCard(), dealCard()]
-  // bankerHand = [dealCard(), dealCard()]
-
   //write data to firebase
   writeDeckToDatabase(sessionId, deck)
 
-  playerHandCard1 = await playerHit(sessionId, playerId)
-  playerHandCard2 = await playerHit(sessionId, playerId)
-  bankerHandCard1 = await playerHit(sessionId, bankerId)
-  bankerHandCard2 = await playerHit(sessionId, bankerId)
+  // draw initial hands for player n banker
+  let playerHand = await drawInitialHand(sessionId, playerId)
+  let bankerHand = await drawInitialHand(sessionId, bankerId)
+
+  console.log('PLAYERHANDB@: ' + playerHand)
+  console.log('BANKER@: ' + bankerHand)
 
 
-  writeHandToDatabase(sessionId, playerId, `${playerHandCard1}, ${playerHandCard2}`)
-  writeHandToDatabase(sessionId, bankerId, `${bankerHandCard1} ,${bankerHandCard2}`)
+  const playerCardValue = CalculateValue(playerHand);
+  const bankerCardValue = CalculateValue(bankerHand);
 
-  playerHand = [playerHandCard1, playerHandCard2]
-  bankerHand = [bankerHandCard1, bankerHandCard2]
+  // await Promise.all([
+  //   writeValueToDatabase(sessionId, playerId, playerCardValue),
+  //   writeValueToDatabase(sessionId, bankerId, bankerCardValue)
+  // ]);
 
-  bankerCardValue = CalculateValue(bankerHand)
-  playerCardValue = CalculateValue(playerHand)
 
-  socket.emit('bankerCards', bankerHand, bankerCardValue);
-  socket.emit('playerCards', playerHand, playerCardValue);
 
+  render_data(socket, sessionId, playerId, bankerId)
+
+}
+
+async function drawInitialHand(sessionId, playerId) {
+  const card1 = await playerHit(sessionId, playerId);
+  const card2 = await playerHit(sessionId, playerId);
+  return [card1, card2];
 }
 
 async function playerHit(sessionId, playerId){
   try{
-    const currentDeck = await getDeck(sessionId)
-    const playerCurrentHand = await getHand(sessionId, playerId)
-
+    let currentDeck = await getDeck(sessionId)
+    let playerCurrentHand = await getHand(sessionId, playerId)
     let dealtCard = currentDeck.shift()
+    console.log('dealt')
+    console.log(dealtCard)
+
+    if (playerCurrentHand == 'undefined') {playerCurrentHand = dealtCard}
+    else {playerCurrentHand = `${playerCurrentHand},${dealtCard}`}
 
     // rewrite deck in database
     writeDeckToDatabase(sessionId, currentDeck)
-
-    return dealtCard
+    // rewrite player's hand
+    writeHandToDatabase(sessionId,playerId, playerCurrentHand)
 
   } catch (error){console.error('[/playerHit] Error: ', error)}
 }
@@ -256,6 +265,20 @@ function CalculateValue(hand){
           return result
       }
   }
+}
+
+async function render_data(socket, sessionId, playerId, bankerId){
+  // get current card 
+  // send card details to client
+  let playerCurrentHand = await getHand(sessionId, playerId)
+  playerCurrentHand = playerCurrentHand.split(',')
+  let playerCurrentValue = await getValue(sessionId, playerId)
+
+  let bankerCurrentHand = await getHand(sessionId, bankerId)
+  bankerCurrentHand = bankerCurrentHand.split(',')
+  let bankerCurrentValue = await getValue(sessionId, bankerId)
+
+  socket.emit('render', playerCurrentHand, playerCurrentValue, bankerCurrentHand, bankerCurrentValue)
 }
 
 
@@ -374,7 +397,7 @@ function createSessionAndAddPlayer(username) {
   bankerId = bankerRef.key; 
 
   set(bankerRef, {
-    username: 'MaoZeDong',
+    username: 'Banker',
     currentHand : 'undefined',
     value : 'undefined',
     endTurn: 'undefined'
@@ -389,7 +412,7 @@ function writeDeckToDatabase(sessionId, deck) {
 
   set(deckRef, deck)
     .then(() => {
-      console.log('Deck data written to the database under session ID:', sessionId);
+      // console.log('Deck data written to the database under session ID:', sessionId);
     })
     .catch((error) => {
       console.error('[/playerHit] Error writing deck data to the database:', error);
@@ -402,10 +425,23 @@ function writeHandToDatabase(sessionId, playerId, data){
 
   set(handRef, data)
     .then( () => {
-      console.log(`Data written to the database under: /${sessionId}/${playerId}`);
+      // console.log(`Data written to the database under: /${sessionId}/${playerId}`);
     })
     .catch( (error) => {
       console.error('[/playerHit] Error writing hand data to the database:', error);
+    })
+}
+
+function writeValueToDatabase(sessionId, playerId, value){
+  const db = getDatabase()
+  const valueRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/value`)
+
+  set(valueRef, value)
+    .then( () => {
+      // console.log(`Value written to the database under: /${sessionId}/${playerId}`);
+    })
+    .catch( (error) => {
+      console.error('[Write Value] Error writing hand data to the database:', error);
     })
 }
 
@@ -441,6 +477,20 @@ async function getHand(sessionId, playerId){
   });
 }
 
+async function getValue(sessionId, playerId){
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    const valueRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/value`);
+
+    onValue(valueRef, (snapshot) => {
+      const value = snapshot.val();
+      resolve(value);
+    }, (error) => {
+      console.error('Error fetching deck:', error);
+      reject(error);
+    });
+  });
+}
 
 
 // Start the server
@@ -453,3 +503,4 @@ server.listen(PORT, () => {
 
 
 
+// render_data('-NxqmErlX5NFM7SGsyNv', '-NxqmErlX5NFM7SGsyNw', '-NxqmErmb7o5SRhijK_A')
