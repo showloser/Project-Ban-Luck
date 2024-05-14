@@ -147,42 +147,35 @@ async function startGame(socket, sessionId, playerId) {
   writeDeckToDatabase(sessionId, deck)
 
   // draw initial hands for player n banker
-  let playerHand = await drawInitialHand(sessionId, playerId)
-  let bankerHand = await drawInitialHand(sessionId, bankerId)
-
-  console.log('PLAYERHANDB@: ' + playerHand)
-  console.log('BANKER@: ' + bankerHand)
-
-
-  const playerCardValue = CalculateValue(playerHand);
-  const bankerCardValue = CalculateValue(bankerHand);
-
-  // await Promise.all([
-  //   writeValueToDatabase(sessionId, playerId, playerCardValue),
-  //   writeValueToDatabase(sessionId, bankerId, bankerCardValue)
-  // ]);
-
-
+  await drawInitialHand(sessionId, playerId)
+  await drawInitialHand(sessionId, bankerId)
 
   render_data(socket, sessionId, playerId, bankerId)
-
 }
 
 async function drawInitialHand(sessionId, playerId) {
-  const card1 = await playerHit(sessionId, playerId);
-  const card2 = await playerHit(sessionId, playerId);
-  return [card1, card2];
+  await playerHit(sessionId, playerId);
+  await playerHit(sessionId, playerId);
+}
+
+async function calculatePlayerCardValue(sessionId, playerId){
+  try{
+    let hand = await getHand(sessionId, playerId)
+    hand = hand.split(',')
+    return CalculateValue(hand)
+  }
+  catch(error){
+    console.error(error)
+  }
 }
 
 async function playerHit(sessionId, playerId){
-  try{
+  // try{
     let currentDeck = await getDeck(sessionId)
     let playerCurrentHand = await getHand(sessionId, playerId)
     let dealtCard = currentDeck.shift()
-    console.log('dealt')
-    console.log(dealtCard)
 
-    if (playerCurrentHand == 'undefined') {playerCurrentHand = dealtCard}
+    if (playerCurrentHand == 'undefined' || playerCurrentHand == null) {playerCurrentHand = dealtCard}
     else {playerCurrentHand = `${playerCurrentHand},${dealtCard}`}
 
     // rewrite deck in database
@@ -190,7 +183,10 @@ async function playerHit(sessionId, playerId){
     // rewrite player's hand
     writeHandToDatabase(sessionId,playerId, playerCurrentHand)
 
-  } catch (error){console.error('[/playerHit] Error: ', error)}
+    // calculate hand 
+    let value = await calculatePlayerCardValue(sessionId, playerId)
+    writeValueToDatabase(sessionId, playerId, value)
+  // } catch (error){console.error('[/playerHit] Error: ', error)}
 }
 
 function bankerHit(){
@@ -225,31 +221,31 @@ function CalculateValue(hand){
           // [TWO CARDS]:
           if (hand.length == 2){
               if (aces == 2){
-                  return ['BanBan']
+                  return 'BanBan'
               }
               else if (aces = 1 && total == 10)
-                  return ['BanLuck']
+                  return 'BanLuck'
               else{
-                  return [parseInt(total + 11)]
+                  return parseInt(total + 11)
               }
           }
           // [THREE CARDS]:
           else if (hand.length == 3){
               // check if bust:
               if ((total + 10) > 21 ){
-                  return [parseInt(total + 1)]
+                  return parseInt(total + 1)
               }
               else{
-                  return [parseInt(total+1), parseInt(total + 10)]
+                  return parseInt(total+1), parseInt(total + 10)
               }
           }
           // [FOUR OR FIVE CARDS]:
           else{
-              return [parseInt(total + aces)]
+              return parseInt(total + aces)
           }
       }
       else{
-          return [parseInt(total)]
+          return parseInt(total)
       }
   }
 
@@ -259,7 +255,7 @@ function CalculateValue(hand){
   }
   else{
       if (result[0] > 21){
-          return ['Bust!']
+          return 'Bust!'
       }
       else{
           return result
@@ -291,6 +287,7 @@ io.on('connection', (socket) => {
   socket.on('sessionId', (sessionId, playerId) => {
     const current_sessionId = sessionId
     const current_playerId = playerId
+    socket.sessionId = sessionId
 
   // Deal initial cards when a client connects
   startGame(socket, current_sessionId, current_playerId);
@@ -302,7 +299,7 @@ io.on('connection', (socket) => {
       socket.emit('error_card_length_5')
     }
     else{
-      playerHit(sessionId, playerId)
+      // playerHit(sessionId, playerId)
       totalCardValue = CalculateValue(playerHand)
       socket.emit('playerCards', playerHand, totalCardValue)
     }
@@ -335,8 +332,12 @@ io.on('connection', (socket) => {
 
 
   // Handle client disconnect
-  socket.on('disconnect', (socket) => {
+  socket.on('disconnect', () => {
+    if (socket.sessionId){
+      deleteSession(socket.sessionId)
+    }
     console.log('A client disconnected');
+
 });
 
 })
@@ -353,7 +354,6 @@ app.post('/form_createRoom', (req, res) => {
   }
   catch(e){
     console.log(e)
-    
     res.status(400).json({ success: false, message: 'Failed to create session.'})
   }
 
@@ -369,6 +369,17 @@ app.post('/form_joinRoom', (req, res) => {
   res.status(200).json({ success: true, message: "Form data submitted successfully" });
 })
 
+async function deleteSession(sessionId){
+  const db = getDatabase()
+  const sesRef = ref(db, `/project-bunluck/sessions/${sessionId}`)
+  try{
+    await remove(sesRef)
+    console.log('[Session Deleted Successfully]')
+  } catch (error){
+    console.error('Error deleting session: ', error)
+    throw error
+  }
+}
 
 function createSessionAndAddPlayer(username) {
   const db = getDatabase();
@@ -445,7 +456,6 @@ function writeValueToDatabase(sessionId, playerId, value){
     })
 }
 
-
 async function getDeck(sessionId) {
   // jibai firebase only can async. Need to use promise to wait for data to be resolved so that it is 'Synchronous' (refer to func [fetchData for usage])
   return new Promise((resolve, reject) => {
@@ -493,14 +503,12 @@ async function getValue(sessionId, playerId){
 }
 
 
+
+
 // Start the server
 const PORT = process.env.PORT || 8888;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
-
-
-
 
 // render_data('-NxqmErlX5NFM7SGsyNv', '-NxqmErlX5NFM7SGsyNw', '-NxqmErmb7o5SRhijK_A')
