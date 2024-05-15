@@ -151,6 +151,10 @@ async function startGame(socket, sessionId, playerId) {
   await drawInitialHand(sessionId, bankerId)
 
   render_data(socket, sessionId, playerId, bankerId)
+
+  // change 'Restart' to 'False' in firebase
+  await changeSessionRestartStatus(sessionId)
+
 }
 
 async function drawInitialHand(sessionId, playerId) {
@@ -179,13 +183,15 @@ async function playerHit(sessionId, playerId){
     else {playerCurrentHand = `${playerCurrentHand},${dealtCard}`}
 
     // rewrite deck in database
-    writeDeckToDatabase(sessionId, currentDeck)
+    await writeDeckToDatabase(sessionId, currentDeck)
+  
     // rewrite player's hand
-    writeHandToDatabase(sessionId,playerId, playerCurrentHand)
+    await writeHandToDatabase(sessionId,playerId, playerCurrentHand)
+
 
     // calculate hand 
     let value = await calculatePlayerCardValue(sessionId, playerId)
-    writeValueToDatabase(sessionId, playerId, value)
+    await writeValueToDatabase(sessionId, playerId, value)
   // } catch (error){console.error('[/playerHit] Error: ', error)}
 }
 
@@ -267,11 +273,8 @@ async function render_data(socket, sessionId, playerId, bankerId){
   // get current card 
   // send card details to client
   let playerCurrentHand = await getHand(sessionId, playerId)
-  playerCurrentHand = playerCurrentHand.split(',')
   let playerCurrentValue = await getValue(sessionId, playerId)
-
   let bankerCurrentHand = await getHand(sessionId, bankerId)
-  bankerCurrentHand = bankerCurrentHand.split(',')
   let bankerCurrentValue = await getValue(sessionId, bankerId)
 
   socket.emit('render', playerCurrentHand, playerCurrentValue, bankerCurrentHand, bankerCurrentValue)
@@ -284,13 +287,32 @@ async function render_data(socket, sessionId, playerId, bankerId){
 io.on('connection', (socket) => {
   console.log('a connection is established')
 
-  socket.on('sessionId', (sessionId, playerId) => {
+  socket.on('sessionId', async (sessionId, playerId) => {
     const current_sessionId = sessionId
     const current_playerId = playerId
-    socket.sessionId = sessionId
 
-  // Deal initial cards when a client connects
-  startGame(socket, current_sessionId, current_playerId);
+    // check if session already exist: 
+    let sessionCheck = await checkExistingSession(sessionId)
+    if (!sessionCheck){
+      console.log("[ DO SOMETHING ]")
+      // should not run for now!!!
+
+      // Deal initial cards when a client connects
+      // startGame(socket, current_sessionId, current_playerId);
+    }
+    else{
+      // check if 'restart === true'
+      let sessionRestart = await checkSessionRestart(sessionId)
+      if (sessionRestart === 'True'){
+        startGame(socket, current_sessionId, current_playerId);
+      }
+      else{
+        console.log("[ Load Existing Session ]")
+        let sessionData = await loadExistingSession(sessionId)
+        socket.emit('loadExistingSession', sessionData)
+      }
+    }
+
 
   // Handle [Hit]  requests
   socket.on('playerHit', (sessionId, playerId) => {
@@ -333,11 +355,10 @@ io.on('connection', (socket) => {
 
   // Handle client disconnect
   socket.on('disconnect', () => {
-    if (socket.sessionId){
-      deleteSession(socket.sessionId)
-    }
-    console.log('A client disconnected');
-
+    // if (socket.sessionId){
+    //   deleteSession(socket.sessionId)
+    // }
+    // console.log('A client disconnected');
 });
 
 })
@@ -381,6 +402,58 @@ async function deleteSession(sessionId){
   }
 }
 
+async function checkExistingSession(sessionId){
+  const db = getDatabase()
+  const sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}`)
+  try{
+    const snapshot = await get(sessionRef)
+    return snapshot.exists()
+  } catch(error){
+    console.log('[Error] {checkExistingSession}')
+      throw error
+  }
+}
+
+async function checkSessionRestart(sessionId){
+  const db = getDatabase()
+  const sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/Restart`)
+  try{
+    const snapshot = await get(sessionRef)
+    return snapshot.val()
+  } catch(error){
+    console.log('[Error] {checkSessionRestart}')
+      throw error
+  }
+}
+
+async function changeSessionRestartStatus(sessionId){
+  const db = getDatabase()
+  const restartRef = ref(db, `/project-bunluck/sessions/${sessionId}/Restart`)
+  
+  try {
+    // Update the value of restartRef to 'False'
+    await set(restartRef, 'False');
+    console.log('Restart value updated successfully.');
+  } catch (error) {
+    console.error('Error updating restart value:', error);
+  }
+}
+
+async function loadExistingSession(sessionId, playerId){
+  const db = getDatabase()
+  sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/players`)
+
+  try{
+    const snapshot = await get(sessionRef)
+    if (snapshot.exists()){
+      return snapshot.val()
+    } 
+  } catch (error) {
+    console.log('[Error] {loadExistingSession}')
+    throw error
+  }
+}
+
 function createSessionAndAddPlayer(username) {
   const db = getDatabase();
   const sessionRef = push(ref(db, '/project-bunluck/sessions')); // Generate unique session ID
@@ -392,14 +465,16 @@ function createSessionAndAddPlayer(username) {
   // Store the session ID and player's username along with their player ID in the database
   set(sessionRef, {
     sessionId: sessionId,
-    createdAt: new Date().toISOString() // Timestamp indicating when the session was created
+    createdAt: new Date().toISOString(), // Timestamp indicating when the session was created
+    Restart: 'True'
   });
   
   set(playerRef, {
     username: username,
     currentHand : 'undefined',
     value : 'undefined',
-    endTurn: 'undefined'
+    endTurn: 'undefined',
+    banker: 'False'
   });
 
 
@@ -411,7 +486,8 @@ function createSessionAndAddPlayer(username) {
     username: 'Banker',
     currentHand : 'undefined',
     value : 'undefined',
-    endTurn: 'undefined'
+    endTurn: 'undefined',
+    banker: 'True'
   });
 
   return { sessionId: sessionId, playerId: playerId };
@@ -505,6 +581,7 @@ async function getValue(sessionId, playerId){
 
 
 
+
 // Start the server
 const PORT = process.env.PORT || 8888;
 server.listen(PORT, () => {
@@ -512,3 +589,14 @@ server.listen(PORT, () => {
 });
 
 // render_data('-NxqmErlX5NFM7SGsyNv', '-NxqmErlX5NFM7SGsyNw', '-NxqmErmb7o5SRhijK_A')
+
+// async function x(){
+//  var x = await loadExistingSession('-Nxw1LdyJQIFBpzTkzf-', '2')
+//  console.log(x)
+// }
+
+
+// async function x() {
+//   var x = await checkExistingSession('-NxwRmkQMm_MEAp4cHQW')
+//   console.log(x)
+// x()

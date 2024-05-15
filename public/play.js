@@ -30,12 +30,45 @@ socket.on('render', (playerCurrentHand, playerCurrentValue, bankerCurrentHand, b
 
     updateDealerCards(bankerCurrentHand);
     updateBankerCardValue(bankerCurrentValue)
+})
+
+
+socket.on('loadExistingSession', (data) => {
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+          const session = data[key];
+          
+            // check dealer / player
+            if (session.banker == 'True'){                      
+                updateBankerCardValue(session.value)
+                updateDealerCards(session.currentHand);
+            }
+            else{
+                updatePlayerCards(session.currentHand)
+                updatePlayerCardValue(session.value)
+            }
+
+            console.log(session.banker)
+        
+        //   console.log(`Key: ${key}`);
+        //   console.log(`Banker: ${session.banker}`);
+        //   console.log(`Username: ${session.username}`);
+        //   console.log(`Current Hand: ${session.currentHand}`);
+        //   console.log(`End Turn: ${session.endTurn}`);
+        //   console.log(`Value: ${session.value}`);
+
+        }
+
+      }
+
 
 
 })
 
 
+
 function updateDealerCards(cards) {
+    cards = cards.split(',')
     const dealerCardsDiv = document.getElementById('dealer-cards');
     dealerCardsDiv.innerHTML = ''; // Clear previous cards
 
@@ -50,6 +83,7 @@ function updateDealerCards(cards) {
 
 
 function updatePlayerCards(cards) {
+    cards = cards.split(',')
     const playerCardsDiv = document.getElementById('player-cards');
     playerCardsDiv.innerHTML = ''; // Clear previous cards
 
