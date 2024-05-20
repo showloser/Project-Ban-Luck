@@ -288,118 +288,6 @@ function CalculateValue(hand){
 // }
 
 
-
-// CONNECTION LOGIC:
-// Handle 'connect' event
-io.on('connection', (socket) => {
-  socket.on('sessionId', async (sessionId, playerId) => {
-    const current_sessionId = sessionId
-    const current_playerId = playerId
-
-    // check if session already exist: 
-    let sessionCheck = await checkExistingSession(sessionId)
-    if (!sessionCheck){
-      console.log("[ DO SOMETHING ]")
-      // should not run for now!!!
-
-      // Deal initial cards when a client connects
-      // startGame(socket, current_sessionId, current_playerId);
-    }
-    else{
-      let sessionRestart = await checkSessionRestart(sessionId)
-      if (sessionRestart === 'True'){
-        startGame(socket, current_sessionId, current_playerId);
-      }
-      else{
-        console.log("[ Load Existing Session ]")
-        let sessionData = await loadExistingSession(sessionId)
-        socket.emit('loadExistingSession', sessionData)
-      }
-    }
-
-  // Handle [Hit]  requests
-  socket.on('playerHit', async (sessionId, playerId) => {
-
-    // get current player's hand
-    let playerHand = (await getHand(sessionId, playerId)).split(',')
-
-
-    // check card amount (card amount cannot > 5)
-    if (playerHand.length >= 5){
-      socket.emit('error_card_length_5')
-    }
-    else{
-      playerHit(sessionId, playerId)
-      let sessionData = await loadExistingSession(sessionId)
-      socket.emit('loadExistingSession', sessionData)    }
-  } )
-
-    // Handle [Stand] requests
-  socket.on('playerStand', (sessionId, playerId) => {
-    while(true){
-      totalCardValue_banker = CalculateValue(bankerHand)
-      if (totalCardValue_banker.length == 2){
-        if (totalCardValue_banker[-1] >= 16){
-          socket.emit('playerStand', totalCardValue_banker[-1])
-          break
-        }
-        else{
-          bankerHit()
-        }
-      }
-      else if(totalCardValue_banker <= 16){
-        bankerHit()
-      }
-      else{
-        // send data over
-        socket.emit('playerStand', bankerHand, totalCardValue_banker)
-        break
-      }
-    }
-  })
-})
-
-  socket.on('restartGame', async (sessionId, playerId) => {
-    restartGame(sessionId) //erase all relevant data from db
-  })
-
-  // Handle client disconnect
-  socket.on('disconnect', () => {
-    // if (socket.sessionId){
-    //   deleteSession(socket.sessionId)
-    // }
-    // console.log('A client disconnected');
-});
-
-})
-
-// handle data from index.html
-app.post('/form_createRoom', (req, res) => {
-  const username = req.body.username;
-  try{
-    // create session and add player into current session
-    data = createSessionAndAddPlayer(username)
-
-    // send success response with generated session ID
-    res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId});
-  }
-  catch(e){
-    console.log(e)
-    res.status(400).json({ success: false, message: 'Failed to create session.'})
-  }
-
-
-})
-
-app.post('/form_joinRoom', (req, res) => {
-  const username = req.body.username;
-  const roomCode = req.body.roomCode;
-
-  //to do 
-  //send success
-  res.status(200).json({ success: true, message: "Form data submitted successfully" });
-})
-
 async function deleteSession(sessionId){
   const db = getDatabase()
   const sesRef = ref(db, `/project-bunluck/sessions/${sessionId}`)
@@ -587,7 +475,6 @@ async function getHand(sessionId, playerId){
 // }
 
 async function restartGame(sessionId){
-
   try{
     const db = getDatabase()
     const sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}`)
@@ -617,6 +504,120 @@ async function restartGame(sessionId){
   }
 
 }
+
+
+// CONNECTION LOGIC:
+// Handle 'connect' event
+io.on('connection', (socket) => {
+  socket.on('sessionId', async (sessionId, playerId) => {
+    const current_sessionId = sessionId
+    const current_playerId = playerId
+
+    // check if session already exist: 
+    let sessionCheck = await checkExistingSession(sessionId)
+    if (!sessionCheck){
+      console.log("[ DO SOMETHING ]")
+      // should not run for now!!!
+
+      // Deal initial cards when a client connects
+      // startGame(socket, current_sessionId, current_playerId);
+    }
+    else{
+      let sessionRestart = await checkSessionRestart(sessionId)
+      if (sessionRestart === 'True'){
+        startGame(socket, current_sessionId, current_playerId);
+      }
+      else{
+        console.log("[ Load Existing Session ]")
+        let sessionData = await loadExistingSession(sessionId)
+        socket.emit('loadExistingSession', sessionData)
+      }
+    }
+
+  // Handle [Hit]  requests
+  socket.on('playerHit', async (sessionId, playerId) => {
+
+    // get current player's hand
+    let playerHand = (await getHand(sessionId, playerId)).split(',')
+
+
+    // check card amount (card amount cannot > 5)
+    if (playerHand.length >= 5){
+      socket.emit('error_card_length_5')
+    }
+    else{
+      await playerHit(sessionId, playerId)
+      let sessionData = await loadExistingSession(sessionId)
+      socket.emit('loadExistingSession', sessionData)    }
+  } )
+
+    // Handle [Stand] requests
+  socket.on('playerStand', (sessionId, playerId) => {
+    while(true){
+      totalCardValue_banker = CalculateValue(bankerHand)
+      if (totalCardValue_banker.length == 2){
+        if (totalCardValue_banker[-1] >= 16){
+          socket.emit('playerStand', totalCardValue_banker[-1])
+          break
+        }
+        else{
+          bankerHit()
+        }
+      }
+      else if(totalCardValue_banker <= 16){
+        bankerHit()
+      }
+      else{
+        // send data over
+        socket.emit('playerStand', bankerHand, totalCardValue_banker)
+        break
+      }
+    }
+  })
+})
+
+  socket.on('restartGame', async (sessionId, playerId) => {
+    restartGame(sessionId) //erase all relevant data from db
+  })
+
+  // Handle client disconnect
+  socket.on('disconnect', () => {
+    // if (socket.sessionId){
+    //   deleteSession(socket.sessionId)
+    // }
+    // console.log('A client disconnected');
+});
+
+})
+
+// handle data from index.html
+app.post('/form_createRoom', (req, res) => {
+  const username = req.body.username;
+  try{
+    // create session and add player into current session
+    data = createSessionAndAddPlayer(username)
+
+    // send success response with generated session ID
+    res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId});
+  }
+  catch(e){
+    console.log(e)
+    res.status(400).json({ success: false, message: 'Failed to create session.'})
+  }
+
+
+})
+
+app.post('/form_joinRoom', (req, res) => {
+  const username = req.body.username;
+  const roomCode = req.body.roomCode;
+
+  //to do 
+  //send success
+  res.status(200).json({ success: true, message: "Form data submitted successfully" });
+})
+
+
 
 
 // Start the server

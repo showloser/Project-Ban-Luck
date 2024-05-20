@@ -37,7 +37,6 @@ socket.on('loadExistingSession', (data) => {
     for (const key in data) {
         if (data.hasOwnProperty(key)) {
           const session = data[key];
-          
             // check dealer / player
             if (session.banker == 'True'){                      
                 updateBankerCardValue(session.value)
@@ -115,9 +114,8 @@ function stand(){
     })
 }
 
-
-
 function restart(){
     console.log('[ Restart Game ]')
     socket.emit('restartGame', sessionId, playerId)
+    location.reload()
 }
