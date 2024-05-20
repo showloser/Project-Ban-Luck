@@ -22,7 +22,12 @@ body{     /* applied background and set font to white */
     margin-right: 10px; /* Spacing between cards */
 }
 
+#restart{
+    display: block;
+    margin: 50px auto 0px auto;
+}
+
 #quit-button{
     display: block;
-    margin: 200px auto 0px auto;
+    margin: 100px auto 0px auto;
 }

@@ -150,7 +150,12 @@ async function startGame(socket, sessionId, playerId) {
   await drawInitialHand(sessionId, playerId)
   await drawInitialHand(sessionId, bankerId)
 
-  render_data(socket, sessionId, playerId, bankerId)
+  // depreciated code -> using loadExistingSession(sessionId)
+  // render_data(socket, sessionId, playerId, bankerId)
+  let sessionData = await loadExistingSession(sessionId)
+  socket.emit('loadExistingSession', sessionData)
+  
+
 
   // change 'Restart' to 'False' in firebase
   await changeSessionRestartStatus(sessionId)
@@ -174,7 +179,7 @@ async function calculatePlayerCardValue(sessionId, playerId){
 }
 
 async function playerHit(sessionId, playerId){
-  // try{
+  try{
     let currentDeck = await getDeck(sessionId)
     let playerCurrentHand = await getHand(sessionId, playerId)
     let dealtCard = currentDeck.shift()
@@ -192,7 +197,7 @@ async function playerHit(sessionId, playerId){
     // calculate hand 
     let value = await calculatePlayerCardValue(sessionId, playerId)
     await writeValueToDatabase(sessionId, playerId, value)
-  // } catch (error){console.error('[/playerHit] Error: ', error)}
+  } catch (error){console.error('[/playerHit] Error: ', error)}
 }
 
 function bankerHit(){
@@ -269,24 +274,24 @@ function CalculateValue(hand){
   }
 }
 
-async function render_data(socket, sessionId, playerId, bankerId){
-  // get current card 
-  // send card details to client
-  let playerCurrentHand = await getHand(sessionId, playerId)
-  let playerCurrentValue = await getValue(sessionId, playerId)
-  let bankerCurrentHand = await getHand(sessionId, bankerId)
-  let bankerCurrentValue = await getValue(sessionId, bankerId)
+// Changed to used LoadExistingSession instead!!
 
-  socket.emit('render', playerCurrentHand, playerCurrentValue, bankerCurrentHand, bankerCurrentValue)
-}
+// async function render_data(socket, sessionId, playerId, bankerId){
+//   // get current card 
+//   // send card details to client
+//   let playerCurrentHand = await getHand(sessionId, playerId)
+//   let playerCurrentValue = await getValue(sessionId, playerId)
+//   let bankerCurrentHand = await getHand(sessionId, bankerId)
+//   let bankerCurrentValue = await getValue(sessionId, bankerId)
+
+//   socket.emit('render', playerCurrentHand, playerCurrentValue, bankerCurrentHand, bankerCurrentValue)
+// }
 
 
 
 // CONNECTION LOGIC:
 // Handle 'connect' event
 io.on('connection', (socket) => {
-  console.log('a connection is established')
-
   socket.on('sessionId', async (sessionId, playerId) => {
     const current_sessionId = sessionId
     const current_playerId = playerId
@@ -301,7 +306,6 @@ io.on('connection', (socket) => {
       // startGame(socket, current_sessionId, current_playerId);
     }
     else{
-      // check if 'restart === true'
       let sessionRestart = await checkSessionRestart(sessionId)
       if (sessionRestart === 'True'){
         startGame(socket, current_sessionId, current_playerId);
@@ -313,18 +317,21 @@ io.on('connection', (socket) => {
       }
     }
 
-
   // Handle [Hit]  requests
-  socket.on('playerHit', (sessionId, playerId) => {
+  socket.on('playerHit', async (sessionId, playerId) => {
+
+    // get current player's hand
+    let playerHand = (await getHand(sessionId, playerId)).split(',')
+
+
     // check card amount (card amount cannot > 5)
     if (playerHand.length >= 5){
       socket.emit('error_card_length_5')
     }
     else{
-      // playerHit(sessionId, playerId)
-      totalCardValue = CalculateValue(playerHand)
-      socket.emit('playerCards', playerHand, totalCardValue)
-    }
+      playerHit(sessionId, playerId)
+      let sessionData = await loadExistingSession(sessionId)
+      socket.emit('loadExistingSession', sessionData)    }
   } )
 
     // Handle [Stand] requests
@@ -352,6 +359,9 @@ io.on('connection', (socket) => {
   })
 })
 
+  socket.on('restartGame', async (sessionId, playerId) => {
+    restartGame(sessionId) //erase all relevant data from db
+  })
 
   // Handle client disconnect
   socket.on('disconnect', () => {
@@ -429,17 +439,15 @@ async function checkSessionRestart(sessionId){
 async function changeSessionRestartStatus(sessionId){
   const db = getDatabase()
   const restartRef = ref(db, `/project-bunluck/sessions/${sessionId}/Restart`)
-  
   try {
     // Update the value of restartRef to 'False'
     await set(restartRef, 'False');
-    console.log('Restart value updated successfully.');
   } catch (error) {
     console.error('Error updating restart value:', error);
   }
 }
 
-async function loadExistingSession(sessionId, playerId){
+async function loadExistingSession(sessionId){
   const db = getDatabase()
   sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/players`)
 
@@ -563,23 +571,52 @@ async function getHand(sessionId, playerId){
   });
 }
 
-async function getValue(sessionId, playerId){
-  return new Promise((resolve, reject) => {
-    const db = getDatabase();
-    const valueRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/value`);
+// async function getValue(sessionId, playerId){
+//   return new Promise((resolve, reject) => {
+//     const db = getDatabase();
+//     const valueRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/value`);
 
-    onValue(valueRef, (snapshot) => {
-      const value = snapshot.val();
-      resolve(value);
-    }, (error) => {
-      console.error('Error fetching deck:', error);
-      reject(error);
-    });
-  });
+//     onValue(valueRef, (snapshot) => {
+//       const value = snapshot.val();
+//       resolve(value);
+//     }, (error) => {
+//       console.error('Error fetching deck:', error);
+//       reject(error);
+//     });
+//   });
+// }
+
+async function restartGame(sessionId){
+
+  try{
+    const db = getDatabase()
+    const sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}`)
+  
+    const snapshot = await get(sessionRef);
+  
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      const updates = {}; // obj to hold all updates
+
+      // change restart var to 'True'
+      updates['Restart'] = 'True'
+    
+      // Update currentHand and value for each player
+      if (data.players) {
+        Object.keys(data.players).forEach(playerId => {
+          updates[`players/${playerId}/currentHand`] = 'undefined';
+          updates[`players/${playerId}/value`] = 'undefined';
+        });
+      }
+      
+      // Write the updates to the database
+      await update(sessionRef, updates);
+    }
+  } catch(error){
+    console.error('Error rewriting nodes: ' + error)
+  }
+
 }
-
-
-
 
 
 // Start the server
@@ -588,15 +625,4 @@ server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
 
-// render_data('-NxqmErlX5NFM7SGsyNv', '-NxqmErlX5NFM7SGsyNw', '-NxqmErmb7o5SRhijK_A')
-
-// async function x(){
-//  var x = await loadExistingSession('-Nxw1LdyJQIFBpzTkzf-', '2')
-//  console.log(x)
-// }
-
-
-// async function x() {
-//   var x = await checkExistingSession('-NxwRmkQMm_MEAp4cHQW')
-//   console.log(x)
-// x()
+// restartGame('-NyL31QpvHWH8ddGNd1N')

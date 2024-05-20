@@ -47,22 +47,8 @@ socket.on('loadExistingSession', (data) => {
                 updatePlayerCards(session.currentHand)
                 updatePlayerCardValue(session.value)
             }
-
-            console.log(session.banker)
-        
-        //   console.log(`Key: ${key}`);
-        //   console.log(`Banker: ${session.banker}`);
-        //   console.log(`Username: ${session.username}`);
-        //   console.log(`Current Hand: ${session.currentHand}`);
-        //   console.log(`End Turn: ${session.endTurn}`);
-        //   console.log(`Value: ${session.value}`);
-
         }
-
       }
-
-
-
 })
 
 
@@ -131,3 +117,7 @@ function stand(){
 
 
 
+function restart(){
+    console.log('[ Restart Game ]')
+    socket.emit('restartGame', sessionId, playerId)
+}
