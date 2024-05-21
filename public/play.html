@@ -41,17 +41,33 @@
     </div>
 
 
+
+
     <!-- Chat -->
-    <div class="chat-container">
-        <div class="chat-header">Chat</div>
+    <div class="chat-container" id="chat-container">
+        <div class="chat-header" id="chat-header">Chat</div>
+        <div class="chat-content" id="chat-content">
         <div class="chat-messages" id="chat-messages">
-          <!-- Chat messages will appear here -->
+            <!-- Chat messages will appear here -->
         </div>
         <div class="chat-input">
-          <input type="text" id="chat-input" placeholder="Type a message...">
-          <button onclick="sendMessage()">Send</button>
+            <input type="text" id="chat-input" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
         </div>
-      </div>
+        </div>
+    </div>
+
+    <script>
+    document.getElementById('chat-header').addEventListener('click', function() {
+    const chatContent = document.getElementById('chat-content');
+    
+    if (chatContent.style.maxHeight) {
+        chatContent.style.maxHeight = null;
+    } else {
+        chatContent.style.maxHeight = chatContent.scrollHeight + 'px';
+    }
+    });
+    </script>
 
 
     <!-- Connect to socket.io server -->
