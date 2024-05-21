@@ -1,7 +1,7 @@
 // [TO DO]
 // remove all const db = getdatabase()
   // to be removed
-  let bankerId;
+let bankerId;
 
 const express = require('express');
 const http = require('http');
@@ -459,20 +459,20 @@ async function getHand(sessionId, playerId){
   });
 }
 
-// async function getValue(sessionId, playerId){
-//   return new Promise((resolve, reject) => {
-//     const db = getDatabase();
-//     const valueRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/value`);
+async function getValue(sessionId, playerId){
+  return new Promise((resolve, reject) => {
+    const db = getDatabase();
+    const valueRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/value`);
 
-//     onValue(valueRef, (snapshot) => {
-//       const value = snapshot.val();
-//       resolve(value);
-//     }, (error) => {
-//       console.error('Error fetching deck:', error);
-//       reject(error);
-//     });
-//   });
-// }
+    onValue(valueRef, (snapshot) => {
+      const value = snapshot.val();
+      resolve(value);
+    }, (error) => {
+      console.error('Error fetching deck:', error);
+      reject(error);
+    });
+  });
+}
 
 async function restartGame(sessionId){
   try{
@@ -540,7 +540,6 @@ io.on('connection', (socket) => {
     // get current player's hand
     let playerHand = (await getHand(sessionId, playerId)).split(',')
 
-
     // check card amount (card amount cannot > 5)
     if (playerHand.length >= 5){
       socket.emit('error_card_length_5')
@@ -551,32 +550,21 @@ io.on('connection', (socket) => {
       socket.emit('loadExistingSession', sessionData)    }
   } )
 
-    // Handle [Stand] requests
-  socket.on('playerStand', (sessionId, playerId) => {
-    while(true){
-      totalCardValue_banker = CalculateValue(bankerHand)
-      if (totalCardValue_banker.length == 2){
-        if (totalCardValue_banker[-1] >= 16){
-          socket.emit('playerStand', totalCardValue_banker[-1])
-          break
-        }
-        else{
-          bankerHit()
-        }
-      }
-      else if(totalCardValue_banker <= 16){
-        bankerHit()
-      }
-      else{
-        // send data over
-        socket.emit('playerStand', bankerHand, totalCardValue_banker)
-        break
-      }
-    }
-  })
+  // // Handle [Stand] requests
+  // socket.on('playerStand', async (sessionId, playerId) => {
+  //   banker_function(sessionId, bankerId)
+  // })
+
 })
 
-  socket.on('restartGame', async (sessionId, playerId) => {
+
+
+
+
+
+
+
+socket.on('restartGame', async (sessionId, playerId) => {
     restartGame(sessionId) //erase all relevant data from db
   })
 
@@ -620,10 +608,30 @@ app.post('/form_joinRoom', (req, res) => {
 
 
 
-// Start the server
-const PORT = process.env.PORT || 8888;
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// // Start the server
+// const PORT = process.env.PORT || 8888;
+// server.listen(PORT, () => {
+//     console.log(`Server is running on port ${PORT}`);
+// });
 
-// restartGame('-NyL31QpvHWH8ddGNd1N')
+
+async function banker_function(sessionId, bankerId){
+  let current_value = await getValue(sessionId, bankerId)
+  console.log(current_value)
+
+  while (true){
+    if (current_value > 16 || current_value == 'BanBan' || current_value == 'BanLuck'){
+      console.log('DONE')
+      break
+    }
+    else{
+      await playerHit(sessionId, bankerId)
+      console.log('HIT')
+    }
+    console.log(await getValue(sessionId, bankerId))
+  }
+
+}
+
+
+banker_function('-NyQa8rMmahHJWmLYIMk', '-NyQa8rP6XFxhfofWY2L' )

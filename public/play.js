@@ -32,7 +32,6 @@ socket.on('render', (playerCurrentHand, playerCurrentValue, bankerCurrentHand, b
     updateBankerCardValue(bankerCurrentValue)
 })
 
-
 socket.on('loadExistingSession', (data) => {
     for (const key in data) {
         if (data.hasOwnProperty(key)) {
@@ -50,6 +49,38 @@ socket.on('loadExistingSession', (data) => {
       }
 })
 
+function playerHit(){
+    socket.emit('playerHit', sessionId, playerId ) //send request to 'hit'
+
+    socket.on('playerHit', (cards, cardValue) => { //get data
+        updatePlayerCards(cards);
+        updatePlayerCardValue(cardValue)
+    })
+
+    socket.on('error_card_length_5', () => {
+        document.getElementById('message').innerHTML = "Max Cards allowed is 5"
+    })
+}
+
+function stand(){
+    socket.emit('playerStand', sessionId, playerId) // send request to 'stand'
+    
+    socket.on('playerStand', () => {
+        console.log('STAND')
+
+
+        // updateDealerCards(bankerHand)
+        // updateBankerCardValue(totalCardValue_banker)
+        // document.getElementById('result').innerHTML = `Result = ${totalCardValue_banker}`
+    })
+}
+
+function restart(){
+    console.log('[ Restart Game ]')
+    socket.emit('restartGame', sessionId, playerId)
+    location.reload()
+}
+
 
 
 function updateDealerCards(cards) {
@@ -61,7 +92,7 @@ function updateDealerCards(cards) {
         const img = document.createElement('img');
         img.src = `/images/cards/${card}.svg`;
         img.alt = card;
-        dealerCardsDiv.appendChild(img);
+        dealerCardsDiv.appendChild( img);
     });
 }
 
@@ -88,34 +119,4 @@ function updatePlayerCardValue(value){
 function updateBankerCardValue(value){
     const playerCardValueElement = document.getElementById('value_banker')
     playerCardValueElement.innerHTML = value; // Overwrite previous value
-}
-
-
-function playerHit(){
-    socket.emit('playerHit', sessionId, playerId ) //send request to 'hit'
-
-    socket.on('playerHit', (cards, cardValue) => { //get data
-        updatePlayerCards(cards);
-        updatePlayerCardValue(cardValue)
-    })
-
-    socket.on('error_card_length_5', () => {
-        document.getElementById('message').innerHTML = "Max Cards allowed is 5"
-    })
-}
-
-function stand(){
-    socket.emit('playerStand', sessionId, playerId) // send request to 'stand'
-    
-    socket.on('playerStand', (bankerHand, totalCardValue_banker) => {
-        updateDealerCards(bankerHand)
-        updateBankerCardValue(totalCardValue_banker)
-        document.getElementById('result').innerHTML = `Result = ${totalCardValue_banker}`
-    })
-}
-
-function restart(){
-    console.log('[ Restart Game ]')
-    socket.emit('restartGame', sessionId, playerId)
-    location.reload()
 }

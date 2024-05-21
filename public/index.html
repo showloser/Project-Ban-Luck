@@ -11,22 +11,34 @@
     <h1>Welcome to Project: BanLuck</h1>
     <p>Click the button below to join the game:</p>
 
+    <button class="button" onclick="ShowCreateRoomForm()">
+      <span class="button_lg">
+        <span class="button_sl"></span>
+        <span class="button_text">Create Room</span>
+      </span>
+    </button>
 
-    <button class="button" onclick="ShowCreateRoomForm()">Create Room</button>
-    <button onclick="ShowJoinRoomForm()">Join Room</button>
+    <br>
+
+    <button class="button button_join" onclick="ShowJoinRoomForm()">
+      <span class="button_lg">
+        <span class="button_sl"></span>
+        <span class="button_text">Join Room</span>
+      </span>
+    </button>
 
     <div id="CreateRoomForm" style="display: none;">
-      <form onsubmit="return ValidateData_create()">
-        <input type="text" id="username_create" placeholder="Enter your username" required>
-        <button type="submit">Continue</button>
+      <form onsubmit="return ValidateData_create()" class="forms">
+        <input type="text" id="username_create" class="form_input" placeholder="Enter your username" required>
+        <button type="submit" class="form_submit">Continue</button>
       </form>
     </div>
 
     <div id="JoinRoomForm" style="display: none;">
-      <form onsubmit="return ValidateData_join()">
-        <input type="text" id="username_join" placeholder="Enter your username" required>
-        <input type="text" id="roomcode_join" placeholder="Enter your Room Code" required>
-        <button type="submit">Continue</button>
+      <form onsubmit="return ValidateData_join()" class="forms">
+        <input type="text" id="username_join" class="form_input" placeholder="Enter your username" required>
+        <input type="text" id="roomcode_join" class="form_input" placeholder="Enter your Room Code" required>
+        <button type="submit" class="form_submit">Continue</button>
       </form>
     </div>
   </div>

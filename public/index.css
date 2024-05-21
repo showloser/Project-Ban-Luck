@@ -21,30 +21,6 @@ color: #333;
 form {
 margin-top: 20px;
 }
-/* button {
-background-color: #007bff;
-color: #fff;
-border: none;
-padding: 10px 20px;
-font-size: 16px;
-cursor: pointer;
-border-radius: 5px;
-transition: background-color 0.3s;
-margin-top: 20px;
-}
-
-button:hover {
-background-color: #0056b3;
-}
-
-input[type="text"] {
-padding: 10px;
-margin-top: 10px;
-border: 1px solid #ccc;
-border-radius: 5px;
-width: 200px;
-} */
-
 
 
 .button {
@@ -165,4 +141,47 @@ width: calc(100% + 15px);
 .button:hover .button_lg::after {
 background-color: #fff;
 }
+  
+.button_join .button_sl {
+left: auto;
+right: -8px;
+background-color: #00b9aa;
+
+}
+
+.button_join:hover .button_sl {
+width: calc(100% + 15px);
+left: auto;
+right: -8px;
+}
+
+
+
+
+/* test */
+
+.form_input {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
+    transition: border-color 0.2s;
+
+    margin-bottom: 15px; /* Space between inputs */
+  }
+
+  /* Submit button */
+  .form_submit {
+    padding: 11px 15px;
+    font-size: 14px;
+    color: #fff;
+    background-color: #3973ad; /* Button background */
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
   
