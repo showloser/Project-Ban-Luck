@@ -179,7 +179,7 @@ async function calculatePlayerCardValue(sessionId, playerId){
 }
 
 async function playerHit(sessionId, playerId){
-  try{
+  // try{
     let currentDeck = await getDeck(sessionId)
     let playerCurrentHand = await getHand(sessionId, playerId)
     let dealtCard = currentDeck.shift()
@@ -197,7 +197,7 @@ async function playerHit(sessionId, playerId){
     // calculate hand 
     let value = await calculatePlayerCardValue(sessionId, playerId)
     await writeValueToDatabase(sessionId, playerId, value)
-  } catch (error){console.error('[/playerHit] Error: ', error)}
+  // } catch (error){console.error('[/playerHit] Error: ', error)}
 }
 
 function bankerHit(){
@@ -212,66 +212,61 @@ function CalculateValue(hand){
   // If your total number of cards is 3, then Ace = 10 or 1
   // If your total number of cards is 4 or 5, then Ace = 1
 
-  function determineValue(hand){
-      var total = 0;
-      var aces = 0;
-      for (let card of hand){
-      const value = card.split('_')[0]; //get the value (king/queen/jack/10/9/ace)
-          if (value === 'ace'){
-              aces = aces + 1
-          }
-          else if (value === 'king' || value == 'queen' || value == 'jack'){
-              total = total + 10
-          }
-          else{
-              total = total + parseInt(value)
-          }
-      }
+  function determineValue(hand){  
+    var total = 0;
+    var aces = 0;
+    for (let card of hand){
+    const value = card.split('_')[0]; //get the value (king/queen/jack/10/9/ace)
+        if (value === 'ace'){
+            aces = aces + 1
+        }
+        else if (value === 'king' || value == 'queen' || value == 'jack'){
+            total = total + 10
+        }
+        else{
+            total = total + parseInt(value)
+        }
+    }
   
-      if (aces != 0){
-          // [TWO CARDS]:
-          if (hand.length == 2){
-              if (aces == 2){
-                  return 'BanBan'
-              }
-              else if (aces = 1 && total == 10)
-                  return 'BanLuck'
-              else{
-                  return parseInt(total + 11)
-              }
-          }
-          // [THREE CARDS]:
-          else if (hand.length == 3){
-              // check if bust:
-              if ((total + 10) > 21 ){
-                  return parseInt(total + 1)
-              }
-              else{
-                  return parseInt(total+1), parseInt(total + 10)
-              }
-          }
-          // [FOUR OR FIVE CARDS]:
-          else{
-              return parseInt(total + aces)
-          }
-      }
-      else{
-          return parseInt(total)
-      }
+    if (aces != 0){
+        // [TWO CARDS]:
+        if (hand.length == 2){
+            if (aces == 2){
+                return ['BanBan']
+            }
+            else if (aces = 1 && total == 10)
+                return ['BanLuck']
+            else{
+                return [parseInt(total + 10),parseInt(total + 11)]
+            }
+        }
+        // [THREE CARDS]:
+        else if (hand.length == 3){
+  
+            if (aces  == 1){
+              return [parseInt(total+1), parseInt(total+10)]
+            }
+  
+            else if (aces == 2){
+              return [parseInt(total+2),parseInt(total+11)]
+            }
+  
+            else{
+              return [21]
+            }
+        }
+        // [FOUR OR FIVE CARDS]:
+        else{
+            return [parseInt(total + aces)]
+        }
+    }
+    else{
+        return [parseInt(total)]
+    }
   }
+  
 
-  result = determineValue(hand)
-  if (result.length == 2 || typeof result[0] === 'string'){
-      return result
-  }
-  else{
-      if (result[0] > 21){
-          return 'Bust!'
-      }
-      else{
-          return result
-      }
-  }
+  return determineValue(hand)
 }
 
 // Changed to used LoadExistingSession instead!!
@@ -551,9 +546,47 @@ io.on('connection', (socket) => {
   } )
 
   // // Handle [Stand] requests
-  // socket.on('playerStand', async (sessionId, playerId) => {
-  //   banker_function(sessionId, bankerId)
-  // })
+
+  //  FAKE BANKER (TO BE CHANGED TO REAL BANKER -> WILL RUN ON DEFAULT IF PLAYER UNRESPONSIVE THOUGH)
+  socket.on('playerStand', async (sessionId, playerId) => {
+    while (true){
+      let current_value = await getValue(sessionId, bankerId)
+      if (current_value.length == 1){
+        // check for BanLuck/BanBan
+        if (typeof(current_value) == 'string' || current_value > 21){
+          break
+        }
+        else if (current_value <= 16){
+          await playerHit(sessionId, bankerId)
+        }
+        else{ // values between 17 and 21
+          break 
+        }
+      }
+  
+      else{
+        if ((current_value[0] >= 17 && current_value[0] <= 21) || (current_value[1] >= 17 && current_value[1] <= 21)){
+          // if (current_value[0] > current_value[1]){
+          //   return current_value[0]
+          // } else{
+          //   return current_value[1]
+          // }
+          break
+        }
+        else if ((current_value[0] > 21) && (current_value[1] > 21)){
+          break
+        }
+        else{
+          await playerHit(sessionId, bankerId)
+        }
+      }
+    }
+
+    let sessionData = await loadExistingSession(sessionId)
+    socket.emit('loadExistingSession', sessionData)
+
+
+  })
 
 })
 
@@ -608,47 +641,10 @@ app.post('/form_joinRoom', (req, res) => {
 
 
 
-// // Start the server
-// const PORT = process.env.PORT || 8888;
-// server.listen(PORT, () => {
-//     console.log(`Server is running on port ${PORT}`);
-// });
+// Start the server
+const PORT = process.env.PORT || 8888;
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
 
 
-async function banker_function(sessionId, bankerId){
-  let current_value = await getValue(sessionId, bankerId)
-  console.log('Current Value: ' + current_value)
-  console.log('Current Value Type: ' + typeof(current_value))
-
-  while (true){
-    if (typeof(current_value) == 'string'){
-      if (current_value == 'Bust!' || current_value == 'Banluck' || 'BanBan'){
-        console.log('case 1')
-        break
-      }
-      else if(current_value > 16){
-        console.log('case 2')
-
-        break
-      }
-      else{
-        await playerHit(sessionId, bankerId)
-      }
-    }
-  }
-  // while (true){
-  //   if (current_value > 16 ){
-  //     console.log('DONE')
-  //     break
-  //   }
-  //   else{
-  //     await playerHit(sessionId, bankerId)
-  //     console.log('HIT')
-  //   }
-  //   console.log(await getValue(sessionId, bankerId))
-  // }
-
-}
-
-
-banker_function('-NyQa8rMmahHJWmLYIMk', '-NyQa8rP6XFxhfofWY2L' )
