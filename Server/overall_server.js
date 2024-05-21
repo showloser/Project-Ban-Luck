@@ -617,19 +617,36 @@ app.post('/form_joinRoom', (req, res) => {
 
 async function banker_function(sessionId, bankerId){
   let current_value = await getValue(sessionId, bankerId)
-  console.log(current_value)
+  console.log('Current Value: ' + current_value)
+  console.log('Current Value Type: ' + typeof(current_value))
 
   while (true){
-    if (current_value > 16 || current_value == 'BanBan' || current_value == 'BanLuck'){
-      console.log('DONE')
-      break
+    if (typeof(current_value) == 'string'){
+      if (current_value == 'Bust!' || current_value == 'Banluck' || 'BanBan'){
+        console.log('case 1')
+        break
+      }
+      else if(current_value > 16){
+        console.log('case 2')
+
+        break
+      }
+      else{
+        await playerHit(sessionId, bankerId)
+      }
     }
-    else{
-      await playerHit(sessionId, bankerId)
-      console.log('HIT')
-    }
-    console.log(await getValue(sessionId, bankerId))
   }
+  // while (true){
+  //   if (current_value > 16 ){
+  //     console.log('DONE')
+  //     break
+  //   }
+  //   else{
+  //     await playerHit(sessionId, bankerId)
+  //     console.log('HIT')
+  //   }
+  //   console.log(await getValue(sessionId, bankerId))
+  // }
 
 }
 
