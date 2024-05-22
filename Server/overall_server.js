@@ -14,10 +14,6 @@ const io = socketIo(server);
 const path = require('path'); 
 const { start } = require('repl');
 
-// for chat input sanitization 
-const validator = require('express-validator');
-app.use(validator()); // Apply the validator middleware
-
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!     [ FireBase ]     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // Current json Firebase hierarchy  
@@ -530,7 +526,7 @@ async function chat(sessionId, playerId, username, chatData){
 
 }
 
-function escapeHtml(){
+function escapeHtml(str){
   const htmlEscapes = {
     '&': '&amp;',
     '<': '&lt;',
@@ -628,22 +624,14 @@ io.on('connection', (socket) => {
 
 
   })
-
 })
 
 socket.on('chat', async (sessionId, playerId, username, chatData) => {
-  const errors = validationResult(socket);
-  if (!errors.isEmpty()) {
-    console.error('Validation errors:', errors.array());
-    // Optionally emit an error event to the client with error details
-    socket.emit('chat_error', errors.array());
-    return;
-  }
 
   // Escape HTML entities
   const sanitizedUsername = escapeHtml(username); 
   const sanitizedChatData = escapeHtml(chatData); 
-
+  
   chat(sessionId, playerId, username, sanitizedChatData) // push data to database
 
   // send this data to everyone (including sender) [!! Only sends the new message !!]
@@ -654,6 +642,7 @@ socket.on('chat', async (sessionId, playerId, username, chatData) => {
   socket.emit('chat_broadcast', sanitizedUsername, sanitizedChatData)
 
 })
+
 
 socket.on('restartGame', async (sessionId, playerId) => {
     restartGame(sessionId) //erase all relevant data from db
