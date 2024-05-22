@@ -14,6 +14,9 @@ const io = socketIo(server);
 const path = require('path'); 
 const { start } = require('repl');
 
+// for chat input sanitization 
+const validator = require('express-validator');
+app.use(validator()); // Apply the validator middleware
 
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!     [ FireBase ]     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -35,14 +38,19 @@ const { start } = require('repl');
 //         - suit
 //         - value
 //     - createdAt
-
+//     - chat
+//       - {messageId}
+//         - senderId
+//         - senderUsername
+//         - message
+//         - timestamp
 
 // Import the functions you need from the SDKs you need
 const { initializeApp, SDK_VERSION } = require('firebase/app');
 const { getDatabase, ref, get, child, set, update, remove, push, onValue } = require('firebase/database');
 const { create } = require('domain');
 const { type } = require('os');
-const { error } = require('console');
+const { error, timeStamp } = require('console');
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlJ1gEXCOAIEN2Q1w69sKnzuxeUvpYge4",
@@ -368,7 +376,6 @@ function createSessionAndAddPlayer(username) {
     banker: 'False'
   });
 
-
   // dummy account
   const bankerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique dummy ID
   bankerId = bankerRef.key; 
@@ -501,6 +508,40 @@ async function restartGame(sessionId){
 }
 
 
+async function chat(sessionId, playerId, username, chatData){
+  const db = getDatabase()
+  const chatRef = ref(db, `/project-bunluck/sessions/${sessionId}/chat`)
+
+  const newMessageRef = push(chatRef); // Generate a unique message ID
+
+  // message object
+  const messageObj = {
+    senderId: playerId,
+    senderUsername: username,
+    message: chatData,
+    timeStamp: new Date().toString()
+  }
+
+  //push message into fb node'
+  set(newMessageRef, messageObj)
+  .catch((error) => {
+    console.error('Error sending message: ' + error)
+  })
+
+}
+
+function escapeHtml(){
+  const htmlEscapes = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  };
+  return str.replace(/[&<>"']/g, (char) => htmlEscapes[char]);  
+}
+
+
 // CONNECTION LOGIC:
 // Handle 'connect' event
 io.on('connection', (socket) => {
@@ -590,19 +631,36 @@ io.on('connection', (socket) => {
 
 })
 
+socket.on('chat', async (sessionId, playerId, username, chatData) => {
+  const errors = validationResult(socket);
+  if (!errors.isEmpty()) {
+    console.error('Validation errors:', errors.array());
+    // Optionally emit an error event to the client with error details
+    socket.emit('chat_error', errors.array());
+    return;
+  }
 
+  // Escape HTML entities
+  const sanitizedUsername = escapeHtml(username); 
+  const sanitizedChatData = escapeHtml(chatData); 
 
+  chat(sessionId, playerId, username, sanitizedChatData) // push data to database
 
+  // send this data to everyone (including sender) [!! Only sends the new message !!]
+  // improvements to make:
+  // 1) if client is connected: only send the new message
+  // 2) if client is new, send the latest 20 message
+  // 3) every 10mins, refresh the chat (delete everything except the latest 20 message) 
+  socket.emit('chat_broadcast', sanitizedUsername, sanitizedChatData)
 
-
-
+})
 
 socket.on('restartGame', async (sessionId, playerId) => {
     restartGame(sessionId) //erase all relevant data from db
   })
 
   // Handle client disconnect
-  socket.on('disconnect', () => {
+socket.on('disconnect', () => {
     // if (socket.sessionId){
     //   deleteSession(socket.sessionId)
     // }
@@ -646,5 +704,4 @@ const PORT = process.env.PORT || 8888;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-
 

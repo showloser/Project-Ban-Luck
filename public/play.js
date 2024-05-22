@@ -1,6 +1,24 @@
 const sessionId = localStorage.getItem('sessionId')
 const playerId = localStorage.getItem('playerId')
+const username = localStorage.getItem('username')
 const socket = io(); // Connect to the server
+
+const chatInput = document.getElementById('chat-input');
+chatInput.addEventListener('keyup', (event) => {
+  // Check if Enter key was pressed and prevent default form submission
+  if (event.key === 'Enter' && !event.ctrlKey) {
+    event.preventDefault(); // Prevent default form submission behavior
+
+    // Additional checks and logic (optional)
+    if (chatInput.value.trim() !== '') { // Check if message isn't empty
+      sendMessage(); // Send the message
+    } else {
+      // Handle empty message case (e.g., display an error message)
+      window.alert('Empty message cannot be sent!');
+    }
+  }
+});
+
 
 socket.on('connect', () => {
     console.log('Connected to server');
@@ -49,6 +67,14 @@ socket.on('loadExistingSession', (data) => {
       }
 })
 
+socket.on('chat_broadcast', (username, chatData) => {
+    appendChatMessage(username, chatData);
+})
+socket.on('chat_error', (error) => {
+    window.alert(error)
+})
+
+
 function playerHit(){
     socket.emit('playerHit', sessionId, playerId ) //send request to 'hit'
 
@@ -67,11 +93,6 @@ function stand(){
     
     socket.on('playerStand', () => {
         console.log('STAND')
-
-
-        // updateDealerCards(bankerHand)
-        // updateBankerCardValue(totalCardValue_banker)
-        // document.getElementById('result').innerHTML = `Result = ${totalCardValue_banker}`
     })
 }
 
@@ -80,6 +101,29 @@ function restart(){
     socket.emit('restartGame', sessionId, playerId)
     location.reload()
 }
+
+
+// CHAT FUNCTIONALITY
+function sendMessage(){
+    const chatInput = document.getElementById('chat-input');
+    socket.emit('chat', sessionId, playerId, username, chatInput.value)
+    chatInput.value = '' // reset input field to nothing
+}
+
+function appendChatMessage(username, chatData) {
+    // Create a new message element (e.g., a paragraph)
+    const messageElement = document.createElement('p');
+    messageElement.classList.add('chat-message-child');
+  
+    // Build the message content (username, timestamp, etc.)
+    const messageContent = `<b>${username}:</b> ${chatData}`;
+    messageElement.innerHTML = messageContent;
+  
+    // Get the chat messages container element
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.appendChild(messageElement);
+  }
+
 
 
 
@@ -95,8 +139,6 @@ function updateDealerCards(cards) {
         dealerCardsDiv.appendChild( img);
     });
 }
-
-
 
 function updatePlayerCards(cards) {
     cards = cards.split(',')
@@ -120,3 +162,4 @@ function updateBankerCardValue(value){
     const playerCardValueElement = document.getElementById('value_banker')
     playerCardValueElement.innerHTML = value; // Overwrite previous value
 }
+
