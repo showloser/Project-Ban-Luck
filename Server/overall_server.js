@@ -100,8 +100,6 @@ function delete_all_data_in_session(db, session_id){
     });
 
 }
-
-
 // !!!!!!!!!!!!!!!!!!!!!!!!!     [ FireBase ] END    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 const publicPath = path.join(__dirname, '../public')
@@ -138,10 +136,6 @@ function shuffleDeck(deck){ // using Fisher-Yates algorith, which is truly rando
     [deck[i], deck[j]] = [deck[j], deck[i]]; // Swap elements at index i and j
   }
   return deck;
-}
-
-function dealCard(){
-  return deck.pop()
 }
 
 async function startGame(socket, sessionId, playerId) {
@@ -202,10 +196,6 @@ async function playerHit(sessionId, playerId){
     let value = await calculatePlayerCardValue(sessionId, playerId)
     await writeValueToDatabase(sessionId, playerId, value)
   // } catch (error){console.error('[/playerHit] Error: ', error)}
-}
-
-function bankerHit(){
-  bankerHand.push(dealCard())
 }
 
 function CalculateValue(hand){
@@ -286,6 +276,9 @@ function CalculateValue(hand){
 //   socket.emit('render', playerCurrentHand, playerCurrentValue, bankerCurrentHand, bankerCurrentValue)
 // }
 
+function generateSessionCode(){
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
 
 async function deleteSession(sessionId){
   const db = getDatabase()
@@ -349,19 +342,23 @@ async function loadExistingSession(sessionId){
   }
 }
 
-function createSessionAndAddPlayer(username) {
+
+
+// Firebase [WRITE]
+function createSession(username) {
   const db = getDatabase();
+  const sessionCode = generateSessionCode() // generate unique session code
   const sessionRef = push(ref(db, '/project-bunluck/sessions')); // Generate unique session ID
   const sessionId = sessionRef.key; // Get the generated session ID
 
   const playerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique player ID
   const playerId = playerRef.key; // Get the generated player ID
-
   // Store the session ID and player's username along with their player ID in the database
   set(sessionRef, {
     sessionId: sessionId,
     createdAt: new Date().toISOString(), // Timestamp indicating when the session was created
-    Restart: 'True'
+    Restart: 'True',
+    sessionCode: sessionCode
   });
   
   set(playerRef, {
@@ -384,7 +381,25 @@ function createSessionAndAddPlayer(username) {
     banker: 'True'
   });
 
-  return { sessionId: sessionId, playerId: playerId };
+  return { sessionId: sessionId, playerId: playerId, sessionCode: sessionCode };
+}
+
+function writePlayerToSession(sessionId, username){
+  const db = getDatabase()
+  const playerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique player ID
+  const playerId = playerRef.key;
+
+  set(playerRef, {
+    username: username,
+    currentHand : 'undefined',
+    value : 'undefined',
+    endTurn: 'undefined',
+    banker: 'False'
+  });
+
+  return { sessionId: sessionId, playerId: playerId};
+
+
 }
 
 function writeDeckToDatabase(sessionId, deck) {
@@ -424,6 +439,29 @@ function writeValueToDatabase(sessionId, playerId, value){
     .catch( (error) => {
       console.error('[Write Value] Error writing hand data to the database:', error);
     })
+}
+
+// Firebase [GET]
+
+async function getSessionId(sessionCode){
+  const db = getDatabase()
+  const sessionSnapshot = await get(ref(db, '/project-bunluck/sessions'))
+
+  if (sessionSnapshot.exists()){
+    const sessions = sessionSnapshot.val();
+    for (const sessionId in sessions){
+      if (sessions[sessionId].sessionCode === sessionCode){
+        return sessionId
+      }
+    }
+    return false
+  }
+  else{
+    throw new Error('Game with the provided code not found');
+  }
+
+
+
 }
 
 async function getDeck(sessionId) {
@@ -663,10 +701,10 @@ app.post('/form_createRoom', (req, res) => {
   const username = req.body.username;
   try{
     // create session and add player into current session
-    data = createSessionAndAddPlayer(username)
+    data = createSession(username)
 
     // send success response with generated session ID
-    res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId});
+    res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId, sessionCode: data.sessionCode});
   }
   catch(e){
     console.log(e)
@@ -676,13 +714,25 @@ app.post('/form_createRoom', (req, res) => {
 
 })
 
-app.post('/form_joinRoom', (req, res) => {
+app.post('/form_joinRoom', async (req, res) => {
   const username = req.body.username;
-  const roomCode = req.body.roomCode;
+  const sessionCode = req.body.sessionCode;
 
-  //to do 
-  //send success
-  res.status(200).json({ success: true, message: "Form data submitted successfully" });
+  // try{
+    const sessionId = await getSessionId(sessionCode)
+
+    if (sessionId != false){
+      // add player into database
+      data = writePlayerToSession(sessionId, username)
+
+      res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId, sessionCode: sessionCode});
+    }
+    else{
+      res.status(404).json({ success: false, message: "Session not found" });
+    }
+  // } catch (error){
+  //   console.log(error)
+  // }
 })
 
 
@@ -693,4 +743,5 @@ const PORT = process.env.PORT || 8888;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
 

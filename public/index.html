@@ -70,17 +70,18 @@
         },
 
         success: function (res){
-          console.log('Form submission success')
-
           // Store sessionId in local storage
           localStorage.setItem('sessionId', res.sessionId)
           // Store username in local storage
           localStorage.setItem('username', username)
           //Store playerId in local storage
           localStorage.setItem('playerId', res.playerId)
+          //Store sessionCode in local storage
+          localStorage.setItem('sessionCode', res.sessionCode)
 
           // Redirect user to play.html
-          window.location.href = "play.html";
+          window.location.href = `play.html?code=${res.sessionCode}`;
+
         },
         error: function(xhr, status, error) {
         window.alert('Failed to submit form data:', error);
@@ -89,9 +90,10 @@
     }
 
     function ValidateData_join() {
-    event.preventDefault();
+      event.preventDefault();
       var username = document.getElementById("username_join").value;
-      var roomcode = document.getElementById('roomcode_join').value;
+      var sessionCode = document.getElementById('roomcode_join').value;
+      console.log(sessionCode)
       if (!username.trim() && !roomcode.trim()) {
         alert("Please enter a username.");
         return false;
@@ -103,16 +105,28 @@
         method: 'POST',
         data: {
         username: username,
-        roomCode: roomcode
+        sessionCode: sessionCode
         },
-
         success: function (res){
-          console.log('Form submission success')
+          // Store sessionId in local storage
+          localStorage.setItem('sessionId', res.sessionId)
+          // Store username in local storage
+          localStorage.setItem('username', username)
+          //Store playerId in local storage
+          localStorage.setItem('playerId', res.playerId)
+          //Store sessionCode in local storage
+          localStorage.setItem('sessionCode', sessionCode)
+
           // Redirect user to play.html
-          window.location.href = "play.html";
+          window.location.href = `play.html?code=${sessionCode}`;
         },
         error: function(xhr, status, error) {
-        console.error('Failed to submit form data:', error);
+          if (error == 'Not Found'){
+            window.alert(`Room with code: [${sessionCode}] does NOT exist.`);        
+          }
+          else{
+            window.alert(error)
+          }
         } 
       })
     }
