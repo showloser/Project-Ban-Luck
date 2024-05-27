@@ -22,7 +22,7 @@ function addCard(playerId, cards) {
         cardImg.src = `images/cards/${card}.svg`; 
         cardImg.alt = `${card}`;
         playerCards.appendChild(cardImg);
-        cardElements.push(cardImg);
+        cardElements.push(cardImg); //pushes the img html
     })
 
     // Wait for all images to load before updating the card fan [cb animation error]
