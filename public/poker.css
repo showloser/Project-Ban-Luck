@@ -1,14 +1,10 @@
 body {
     font-family: Arial, sans-serif;
     background-color: #006400;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
 }
 
 .table {
+    margin: auto;
     width: 80vmin;
     height: 80vmin;
     background-color: #228B22;
@@ -51,7 +47,7 @@ body {
 
 .player .playerCards {
     margin-top: 10px;
-    height: 150px; /* Adjust height to accommodate stacked cards */
+    height: 200px; /* Adjust height to accommodate card fan */
     width: 100%; /* Ensure full width */
     display: flex;
     justify-content: center;
@@ -59,10 +55,106 @@ body {
     position: relative; /* Position relative for absolute positioning of card images */
 }
 
-
 .player .playerCards img {
-    position: absolute; /* Position card images absolutely within the .cards div */
-    top: 0;
-    left: 0;
+    position: absolute; /* Position card images absolutely within the .playerCards div */
     height: 150px;
+    transition: transform 0.5s ease, left 0.5s ease, top 0.5s ease; 
+    transition: top 0.2s ease;
+    top: 30px; 
+
 }
+
+.player .playerCards img:hover {
+    top:-10px;
+}
+
+
+.buttons{
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+#restart{
+    display: block;
+    margin: 20px auto 0 auto;
+}
+
+
+
+/* Chat */
+.chat-container {
+    font-size: 14px;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 30%;
+    background-color: #333;
+    color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.5);
+    transition: transform 0.3s;
+  }
+  
+  .chat-header {
+    padding: 10px;
+    background-color: #444;
+    border-bottom: 1px solid #555;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+  }
+  
+  .chat-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s;
+  }
+  
+  .chat-messages {
+    height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #222;
+  }
+  
+  .chat-messages::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .chat-messages::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 3px;
+  }
+  
+  .chat-input {
+    display: flex;
+    border-top: 1px solid #555;
+  }
+  
+  #chat-input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+  }
+  
+  #chat-input::placeholder {
+    color: #999;
+  }
+  
+  .chat-input button {
+    padding: 10px 15px;
+    background-color: #444;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .chat-input button:hover {
+    background-color: #555;
+  }
