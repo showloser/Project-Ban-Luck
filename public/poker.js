@@ -25,7 +25,7 @@ function addCard(playerId, cards) {
         cardElements.push(cardImg); //pushes the img html
     })
 
-    // Wait for all images to load before updating the card fan [cb animation error]
+    // Wait for all images to load before updating the card fan [to fix the cb animation error]
     Promise.all(cardElements.map(cardImg => {
         return new Promise((resolve) => {
             cardImg.onload = resolve;
@@ -76,36 +76,69 @@ function updateCardFan(playerId) {
 }
 
 
+
+
+
+
+
 // JavaScript to dynamically generate and position player elements
-const maxPlayers = 5;
-const activePlayers = 3; // Example: Change this value based on your game logic
+function loadPlayerUI(player_data) {
+    console.log(player_data);
 
-const playersContainer = document.getElementById('playersContainer');
-for (let i = 1; i <= activePlayers; i++) {
-    const playerDiv = document.createElement('div');
-    playerDiv.className = 'player';
-    playerDiv.id = `player${i}`;
-    playerDiv.innerHTML = `
-        <h2>Player ${i}</h2>
-        <div class="playerCards"></div>
-        <div class="playerValue"></div>
-    `;
+    const playersContainer = document.getElementById('playersContainer');
+    playersContainer.innerHTML = '';  // Clear any existing player elements
 
-    const angle = 135 - ((i - 1) * (90 / (activePlayers - 1))); 
-    const radius = 35; 
-    const x = 50 + radius * Math.cos(angle * Math.PI / 180);
-    const y = 50 + radius * Math.sin(angle * Math.PI / 180);
+    // Extract player keys from the player_data object
+    const playerKeys = Object.keys(player_data);
+    const activePlayers = playerKeys.length;
 
-    playerDiv.style.left = `${x}%`;
-    playerDiv.style.top = `${y}%`;
-    playerDiv.style.transform = 'translate(-50%, -50%)';
+    for (let i = 0; i < activePlayers; i++) {
+        const playerId = playerKeys[i];
+        const playerInfo = player_data[playerId];
+        console.log(playerInfo);
 
-    playersContainer.appendChild(playerDiv);
+        const playerDiv = document.createElement('div');
+        playerDiv.className = 'player';
+        playerDiv.id = playerId;
+        playerDiv.innerHTML = `
+            <h2>${playerInfo.username}</h2>
+            <div class="playerCards"></div>
+            <div class="playerValue"></div>
+        `;
+
+        // Position the playerDiv in a circle around the center of the container
+        const angle = 135 - (i * (90 / (activePlayers - 1))); 
+        const radius = 35; 
+        const x = 50 + radius * Math.cos(angle * Math.PI / 180);
+        const y = 50 + radius * Math.sin(angle * Math.PI / 180);
+
+        playerDiv.style.left = `${x}%`;
+        playerDiv.style.top = `${y}%`;
+        playerDiv.style.transform = 'translate(-50%, -50%)';
+
+        playersContainer.appendChild(playerDiv);
+    }
 }
 
 
-// addCard('player2', '2_of_hearts,6_of_spades');
-// addCard('player2', '6_of_spades');
-// addCard('player2', '8_of_hearts');
+
+// socket.io connections.
+const sessionId = localStorage.getItem('sessionId')
+const playerId = localStorage.getItem('playerId')
+const username = localStorage.getItem('username')
+const socket = io(); // Connect to the server
+
+
+socket.on('connect', () => {
+    console.log('Connected to server');
+    socket.emit('multiplayer', sessionId); // Send sessionId to the server
+    socket.on('multiplayer_client', (player_data) => {
+        loadPlayerUI(player_data)
+        addCard('-NyzRodMYAqoXE61CG53', '2_of_hearts,6_of_spades,king_of_diamonds');
+
+    })
+});
+
+
 
 

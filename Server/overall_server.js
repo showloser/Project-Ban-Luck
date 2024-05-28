@@ -280,17 +280,6 @@ function generateSessionCode(){
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-async function deleteSession(sessionId){
-  const db = getDatabase()
-  const sesRef = ref(db, `/project-bunluck/sessions/${sessionId}`)
-  try{
-    await remove(sesRef)
-    console.log('[Session Deleted Successfully]')
-  } catch (error){
-    console.error('Error deleting session: ', error)
-    throw error
-  }
-}
 
 async function checkExistingSession(sessionId){
   const db = getDatabase()
@@ -443,6 +432,18 @@ function writeValueToDatabase(sessionId, playerId, value){
 
 // Firebase [GET]
 
+async function getPlayers(sessionId) {
+  const db = getDatabase()
+  const playerSnapshot = await get(ref(db, `/project-bunluck/sessions/${sessionId}/players`))
+
+  if (playerSnapshot.exists()){
+    return playerSnapshot.val()
+  }
+  else{
+    throw new Error('Error!!');
+  }
+}
+
 async function getSessionId(sessionCode){
   const db = getDatabase()
   const sessionSnapshot = await get(ref(db, '/project-bunluck/sessions'))
@@ -579,6 +580,14 @@ function escapeHtml(str){
 // CONNECTION LOGIC:
 // Handle 'connect' event
 io.on('connection', (socket) => {
+
+  socket.on('multiplayer' , async (sessionId) => {
+    const current_players = await getPlayers(sessionId)
+    socket.emit('multiplayer_client', current_players)
+  })
+
+
+
   socket.on('sessionId', async (sessionId, playerId) => {
     const current_sessionId = sessionId
     const current_playerId = playerId
