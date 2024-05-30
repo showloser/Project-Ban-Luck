@@ -377,6 +377,21 @@ function writeValueToDatabase(sessionId, playerId, value){
 
 // Firebase [GET]
 
+async function getPlayers(sessionId){
+  const db = getDatabase()
+  sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/players`)
+
+  try{
+    const snapshot = await get(sessionRef)
+    if (snapshot.exists()){
+      return Object.keys(snapshot.val())
+    } 
+  } catch (error) {
+    console.log('[Error] {loadExistingSession}')
+    throw error
+  }
+}
+
 async function getSessionId(sessionCode){
   const db = getDatabase()
   const sessionSnapshot = await get(ref(db, '/project-bunluck/sessions'))
@@ -531,9 +546,18 @@ io.on('connection', (socket) => {
       if (sessionRestart === 'True'){
 
         // wait until minimum of 2 players AND all players are ready
-        
+        const currentPlayers = await getPlayers(sessionId)
+        // console.log(currentPlayers)
+        console.log(currentPlayers.length)
 
-        startGame(socket, current_sessionId, current_playerId);
+        if (currentPlayers.length >= 2){
+          console.log('normal')
+        }
+        else{
+          console.log('wtf?')
+        }
+
+        // startGame(socket, current_sessionId, current_playerId);
       }
       else{
         console.log("[ Load Existing Session ]")
