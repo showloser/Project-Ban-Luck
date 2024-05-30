@@ -63,43 +63,6 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase();
 
-function update_data_in_session(db, data){
-  push(ref(db, '/project-bunluck/sessions/' + data.session_id), {
-    userid : data.userid,
-    username : data.username,
-    current_hand : data.current_hand,
-    value : data.value,
-    end_turn : data.end_turn
-  })
-
-}
-
-function get_all_data(db){
-  get(child(ref(db) , '/project-banluck' )).then((snapshot) => {
-    if (snapshot.exists()){
-      console.log(snapshot.val())
-    }
-    else{
-      console.log('No Data Available')
-    }
-  }).catch((error) => {
-    console.log(error)
-  }) 
-}
-
-function delete_all_data_in_session(db, session_id){
-
-  const sessionRef =  ref(db, '/project-bunluck/sessions/' + session_id);
-
-  remove(sessionRef)
-    .then(() => {
-      console.log(`All data for session ${session_id} deleted successfully.`);
-    })
-    .catch((error) => {
-      console.error(`Error deleting data for session ${session_id}:`, error);
-    });
-
-}
 // !!!!!!!!!!!!!!!!!!!!!!!!!     [ FireBase ] END    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 const publicPath = path.join(__dirname, '../public')
@@ -146,15 +109,10 @@ async function startGame(socket, sessionId, playerId) {
 
   // draw initial hands for player n banker
   await drawInitialHand(sessionId, playerId)
-  await drawInitialHand(sessionId, bankerId)
 
-  // depreciated code -> using loadExistingSession(sessionId)
-  // render_data(socket, sessionId, playerId, bankerId)
   let sessionData = await loadExistingSession(sessionId)
   socket.emit('loadExistingSession', sessionData)
   
-
-
   // change 'Restart' to 'False' in firebase
   await changeSessionRestartStatus(sessionId)
 
@@ -263,19 +221,6 @@ function CalculateValue(hand){
   return determineValue(hand)
 }
 
-// Changed to used LoadExistingSession instead!!
-
-// async function render_data(socket, sessionId, playerId, bankerId){
-//   // get current card 
-//   // send card details to client
-//   let playerCurrentHand = await getHand(sessionId, playerId)
-//   let playerCurrentValue = await getValue(sessionId, playerId)
-//   let bankerCurrentHand = await getHand(sessionId, bankerId)
-//   let bankerCurrentValue = await getValue(sessionId, bankerId)
-
-//   socket.emit('render', playerCurrentHand, playerCurrentValue, bankerCurrentHand, bankerCurrentValue)
-// }
-
 function generateSessionCode(){
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
@@ -358,17 +303,17 @@ function createSession(username) {
     banker: 'False'
   });
 
-  // dummy account
-  const bankerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique dummy ID
-  bankerId = bankerRef.key; 
+  // // dummy account
+  // const bankerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique dummy ID
+  // bankerId = bankerRef.key; 
 
-  set(bankerRef, {
-    username: 'Banker',
-    currentHand : 'undefined',
-    value : 'undefined',
-    endTurn: 'undefined',
-    banker: 'True'
-  });
+  // set(bankerRef, {
+  //   username: 'Banker',
+  //   currentHand : 'undefined',
+  //   value : 'undefined',
+  //   endTurn: 'undefined',
+  //   banker: 'True'
+  // });
 
   return { sessionId: sessionId, playerId: playerId, sessionCode: sessionCode };
 }
@@ -431,18 +376,6 @@ function writeValueToDatabase(sessionId, playerId, value){
 }
 
 // Firebase [GET]
-
-async function getPlayers(sessionId) {
-  const db = getDatabase()
-  const playerSnapshot = await get(ref(db, `/project-bunluck/sessions/${sessionId}/players`))
-
-  if (playerSnapshot.exists()){
-    return playerSnapshot.val()
-  }
-  else{
-    throw new Error('Error!!');
-  }
-}
 
 async function getSessionId(sessionCode){
   const db = getDatabase()
@@ -580,14 +513,6 @@ function escapeHtml(str){
 // CONNECTION LOGIC:
 // Handle 'connect' event
 io.on('connection', (socket) => {
-
-  socket.on('multiplayer' , async (sessionId) => {
-    const current_players = await getPlayers(sessionId)
-    socket.emit('multiplayer_client', current_players)
-  })
-
-
-
   socket.on('sessionId', async (sessionId, playerId) => {
     const current_sessionId = sessionId
     const current_playerId = playerId
@@ -604,11 +529,16 @@ io.on('connection', (socket) => {
     else{
       let sessionRestart = await checkSessionRestart(sessionId)
       if (sessionRestart === 'True'){
+
+        // wait until minimum of 2 players AND all players are ready
+        
+
         startGame(socket, current_sessionId, current_playerId);
       }
       else{
         console.log("[ Load Existing Session ]")
         let sessionData = await loadExistingSession(sessionId)
+
         socket.emit('loadExistingSession', sessionData)
       }
     }

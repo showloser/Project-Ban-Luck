@@ -19,24 +19,28 @@
     </div>
 
     <div class="buttons">
-        <button id="hit-button" onclick="playerHit()">Hit</button>
-        <button id="stand-button" onclick="stand()">Stand</button>
+        <span id="playerReady" onclick="playerReady()">READY</span>
+        <div class="playerActions">
+            <button id="hit-button" onclick="playerHit()">Hit</button>
+            <button id="stand-button" onclick="stand()">Stand</button>
+        </div>
     </div>
 
     <button id="restart" onclick="restart()">Restart</button>
 
+    <div id="message"></div>
 
     <!-- Chat -->
     <div class="chat-container" id="chat-container">
         <div class="chat-header" id="chat-header">Chat</div>
         <div class="chat-content" id="chat-content">
-        <div class="chat-messages" id="chat-messages">
-            <!-- Chat messages will appear here -->
-        </div>
-        <div class="chat-input">
-            <input type="text" id="chat-input" placeholder="Type a message...">
-            <button onclick="sendMessage()">Send</button>
-        </div>
+            <div class="chat-messages" id="chat-messages">
+                <!-- Chat messages will appear here -->
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chat-input" placeholder="Type a message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
         </div>
     </div>
     
