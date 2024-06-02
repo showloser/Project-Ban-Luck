@@ -112,7 +112,7 @@ async function startGame(socket, sessionId, players) {
   }
 
   let sessionData = await loadExistingSession(sessionId)
-  socket.emit('loadExistingSession', sessionData)
+  io.to(sessionId).emit('loadExistingSession', sessionData)
 
   await changeSessionRestartStatus(sessionId)
 
@@ -529,28 +529,6 @@ function escapeHtml(str){
 // Handle 'connect' event
 io.on('connection', (socket) => {
 
-
-
-
-  // socket.io rooms test
-  sessionId = 'MI3210'
-
-  socket.join('MI3210')
-
-  io.to('MI3210').emit("test", 'cao ni ma it works'); 
-
-
-
-
-
-
-
-
-
-
-
-
-
   socket.on('sessionId', async (sessionId, playerId) => {
     const current_sessionId = sessionId
     const current_playerId = playerId
@@ -561,11 +539,16 @@ io.on('connection', (socket) => {
       console.log("[ DO SOMETHING ]")
       // should not run for now!!!
 
-      // Deal initial cards when a client connects
       // startGame(socket, current_sessionId, current_playerId);
     }
     else{
       let sessionRestart = await checkSessionRestart(sessionId)
+
+      // create socket rooms for all clients in same session
+      socket.join(sessionId)
+
+      
+
       if (sessionRestart === 'True'){
 
         // wait until minimum of 2 players AND all players are ready
@@ -602,7 +585,7 @@ io.on('connection', (socket) => {
     else{
       await playerHit(sessionId, playerId)
       let sessionData = await loadExistingSession(sessionId)
-      socket.emit('loadExistingSession', sessionData)    }
+      io.to(sessionId).emit('loadExistingSession', sessionData)    }
   } )
 
   // // Handle [Stand] requests
