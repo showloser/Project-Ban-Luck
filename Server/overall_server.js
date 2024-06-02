@@ -101,19 +101,19 @@ function shuffleDeck(deck){ // using Fisher-Yates algorith, which is truly rando
   return deck;
 }
 
-async function startGame(socket, sessionId, playerId) {
+async function startGame(socket, sessionId, players) {
   deck = initializeDeck()
 
   //write data to firebase
   writeDeckToDatabase(sessionId, deck)
 
-  // draw initial hands for player n banker
-  await drawInitialHand(sessionId, playerId)
+  for (let playerIndex = 0; playerIndex < players.length; playerIndex++ ){
+    await drawInitialHand(sessionId, players[playerIndex])
+  }
 
   let sessionData = await loadExistingSession(sessionId)
   socket.emit('loadExistingSession', sessionData)
-  
-  // change 'Restart' to 'False' in firebase
+
   await changeSessionRestartStatus(sessionId)
 
 }
@@ -528,6 +528,29 @@ function escapeHtml(str){
 // CONNECTION LOGIC:
 // Handle 'connect' event
 io.on('connection', (socket) => {
+
+
+
+
+  // socket.io rooms test
+  sessionId = 'MI3210'
+
+  socket.join('MI3210')
+
+  io.to('MI3210').emit("test", 'cao ni ma it works'); 
+
+
+
+
+
+
+
+
+
+
+
+
+
   socket.on('sessionId', async (sessionId, playerId) => {
     const current_sessionId = sessionId
     const current_playerId = playerId
@@ -547,17 +570,16 @@ io.on('connection', (socket) => {
 
         // wait until minimum of 2 players AND all players are ready
         const currentPlayers = await getPlayers(sessionId)
-        // console.log(currentPlayers)
-        console.log(currentPlayers.length)
 
         if (currentPlayers.length >= 2){
-          console.log('normal')
+          // console.log('normal')
+          startGame(socket, sessionId, currentPlayers)
+
         }
         else{
-          console.log('wtf?')
+          socket.emit('NotEnoughPlayers')
         }
 
-        // startGame(socket, current_sessionId, current_playerId);
       }
       else{
         console.log("[ Load Existing Session ]")

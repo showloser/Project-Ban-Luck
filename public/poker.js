@@ -216,4 +216,12 @@ socket.on('chat_error', (error) => {
 })
 
 
+socket.on('NotEnoughPlayers' , () => {
+    window.alert('Not Enough Players')
+})
 
+
+
+socket.on('test', (data) => {
+    window.alert(data)
+})
