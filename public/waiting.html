@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Waiting Room</title>
+    <link rel="stylesheet" href="waiting.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Waiting Room</h1>
+            <p>Room ID: <span id="roomIdDisplay">123456</span></p>
+            <p>Waiting for more players to join...</p>
+        </header>
+        <main>
+            <h2>Players</h2>
+            <ul id="playerList">
+                <li class="player-container">
+                    <img src="images/profile_icons/2.png" alt="Profile 1" class="profile-pic">
+                    <span class="username">Player 1</span>
+                </li>
+                <li class="player-container" id="targetTest">
+                    <img src="images/profile_icons/5.png" alt="Profile 2" class="profile-pic">
+                    <span class="username">Player 2</span>
+                </li>
+                <!-- Add more player containers as needed -->
+            </ul>
+        </main>
+        <footer>
+            <p>Please wait while we gather enough players.</p>
+            <button id="readyButton" onclick="markReady(this)">Ready</button>
+        </footer>
+    </div>
+    <script>
+        function markReady(button) {
+            const playerContainer = document.getElementById('targetTest')
+            playerContainer.classList.toggle('ready');
+        }
+    </script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+    <script src="waiting.js"></script>
+</body>
+</html>
