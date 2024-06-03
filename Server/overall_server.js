@@ -47,6 +47,7 @@ const { getDatabase, ref, get, child, set, update, remove, push, onValue } = req
 const { create } = require('domain');
 const { type } = require('os');
 const { error, timeStamp } = require('console');
+const { randomBytes } = require('crypto');
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlJ1gEXCOAIEN2Q1w69sKnzuxeUvpYge4",
@@ -276,6 +277,20 @@ async function loadExistingSession(sessionId){
   }
 }
 
+async function getSessionInfo(sessionId){
+  const db = getDatabase()
+  sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/players`)
+
+  try{
+    const snapshot = await get(sessionRef)
+    if (snapshot.exists()){
+      return snapshot.val()
+    } 
+  } catch (error) {
+    console.log('[Error] {loadExistingSession}')
+    throw error
+  }
+}
 
 
 // Firebase [WRITE]
@@ -377,7 +392,7 @@ function writeValueToDatabase(sessionId, playerId, value){
 
 // Firebase [GET]
 
-async function getPlayers(sessionId){
+async function getPlayersId(sessionId){
   const db = getDatabase()
   sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/players`)
 
@@ -527,6 +542,8 @@ function escapeHtml(str){
 
 // CONNECTION LOGIC:
 // Handle 'connect' event
+
+
 io.on('connection', (socket) => {
 
 socket.on('sessionId', async (sessionId, playerId) => {
@@ -552,7 +569,7 @@ socket.on('sessionId', async (sessionId, playerId) => {
       if (sessionRestart === 'True'){
 
         // wait until minimum of 2 players AND all players are ready
-        const currentPlayers = await getPlayers(sessionId)
+        const currentPlayers = await getPlayersId(sessionId)
 
         if (currentPlayers.length >= 2){
           // console.log('normal')
@@ -663,13 +680,35 @@ socket.on('disconnect', () => {
     // console.log('A client disconnected');
 });
 
-socket.on('waiting', async (sessionId) => {
-  let players = await getPlayers(sessionId)
-  socket.emit('waiting', players)
+socket.on('waitingRoom', async (sessionId) => {
+  let sessionInfo = await getSessionInfo(sessionId)
+  socket.emit('waitingRoom', sessionInfo)
 })
 
 
+function generateRandomNumber() {
+  // Get the current time in milliseconds
+  const currentTime = new Date().getTime();
+  
+  // Use the milliseconds part of the current time to create a pseudo-random number
+  const milliseconds = currentTime % 1000;
+  
+  // Scale and transform the milliseconds to get a number between 1 and 100
+  const random_number = (milliseconds % 100) + 1;
+  console.log(random_number)
+  return random_number;
+}
+
+
+socket.on('test', () => {
+  data = generateRandomNumber()
+  socket.emit('test', data)
 })
+
+})
+
+
+
 
 
 // handle data from index.html

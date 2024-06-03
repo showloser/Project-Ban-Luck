@@ -80,7 +80,7 @@
           localStorage.setItem('sessionCode', res.sessionCode)
 
           // Redirect user to poker.html
-          window.location.href = `poker.html?code=${res.sessionCode}`;
+          window.location.href = `waiting.html?code=${res.sessionCode}`;
 
         },
         error: function(xhr, status, error) {
@@ -118,7 +118,7 @@
           localStorage.setItem('sessionCode', sessionCode)
 
           // Redirect user to poker.html
-          window.location.href = `poker.html?code=${sessionCode}`;
+          window.location.href = `waiting.html?code=${sessionCode}`;
         },
         error: function(xhr, status, error) {
           if (error == 'Not Found'){
