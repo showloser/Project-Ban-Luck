@@ -220,8 +220,3 @@ socket.on('NotEnoughPlayers' , () => {
     window.alert('Not Enough Players')
 })
 
-
-
-socket.on('test', (data) => {
-    window.alert(data)
-})

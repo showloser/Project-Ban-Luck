@@ -529,7 +529,7 @@ function escapeHtml(str){
 // Handle 'connect' event
 io.on('connection', (socket) => {
 
-  socket.on('sessionId', async (sessionId, playerId) => {
+socket.on('sessionId', async (sessionId, playerId) => {
     const current_sessionId = sessionId
     const current_playerId = playerId
 
@@ -630,6 +630,7 @@ io.on('connection', (socket) => {
 
 
   })
+
 })
 
 socket.on('chat', async (sessionId, playerId, username, chatData) => {
@@ -662,7 +663,14 @@ socket.on('disconnect', () => {
     // console.log('A client disconnected');
 });
 
+socket.on('waiting', async (sessionId) => {
+  let players = await getPlayers(sessionId)
+  socket.emit('waiting', players)
 })
+
+
+})
+
 
 // handle data from index.html
 app.post('/form_createRoom', (req, res) => {
