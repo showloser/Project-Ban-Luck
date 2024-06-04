@@ -315,7 +315,8 @@ function createSession(username) {
     currentHand : 'undefined',
     value : 'undefined',
     endTurn: 'undefined',
-    banker: 'False'
+    banker: 'False',
+    readyStatus: 'False'
   });
 
   // // dummy account
@@ -343,7 +344,8 @@ function writePlayerToSession(sessionId, username){
     currentHand : 'undefined',
     value : 'undefined',
     endTurn: 'undefined',
-    banker: 'False'
+    banker: 'False',
+    readyStatus: 'False'
   });
 
   return { sessionId: sessionId, playerId: playerId};
@@ -389,6 +391,49 @@ function writeValueToDatabase(sessionId, playerId, value){
       console.error('[Write Value] Error writing hand data to the database:', error);
     })
 }
+
+async function toggleReadyStatus(sessionId, playerId){
+  // highly likely will be fucked if called at the exact same time.
+  const db = getDatabase()
+
+  // get current ready status.
+  const readyStatusRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/readyStatus`)
+  try{
+    const snapshot = await get(readyStatusRef)
+    if (snapshot.val() == 'True'){
+      set(ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/readyStatus`), 'False')
+      .then( () => {
+        // console.log(`Data written to the database under: /${sessionId}/${playerId}`);
+      })
+      .catch( (error) => {
+        console.error('[/playerHit] Error writing hand data to the database:', error);
+      })
+    }
+    else{
+      set(ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/readyStatus`), 'True')
+      .then( () => {
+        // console.log(`Data written to the database under: /${sessionId}/${playerId}`);
+      })
+      .catch( (error) => {
+        console.error('[/playerHit] Error writing hand data to the database:', error);
+      })
+    }
+
+    // get obj of all 'ready-ed' players
+    const snapshotV2 = await get(ref(db, `/project-bunluck/sessions/${sessionId}/players/`))
+    let readyUserIds = []
+
+    for (const id in snapshotV2.val()){
+      if (snapshotV2.val()[id].readyStatus == 'True')
+        readyUserIds.push(id)
+    }
+
+    return readyUserIds
+
+   } catch (error){
+    console.error(error)
+  }
+}  
 
 // Firebase [GET]
 
@@ -564,10 +609,8 @@ socket.on('sessionId', async (sessionId, playerId) => {
       // create socket rooms for all clients in same session
       socket.join(sessionId)
 
-      
 
       if (sessionRestart === 'True'){
-
         // wait until minimum of 2 players AND all players are ready
         const currentPlayers = await getPlayersId(sessionId)
 
@@ -681,31 +724,25 @@ socket.on('disconnect', () => {
 });
 
 socket.on('waitingRoom', async (sessionId) => {
+  // should put socket.join upper in the hierarchy [IMPT]
+  socket.join(sessionId)
   let sessionInfo = await getSessionInfo(sessionId)
-  socket.emit('waitingRoom', sessionInfo)
+  io.to(sessionId).emit('waitingRoom', sessionInfo)
+})
+
+socket.on('readyStatus', async (sessionId, playerId) => {
+  const readyUserIds = await toggleReadyStatus(sessionId, playerId)
+  io.to(sessionId).emit('renderReadyStatus', readyUserIds)    
+
 })
 
 
-function generateRandomNumber() {
-  // Get the current time in milliseconds
-  const currentTime = new Date().getTime();
-  
-  // Use the milliseconds part of the current time to create a pseudo-random number
-  const milliseconds = currentTime % 1000;
-  
-  // Scale and transform the milliseconds to get a number between 1 and 100
-  const random_number = (milliseconds % 100) + 1;
-  console.log(random_number)
-  return random_number;
-}
 
 
-socket.on('test', () => {
-  data = generateRandomNumber()
-  socket.emit('test', data)
-})
 
 })
+
+
 
 
 

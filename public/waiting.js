@@ -22,6 +22,10 @@ function renderUI(sessionData){
         playerContainerDiv.className = 'player-container'
         playerContainerDiv.id = playerId
 
+        if (playerInfo.readyStatus == 'True'){
+            playerContainerDiv.classList.add('ready')
+        }
+
         playerContainerDiv.innerHTML = `
             <img src="images/profile_icons/${i+1}.png" alt="${playerInfo.username} Profile" class='profile-pic'>
             <span class="username">${playerInfo.username}</span>
@@ -35,17 +39,37 @@ function renderUI(sessionData){
 // send data to ready = true/false
 
 function markReady() {
-    const playerContainer = document.getElementById(clientPlayerId)
-    playerContainer.classList.toggle('ready');
-    socket.emit('test')
+    socket.emit('readyStatus', sessionId, clientPlayerId)
 
-
+    const button = document.getElementById('readyButton')
+    // check if current playyer is ready (and change button text accordingly)
+    if (document.getElementById(clientPlayerId).classList.contains('ready')){
+        button.textContent = 'Ready'
+    }
+    else{
+        button.textContent = 'Not Ready'
+    }    
 }
 
+function renderReadyUI(readyUserIds){
+    // remove ready class from all <player-container> div
+    for (const li of document.getElementById('playerList').getElementsByTagName('li')){
+        li.classList.remove('ready')
+    }
 
-socket.on('test', (data) => {
-    console.log(data)
-})
+    readyUserIds.forEach(id => {
+        const element = document.getElementById(id)
+        if (element){
+            if (!element.classList.contains('ready')){
+                element.classList.add('ready')
+            }
+        }
+        else{
+            window.alert('Opps! Something went wrong..')
+        }
+    });
+}
+
 
 
 
@@ -58,6 +82,10 @@ socket.on('connect', () => {
         // console.log(sessionData)
         renderUI(sessionData)
     })  
+
+    socket.on('renderReadyStatus', (readyUserIds) => {
+        renderReadyUI(readyUserIds)
+    })
 
 
 
