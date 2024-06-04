@@ -303,12 +303,25 @@ function createSession(username) {
   const playerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique player ID
   const playerId = playerRef.key; // Get the generated player ID
   // Store the session ID and player's username along with their player ID in the database
+  
+
+  // [IMPT] to be removed and change to subset under 'gameStatus'
   set(sessionRef, {
     sessionId: sessionId,
     createdAt: new Date().toISOString(), // Timestamp indicating when the session was created
     Restart: 'True',
     sessionCode: sessionCode
   });
+
+  set(ref(db, `/project-bunluck/sessions/${sessionId}/gameState`), {
+    sessionId: sessionId,
+    createdAt: new Date().toISOString(), // Timestamp indicating when the session was created
+    Restart: 'True',
+    sessionCode: sessionCode,
+    partyLeader: playerId,
+    gameStatus: 'undefined',
+    winner: 'undefined'
+  })
   
   set(playerRef, {
     username: username,
@@ -735,16 +748,7 @@ socket.on('readyStatus', async (sessionId, playerId) => {
   io.to(sessionId).emit('renderReadyStatus', readyUserIds)    
 
 })
-
-
-
-
-
 })
-
-
-
-
 
 
 
