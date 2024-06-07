@@ -78,9 +78,17 @@ function renderReadyUI(readyUserIds){
 socket.on('connect', () => {
     // send api request for current waiting room status.
     socket.emit('waitingRoom', sessionId)
-    socket.on('waitingRoom' , (sessionData) => {
+    socket.on('waitingRoom' , (sessionData, partyLeader) => {
         // console.log(sessionData)
         renderUI(sessionData)
+
+          // [IMPT] this can be implemented more efficinelty 
+        if (partyLeader == clientPlayerId){
+            document.getElementById('startGameButton').style.display = 'block'
+        }
+        else{
+            document.getElementById('startGameButton').style.display = 'none'
+        }
     })  
 
     socket.on('renderReadyStatus', (readyUserIds) => {

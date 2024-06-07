@@ -292,6 +292,21 @@ async function getSessionInfo(sessionId){
   }
 }
 
+async function getPartyLeader(sessionId){
+  const db = getDatabase()
+  gamestateRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/partyLeader`)
+
+  try{
+    const snapshot = await get(gamestateRef)
+    if (snapshot.exists()){
+      return snapshot.val()
+    }
+
+  } catch (error){
+    console.log('[Error] {getPartyLeader}')
+    throw error  }
+
+}
 
 // Firebase [WRITE]
 function createSession(username) {
@@ -331,18 +346,6 @@ function createSession(username) {
     banker: 'False',
     readyStatus: 'False'
   });
-
-  // // dummy account
-  // const bankerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique dummy ID
-  // bankerId = bankerRef.key; 
-
-  // set(bankerRef, {
-  //   username: 'Banker',
-  //   currentHand : 'undefined',
-  //   value : 'undefined',
-  //   endTurn: 'undefined',
-  //   banker: 'True'
-  // });
 
   return { sessionId: sessionId, playerId: playerId, sessionCode: sessionCode };
 }
@@ -740,13 +743,13 @@ socket.on('waitingRoom', async (sessionId) => {
   // should put socket.join upper in the hierarchy [IMPT]
   socket.join(sessionId)
   let sessionInfo = await getSessionInfo(sessionId)
-  io.to(sessionId).emit('waitingRoom', sessionInfo)
+  let partyLeader = await getPartyLeader(sessionId) // change 'startGame button display to true'
+  io.to(sessionId).emit('waitingRoom', sessionInfo, partyLeader)
 })
 
 socket.on('readyStatus', async (sessionId, playerId) => {
   const readyUserIds = await toggleReadyStatus(sessionId, playerId)
-  io.to(sessionId).emit('renderReadyStatus', readyUserIds)    
-
+  io.to(sessionId).emit('renderReadyStatus', readyUserIds)  
 })
 })
 
