@@ -30,6 +30,7 @@ const { start } = require('repl');
 //       - currentPlayerId
 //       - winner
 //     - deck
+
 //       - {cardId}
 //         - suit
 //         - value
@@ -48,6 +49,7 @@ const { create } = require('domain');
 const { type } = require('os');
 const { error, timeStamp } = require('console');
 const { randomBytes } = require('crypto');
+const { read } = require('fs');
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlJ1gEXCOAIEN2Q1w69sKnzuxeUvpYge4",
@@ -437,12 +439,11 @@ async function toggleReadyStatus(sessionId, playerId){
 
     // get obj of all 'ready-ed' players
     const snapshotV2 = await get(ref(db, `/project-bunluck/sessions/${sessionId}/players/`))
-    let readyUserIds = []
 
-    for (const id in snapshotV2.val()){
-      if (snapshotV2.val()[id].readyStatus == 'True')
-        readyUserIds.push(id)
-    }
+    const readyUserIds = Object.entries(snapshotV2.val()).reduce((acc, [key, value]) => {
+      acc[key] = value.readyStatus;
+      return acc;
+    }, {});
 
     return readyUserIds
 
@@ -450,6 +451,20 @@ async function toggleReadyStatus(sessionId, playerId){
     console.error(error)
   }
 }  
+
+
+async function getReadyStatus(sessionId){
+  const db = getDatabase()
+
+  const snapshot = await get(ref(db, `/project-bunluck/sessions/${sessionId}/players/`))
+  const readyUserIds = Object.entries(snapshot.val()).reduce((acc, [key, value]) => {
+    acc[key] = value.readyStatus;
+    return acc;
+  }, {});
+
+  return readyUserIds
+}
+
 
 // Firebase [GET]
 
@@ -606,7 +621,6 @@ function escapeHtml(str){
 
 
 io.on('connection', (socket) => {
-
 socket.on('sessionId', async (sessionId, playerId) => {
     const current_sessionId = sessionId
     const current_playerId = playerId
@@ -743,15 +757,50 @@ socket.on('waitingRoom', async (sessionId) => {
   // should put socket.join upper in the hierarchy [IMPT]
   socket.join(sessionId)
   let sessionInfo = await getSessionInfo(sessionId)
-  let partyLeader = await getPartyLeader(sessionId) // change 'startGame button display to true'
-  io.to(sessionId).emit('waitingRoom', sessionInfo, partyLeader)
+  io.to(sessionId).emit('waitingRoom', sessionInfo)
 })
 
 socket.on('readyStatus', async (sessionId, playerId) => {
   const readyUserIds = await toggleReadyStatus(sessionId, playerId)
-  io.to(sessionId).emit('renderReadyStatus', readyUserIds)  
+  io.to(sessionId).emit('renderReadyStatus', readyUserIds) 
+
+  // check if all players are ready.
+  const allPlayersReady = Object.values(readyUserIds).every(value => value === 'True');
+
+    // all players are ready
+  if (allPlayersReady){
+    let partyLeader = await getPartyLeader(sessionId) // change 'startGame button display to true'
+    io.to(sessionId).emit('allPlayersReady', true, partyLeader)
+  }
+  })
+
+
+socket.on('redirect_to_game', async (sessionId, playerId) => {
+  try{
+  // check if sender is party leader
+    let partyLeader = await getPartyLeader(sessionId)
+
+    if (playerId == partyLeader){
+      // check if all players are ready
+      const allPlayersReady = Object.values(await getReadyStatus(sessionId, playerId)).every(value => value === 'True');
+      console.log(allPlayersReady)
+      if (allPlayersReady){
+        console.log('allPlayersReady')
+        io.to(sessionId).emit('redirect_all_clients_to_game')
+      }
+    }
+  } catch (e){
+    io.to(sessionId).emit('error', 'Oops! Something bad happened.')
+    console.log(e)
+  }
+
 })
+
+
+
 })
+
+
 
 
 

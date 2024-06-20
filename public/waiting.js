@@ -37,7 +37,6 @@ function renderUI(sessionData){
 }
 
 // send data to ready = true/false
-
 function markReady() {
     socket.emit('readyStatus', sessionId, clientPlayerId)
 
@@ -52,50 +51,62 @@ function markReady() {
 }
 
 function renderReadyUI(readyUserIds){
+    document.getElementById('startGameButton').style.display = 'none'
     // remove ready class from all <player-container> div
     for (const li of document.getElementById('playerList').getElementsByTagName('li')){
         li.classList.remove('ready')
     }
 
-    readyUserIds.forEach(id => {
-        const element = document.getElementById(id)
-        if (element){
+    Object.keys(readyUserIds).forEach(key => {
+        if (readyUserIds[key] == 'True'){
+            const element = document.getElementById(key)
             if (!element.classList.contains('ready')){
                 element.classList.add('ready')
+            } 
+            else{
+                window.alert('Opps! Something went wrong..')
             }
         }
-        else{
-            window.alert('Opps! Something went wrong..')
-        }
-    });
+    })
 }
 
 
-
-
+function startGame(){
+    socket.emit('redirect_to_game', sessionId, clientPlayerId)
+}
 
 
 socket.on('connect', () => {
     // send api request for current waiting room status.
     socket.emit('waitingRoom', sessionId)
-    socket.on('waitingRoom' , (sessionData, partyLeader) => {
-        // console.log(sessionData)
+    socket.on('waitingRoom' , (sessionData) => {
         renderUI(sessionData)
-
-          // [IMPT] this can be implemented more efficinelty 
-        if (partyLeader == clientPlayerId){
-            document.getElementById('startGameButton').style.display = 'block'
-        }
-        else{
-            document.getElementById('startGameButton').style.display = 'none'
-        }
     })  
 
     socket.on('renderReadyStatus', (readyUserIds) => {
         renderReadyUI(readyUserIds)
     })
 
+    socket.on('allPlayersReady', (condition, partyLeader) => {
+    // [IMPT] this can be implemented more efficinelty 
+        if (partyLeader == clientPlayerId){
+            document.getElementById('startGameButton').style.display = 'block'
+        }
+        else{
+            document.getElementById('startGameButton').style.display = 'none'
+        }
+    })
 
+    socket.on('redirect_all_clients_to_game', () => {
+        window.location.href = `poker.html?code=${sessionCode}`;
+    })
+
+
+
+    // Errors [IMPT] -> (DONESNT FUCKING WORK)
+    socket.on('error', (errorMsg) => {
+        window.alert(errorMsg)
+    })
 
 });
 

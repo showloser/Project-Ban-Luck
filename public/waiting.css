@@ -107,8 +107,7 @@ footer p {
 .buttons:hover{
     background-color: #0056b3;
 }
-
-@keyframes readyAnimation {
+/* @keyframes readyAnimation {
     0% {
         border-color: transparent;
     }
@@ -118,7 +117,7 @@ footer p {
     100% {
         border-color: transparent;
     }
-}
+} */
 
 .player-container.ready {
     border: 6px solid #39ff02;
