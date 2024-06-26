@@ -1,0 +1,128 @@
+body {
+    margin: auto;
+    background-color: green;
+    font-family: Arial, sans-serif;
+}
+
+.table {
+    margin: 0 auto;
+    width: 90vw;
+    height: calc(100vh - 80px);
+    position: relative;
+    background-color: #228B22;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.banker {
+    width: 100%;
+    height: 15%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.bankerIcon, .playerIcon {
+    width: 50px;
+    height: 50px;
+    background-color: #FFD700;
+    border-radius: 50%;
+}
+
+.bankerUsername, .playerUsername {
+    margin-top: 5px;
+    color: #8B4513;
+    font-weight: bold;
+}
+
+.middleArea {
+    width: 100%;
+    height: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+.cardPile {
+    width: 100px;
+    height: 150px;
+    background-color: #8B4513;
+    border-radius: 5px;
+}
+
+.players {
+    width: 100%;
+    height: 25%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: relative;
+}
+
+.player {
+    width: 120px;
+    height: 170px;
+    background-color: #FFD700;
+    border-radius: 5px;
+
+}
+
+.betAmount, .cards {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cards img{
+    height: 150px;
+}
+
+.profile{
+    background-color: #f9f9f9;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: row;
+}
+
+.playerIcon{
+    margin-top: 5px;
+    height: 40px;
+    width: 40px;
+}
+
+.playerUsername {
+    margin-top: 5px;
+}
+
+.gameFooter {
+    width: 100%;
+    height: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #8B4513;
+}
+
+.balance, .hitButton, .standButton, .chat {
+    background-color: #FFD700;
+    border: none;
+    padding: 10px 20px;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.balance {
+    color: white;
+    font-weight: bold;
+}
