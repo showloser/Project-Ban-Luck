@@ -16,12 +16,10 @@ body {
 }
 
 .banker {
-    width: 100%;
-    height: 15%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
+    width: 120px;
+    height: 170px;
+    background-color: #FFD700;
+    margin: 0 auto;
 }
 
 .profile {
@@ -39,7 +37,7 @@ body {
 
 .bankerUsername, .playerUsername {
     margin-top: 5px;
-    color: #8B4513;
+    color: black;
     font-weight: bold;
 }
 
@@ -73,7 +71,6 @@ body {
     height: 170px;
     background-color: #FFD700;
     border-radius: 5px;
-
 }
 
 .betAmount, .cards {
