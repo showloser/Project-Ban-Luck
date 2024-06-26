@@ -783,9 +783,7 @@ socket.on('redirect_to_game', async (sessionId, playerId) => {
     if (playerId == partyLeader){
       // check if all players are ready
       const allPlayersReady = Object.values(await getReadyStatus(sessionId, playerId)).every(value => value === 'True');
-      console.log(allPlayersReady)
       if (allPlayersReady){
-        console.log('allPlayersReady')
         io.to(sessionId).emit('redirect_all_clients_to_game')
       }
     }
