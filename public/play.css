@@ -1,9 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+
 body {
     margin: auto;
     background-color: #337233;
     font-family: Arial, sans-serif;
 }
 
+/* Chat [Start]*/
+.chat-window {
+    position: fixed;
+    top: -25px;
+    width: 30vw;
+    height: 400px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    opacity: 0.3; /* Initial opacity */
+    transition: opacity 0.5s;
+    z-index: 1;
+}
+
+.chat-window.hidden {
+    opacity: 0; /* Hidden state */
+    pointer-events: none; /* Prevent interactions when hidden */
+}
+
+.chat-window:hover {
+    opacity: 1;
+}
+
+.chat-content {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.chat-input {
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    border-top: 1px solid #444;
+    background-color: rgba(0, 0, 0, 00.5s);
+}
+
+.chat-input:focus{
+    outline: none;
+}
+/* Chat [End]*/
+
+
+
+/* Main Table [Start]*/
 .table {
     margin: 25px auto 50px;
     width: 90vw;
@@ -14,7 +67,10 @@ body {
     flex-direction: column;
     justify-content: space-between;
 }
+/* Main Table [End]*/
 
+
+/* Banker Section [Start]*/
 .banker {
     width: 130px;
     height: 170px;
@@ -30,21 +86,21 @@ body {
     width: 130px;
     margin: 10px 0;
 }
+/* Banker Section [End]*/
 
-.profile {
+/* Playing Area (Centre) [Start]*/
+.middleArea {
+    width: 100%;
+    height: 50%;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    background-color: #f9f9f9;
-    border-radius: 25px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 130px;
-    margin-top: 10px;
-    
+    position: relative;
 }
+/* Playing Area (Centre) [End] */
 
+
+/* All User profiles (Icons + Username) [Start] */
 .bankerIcon, .playerIcon {
     height: 40px;
     width: 40px;
@@ -57,15 +113,22 @@ body {
     font-weight: bold;
 }
 
-.middleArea {
-    width: 100%;
-    height: 50%;
+.profile {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    position: relative;
+    background-color: #f9f9f9;
+    border-radius: 25px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 130px;
+    margin-top: 10px;
 }
+/* All User profiles (Icons + Username) [End] */
 
+
+/* Player section [Start] */
 .players {
     width: 100%;
     height: 25%;
@@ -96,7 +159,10 @@ body {
     font-size: 14px;
     margin: 0 auto;
 }
+/* Player section [Start] */
 
+
+/* Footer [Start] */
 .gameFooter {
     width: 100%;
     height: 80px;
@@ -104,16 +170,9 @@ body {
     justify-content: space-between;
     align-items: center;
     background-color: #8B4513;
-}
 
-.balance, .chat {
-    background-color: #FFD700;
-    border: none;
-    padding: 10px 20px;
-    font-size: 18px;
-    border-radius: 5px;
-    cursor: pointer;
-    width: 200px;
+    margin-top: -5px;
+    border-top: 5px solid black;
 }
 
 .pixelButton{
@@ -140,8 +199,17 @@ body {
     top: .2em;
 }
 
-
-.balance {
+.balance, .chat {
     color: white;
-    font-weight: bold;
+    font-family: "VT323", monospace;
+    font-weight: 400;
+    font-size: 30px;
+    text-align: center;
+    width: 200px;
+    background-color: #61300D;
+    padding: 10px 20px;
+    margin: 0 20px;
+    border-radius: 5px;
 }
+
+/* Footer [End] */
