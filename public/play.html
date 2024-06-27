@@ -9,20 +9,23 @@
 <body>
     <div class="table">
         <div class="banker">
-            <div class="profile">
+            <div class="bankerProfile">
                 <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
                 <div class="bankerUsername">theBanker</div>
             </div>
+            <div class="cards"><img src="images/pixelCards/king_of_diamonds.png" alt=""></div>
         </div>
 
         <div class="middleArea">
-            <div class="cardPile"></div>
+            <div class="cardPile">
+                <div class="cards"><img src="images/pixelCards/Back1.png" alt=""></div>
+            </div>
         </div>
 
         <div class="players">
             <div class="player">
                 <div class="betAmount"></div>
-                <div class="cards"></div>
+                <div class="cards"><img src="images/pixelCards/king_of_diamonds.png" alt=""></div>
                 <div class="profile">
                     <img class="playerIcon" src="images/profile_icons/1.png" alt="">
                     <div class="playerUsername">showloser</div>
@@ -31,7 +34,7 @@
 
             <div class="player">
                 <div class="betAmount"></div>
-                <div class="cards"></div>
+                <div class="cards"><img src="images/pixelCards/ace_of_diamonds.png" alt=""></div>
                 <div class="profile">
                     <img class="playerIcon" src="images/profile_icons/2.png" alt="">
                     <div class="playerUsername">ninabu</div>
@@ -40,7 +43,7 @@
             
             <div class="player">
                 <div class="betAmount"></div>
-                <div class="cards"><img src="images/cards/10_of_clubs.svg" alt=""></div>
+                <div class="cards"><img src="images/pixelCards/10_of_diamonds.png" alt=""></div>
                 <div class="profile">
                     <img class="playerIcon" src="images/profile_icons/3.png" alt="">
                     <div class="playerUsername">zedong</div>
@@ -49,7 +52,7 @@
 
             <div class="player">
                 <div class="betAmount"></div>
-                <div class="cards"></div>
+                <div class="cards"><img src="images/pixelCards/5_of_diamonds.png" alt=""></div>
                 <div class="profile">
                     <img class="playerIcon" src="images/profile_icons/4.png" alt="">
                     <div class="playerUsername">saldDressing</div>
@@ -58,7 +61,7 @@
 
             <div class="player">
                 <div class="betAmount"></div>
-                <div class="cards"></div>
+                <div class="cards"><img src="images/pixelCards/jack_of_diamonds.png" alt=""></div>
                 <div class="profile">
                     <img class="playerIcon" src="images/profile_icons/5.png" alt="">
                     <div class="playerUsername">bluedemon</div>
@@ -69,8 +72,10 @@
 
     <div class="gameFooter">
         <div class="balance">Balance: $1000</div>
-        <button class="hitButton">HIT</button>
-        <button class="standButton">STAND</button>
+        <div class="buttons">
+            <span id="hitButton" class="pixelButton" onclick="null()">Hit</span>
+            <span id="standButton" class="pixelButton" onclick="null()">Stand</span>
+        </div>
         <div class="chat">Chat</div>
     </div>
     
