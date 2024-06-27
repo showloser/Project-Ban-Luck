@@ -204,6 +204,7 @@ socket.on('connect', () => {
     socket.emit('sessionId', sessionId, clientPlayerId); // Send sessionId to the server
 
     socket.on('loadExistingSession', (player_data) => {
+        console.log(player_data)
         loadPlayerUI(player_data)
     })
 });

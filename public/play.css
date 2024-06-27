@@ -1,5 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap'); 
+/* VT323 */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* Press Start 2P */
 
 body {
     margin: auto;
@@ -128,6 +130,40 @@ body {
 /* All User profiles (Icons + Username) [End] */
 
 
+
+/* Card Value (Arrow) [Start] */
+.arrow-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace; /* Example of a retro font */
+    margin-bottom: 15px;
+}
+
+.arrow-label {
+    background-color: black;
+    color: white;
+    padding: 5px 10px;
+    border: 2px solid yellow; /* Pixelated border */
+    font-size: 18px;
+    text-align: center;
+}
+
+.arrow {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid yellow; /* Retro yellow arrow */
+}
+
+/* Card Value (Arrow) [End] */
+
+
 /* Player section [Start] */
 .players {
     width: 100%;
@@ -140,7 +176,6 @@ body {
 
 .player {
     width: 130px;
-    height: 170px;
     border-radius: 5px;
 }
 
