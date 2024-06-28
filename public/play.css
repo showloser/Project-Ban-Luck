@@ -138,6 +138,7 @@ body {
     justify-content: center;
     font-family: 'Press Start 2P', monospace; /* Example of a retro font */
     margin-bottom: 15px;
+    bottom: 60px;
 }
 
 .arrow-label {
@@ -167,7 +168,9 @@ body {
 /* Player section [Start] */
 
 /* Card Stacking (for back facing cards) [Start] */
-.stacked{ position: absolute; } /* position absolute to stack cards */
+.stacked{ 
+    position: absolute; /* position absolute to stack cards */
+} 
 .emptyDiv{  height: 180px;} /* for alligining margins for cards */
 /* Card Stacking (for back facing cards) [End]*/
 
@@ -183,6 +186,7 @@ body {
 .player {
     width: 130px;
     border-radius: 5px;
+    position: relative;
 }
 
 .betAmount, .cards {
@@ -194,6 +198,17 @@ body {
 
 .cards img{
     height: 180px;
+}
+
+.currentPlayerImgElement{
+    position: absolute;
+    transition: transform 0.5s ease, left 0.5s ease, top 0.5s ease; 
+    transition: top 0.2s ease;
+    top: 0px; 
+}
+
+.currentPlayerImgElement:hover{
+    top:-30px;
 }
 
 .playerUsername {

@@ -48,6 +48,7 @@ function loadGameElements(gameData){
                     <div class="arrow-label">${playerInfo.value}</div>
                     <div class="arrow"></div>
                 </div>
+                <div style="margin-bottom: 150px;"></div>
                 <div class="cards"></div>
                 <div class="profile">
                     <img class="playerIcon" src="images/profile_icons/1.png" alt="">
@@ -76,6 +77,7 @@ function loadGameElements(gameData){
 
 }
 
+
 function addCards(playerId, cardData, facedUpOrDown){ // [IMPT change server to send only each player's card, rest should be faced down]
     const player = document.getElementById(playerId) 
     if (!player) {
@@ -93,13 +95,26 @@ function addCards(playerId, cardData, facedUpOrDown){ // [IMPT change server to 
     cardContainer.innerHTML = ''
     cardData = cardData.split(',')
 
+    const promises = []; // lets all img load before running 
+
     if (facedUpOrDown){
         cardData.forEach( (card) => {
             const cardImg = document.createElement('img');
             cardImg.src = `images/pixelCards/${card}.png`; 
             cardImg.alt = `${card}`;
+            cardImg.classList.add('currentPlayerImgElement')
             cardContainer.appendChild(cardImg);
+            
+            const promise = new Promise((resolve) => {
+                cardImg.onload = resolve;
+            });
+            promises.push(promise);
         })
+
+        // Wait for all images to load before running cardFan
+        Promise.all(promises).then(() => {
+                cardFan(playerId);
+        });
     }
 
     else{
@@ -118,11 +133,50 @@ function addCards(playerId, cardData, facedUpOrDown){ // [IMPT change server to 
 
 
 function cardFan (playerId){
-    // const player = document.getElementById(playerId);
+    const player = document.getElementById(playerId);
+    const playerCards = player.querySelector('.cards');
+
+
+    const cards = playerCards.querySelectorAll('img');
+    const count = cards.length;
+    const spread = 40; // Total spread angle for the fan 
+    const spacing = 30; // Spacing between cards
+    
+    const baseRotationAngle = spread / 2;
+
+    if (count == 2){
+        cards.forEach((card, index) => {
+            const spread = 30; 
+            
+            // calculate the rotation angle for each card
+            const rotationAngle = (index === 0 ? -1 : 1) * spread / 2;
+            
+            // horizontal offset (leftOffset) for each card to move closer together
+            const leftOffset = index === 0 ? -card.clientWidth / 4 : card.clientWidth / 4;
+        
+            card.style.left = `calc(50% - ${card.clientWidth / 2}px + ${leftOffset}px)`;
+            card.style.transform = `rotate(${rotationAngle}deg)`;
+        });
+    }
+    else{
+        cards.forEach((card, index) => {
+            const increment = spread / (count - 1); // Correctly distribute the cards
+            const rotationAngle = -baseRotationAngle + increment * index;
+            
+            if (index === count - 1) {
+                // Center the last card
+                card.style.left = `calc(50%)`;
+            } else {
+                const leftOffset = (index - (count - 1) / 2) * spacing; // Center the cards correctly
+                card.style.left = `calc(50% - ${card.clientWidth / 2}px + ${leftOffset}px)`;
+            }
+            
+            card.style.transform = `rotate(${rotationAngle}deg)`;
+        });
+    }
 
 
 }
-
 
 
 
