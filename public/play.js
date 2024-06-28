@@ -25,14 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetTimeout();
 });
 
-
-// socket.io connections.
-const sessionId = localStorage.getItem('sessionId')
-const clientPlayerId = localStorage.getItem('playerId')
-const username = localStorage.getItem('username')
-const socket = io(); // Connect to the server
-
-function loadGameUI(gameData){
+function loadGameElements(gameData){
     const playersContainer = document.getElementById('playersContainer')
     playersContainer.innerHTML = '' // clear all existing elements (refresh)
 
@@ -44,21 +37,105 @@ function loadGameUI(gameData){
         const playerId = playerKeys[i];
         const playerInfo = gameData[playerId];
 
-        const playerDiv = document.createElement('div');
-        playerDiv.className = 'player';
-        playerDiv.id = playerId;
-        playerDiv.innerHTML = `
-            <div class="betAmount"></div>
-            <div class="cards"></div>
-            <div class="profile">
-                <img class="playerIcon" src="images/profile_icons/1.png" alt="">
-                <div class="playerUsername">${playerInfo.username   }</div>
-            </div>
-        `;
+        // load card images
+        if (playerId == clientPlayerId){
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'player';
+            playerDiv.id = playerId;
+            playerDiv.innerHTML = `
+                <div class="betAmount"></div>
+                <div class="arrow-container">
+                    <div class="arrow-label">${playerInfo.value}</div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="cards"></div>
+                <div class="profile">
+                    <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                    <div class="playerUsername">${playerInfo.username}</div>
+                </div>
+            `;
+            playersContainer.appendChild(playerDiv);
+            addCards(playerId, playerInfo.currentHand, true)
+        }
+        else{
+            const playerDiv = document.createElement('div');
+            playerDiv.className = 'player';
+            playerDiv.id = playerId;
+            playerDiv.innerHTML = `
+                <div class="betAmount"></div>
+                <div class="cards"></div>
+                <div class="profile">
+                    <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                    <div class="playerUsername">${playerInfo.username}</div>
+                </div>
+            `;
+            playersContainer.appendChild(playerDiv);
+            addCards(playerId, playerInfo.currentHand, false)
+        }
     }
 
-    playersContainer.appendChild(playerDiv);
+}
+
+function addCards(playerId, cardData, facedUpOrDown){ // [IMPT change server to send only each player's card, rest should be faced down]
+    const player = document.getElementById(playerId) 
+    if (!player) {
+        window.alert(`Player with ID ${playerId} not found.`); // client playerId error
+        return;
+    }
+
+    const cardContainer = player.querySelector('.cards');
+    if (!cardContainer) {
+        console.error(`Cards container not found for player ${playerId}.`);
+        return;
+    }
+
+    // clear previous cards
+    cardContainer.innerHTML = ''
+    cardData = cardData.split(',')
+
+    if (facedUpOrDown){
+        cardData.forEach( (card) => {
+            const cardImg = document.createElement('img');
+            cardImg.src = `images/pixelCards/${card}.png`; 
+            cardImg.alt = `${card}`;
+            cardContainer.appendChild(cardImg);
+        })
+    }
+
+    else{
+        cardData.forEach( () => {
+            const cardImg = document.createElement('img');
+            cardImg.src = `images/pixelCards/Back1.png`; 
+            cardImg.alt = `cardBackImage`;
+            cardImg.classList.add('stacked')
+            cardContainer.appendChild(cardImg);
+        })
+        const emptyDiv = document.createElement('div')
+        emptyDiv.classList.add('emptyDiv')
+        cardContainer.append(emptyDiv);
+    }
 }
 
 
-loadGameUI({banker: 'False', currentHand: 'king_of_spades,4_of_clubs,queen_of_spades,king_of_spades', endTurn: 'undefined', readyStatus: 'True', username: 'V'})
+function cardFan (playerId){
+    // const player = document.getElementById(playerId);
+
+
+}
+
+
+
+
+// socket.io connections.
+const sessionId = localStorage.getItem('sessionId')
+const clientPlayerId = localStorage.getItem('playerId')
+const username = localStorage.getItem('username')
+const socket = io(); // Connect to the server
+
+socket.on('connect', () => {
+    socket.emit('sessionId', sessionId, clientPlayerId) // send sessionInfo to server
+
+    socket.on('loadExistingSession', (player_data) => {
+        loadGameElements(player_data)
+    })
+})

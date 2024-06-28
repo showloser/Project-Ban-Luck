@@ -34,7 +34,14 @@
         <div id="playersContainer" class="players">
             <div class="player">
                 <div class="betAmount"></div>
-                <div class="cards"><img src="images/pixelCards/king_of_diamonds.png" alt=""></div>
+                <div class="cards">
+                    <img src="images/pixelCards/king_of_diamonds.png" class="stacked" alt="">
+                    <img src="images/pixelCards/king_of_diamonds.png" class="stacked" alt="">
+                    <img src="images/pixelCards/king_of_diamonds.png" class="stacked" alt="">
+                    <div class="emptyDiv"></div>
+                </div>
+
+
                 <div class="profile">
                     <img class="playerIcon" src="images/profile_icons/1.png" alt="">
                     <div class="playerUsername">showloser</div>
@@ -95,7 +102,7 @@
         </div>
         <div class="chat">Leave</div>
     </div>
-    
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
     <script src="play.js"></script>
 </body>
 </html>

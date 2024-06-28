@@ -644,10 +644,8 @@ socket.on('sessionId', async (sessionId, playerId) => {
         // wait until minimum of 2 players AND all players are ready
         const currentPlayers = await getPlayersId(sessionId)
 
-        if (currentPlayers.length >= 2){
-          // console.log('normal')
+        if (currentPlayers.length){ // [IMPT change back to >= 2]
           startGame(socket, sessionId, currentPlayers)
-
         }
         else{
           socket.emit('NotEnoughPlayers')

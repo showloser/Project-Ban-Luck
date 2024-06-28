@@ -98,7 +98,7 @@ socket.on('connect', () => {
     })
 
     socket.on('redirect_all_clients_to_game', () => {
-        window.location.href = `poker.html?code=${sessionCode}`;
+        window.location.href = `play.html?code=${sessionCode}`;
     })
 
 
