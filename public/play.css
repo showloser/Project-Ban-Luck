@@ -14,8 +14,8 @@ body {
     position: fixed;
     top: -25px;
     width: 30vw;
-    height: 400px;
-    background: rgba(0, 0, 0, 0.5);
+    height: 340px;
+    background: r   gba(0, 0, 0, 0.5);
     color: white;
     border-radius: 10px;
     overflow: hidden;
@@ -75,7 +75,7 @@ body {
 /* Banker Section [Start]*/
 .banker {
     width: 130px;
-    height: 170px;
+    height: 150px;
     margin: 0 auto;
 }
 
@@ -104,8 +104,8 @@ body {
 
 /* All User profiles (Icons + Username) [Start] */
 .bankerIcon, .playerIcon {
-    height: 40px;
-    width: 40px;
+    height: 35px;
+    width: 35px;
     border-radius: 50%;
 }
 
@@ -113,6 +113,8 @@ body {
     margin-top: 5px;
     color: black;
     font-weight: bold;
+    font-size: 14px;
+    margin: 0 auto;
 }
 
 .profile {
@@ -197,7 +199,7 @@ body {
 }
 
 .cards img{
-    height: 180px;
+    height: 150px;
 }
 
 .currentPlayerImgElement{
@@ -211,10 +213,7 @@ body {
     top:-30px;
 }
 
-.playerUsername {
-    font-size: 14px;
-    margin: 0 auto;
-}
+
 /* Player section [Start] */
 
 
