@@ -63,10 +63,10 @@
     <div class="gameFooter">
         <div class="balance">Balance: $1000</div>
         <div class="buttons">
-            <span id="hitButton" class="pixelButton" onclick="null()">Hit</span>
+            <span id="hitButton" class="pixelButton" onclick="playerHit()">Hit</span>
             <span id="standButton" class="pixelButton" onclick="null()">Stand</span>
         </div>
-        <div class="chat">Leave</div>
+        <div class="subButton" onclick="restart()">Restart/Leave</div>
     </div>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
     <script src="play.js"></script>

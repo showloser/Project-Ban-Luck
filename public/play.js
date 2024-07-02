@@ -178,7 +178,18 @@ function cardFan (playerId){
 
 }
 
+function playerHit() {
+    socket.emit('playerHit', sessionId, clientPlayerId) //send request to 'hit'
 
+    socket.on('error_card_length_5', () => {
+        window.alert("Max Cards allowed is 5")
+    })
+}
+
+function restart(){
+    socket.emit('restartGame', sessionId, clientPlayerId)
+    location.reload()
+}
 
 // socket.io connections.
 const sessionId = localStorage.getItem('sessionId')
