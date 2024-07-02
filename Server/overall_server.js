@@ -465,6 +465,19 @@ async function getReadyStatus(sessionId){
   return readyUserIds
 }
 
+function changeGameStatus(sessionId, gameStatus){
+  const db = getDatabase()
+
+  const valueRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameStatus`)
+  set(valueRef, gameStatus)
+  .then( () => {
+    return true
+  })
+  .catch( (error) => {
+    console.error('[Write Value] Error writing hand data to the database:', error);
+  })
+
+}
 
 // Firebase [GET]
 
@@ -499,9 +512,6 @@ async function getSessionId(sessionCode){
   else{
     throw new Error('Game with the provided code not found');
   }
-
-
-
 }
 
 async function getDeck(sessionId) {
@@ -581,6 +591,24 @@ async function restartGame(sessionId){
 
 }
 
+async function getGameStatus(sessionId){
+  try{
+    const db = getDatabase()
+    const gameStatusRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameStatus`)
+    const snapshot = await get(gameStatusRef);
+
+    if (snapshot.exists()){
+      return snapshot.val()
+    }
+    else{
+      console.error('Error obtaining [GameStatus]: <snapshot does not exist>')
+    }
+
+
+  } catch(error){
+    console.error('Error obtaining [GameStatus]: ' + error)
+  }
+}
 
 async function chat(sessionId, playerId, username, chatData){
   const db = getDatabase()
@@ -638,14 +666,21 @@ socket.on('sessionId', async (sessionId, playerId) => {
 
       // create socket rooms for all clients in same session
       socket.join(sessionId)
-
-
       if (sessionRestart === 'True'){
         // wait until minimum of 2 players AND all players are ready
         const currentPlayers = await getPlayersId(sessionId)
 
         if (currentPlayers.length){ // [IMPT change back to >= 2]
-          startGame(socket, sessionId, currentPlayers)
+          const currentGameStatus = await getGameStatus(sessionId)
+          
+          if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
+            startGame(socket, sessionId, currentPlayers)
+          }
+          else{
+            console.log("[ Load Existing Session ]")
+            let sessionData = await loadExistingSession(sessionId)
+            socket.emit('loadExistingSession', sessionData)
+          }
         }
         else{
           socket.emit('NotEnoughPlayers')
@@ -655,7 +690,6 @@ socket.on('sessionId', async (sessionId, playerId) => {
       else{
         console.log("[ Load Existing Session ]")
         let sessionData = await loadExistingSession(sessionId)
-
         socket.emit('loadExistingSession', sessionData)
       }
     }
@@ -722,7 +756,6 @@ socket.on('sessionId', async (sessionId, playerId) => {
 })
 
 socket.on('chat', async (sessionId, playerId, username, chatData) => {
-
   // Escape HTML entities
   const sanitizedUsername = escapeHtml(username); 
   const sanitizedChatData = escapeHtml(chatData); 
@@ -770,7 +803,7 @@ socket.on('readyStatus', async (sessionId, playerId) => {
     let partyLeader = await getPartyLeader(sessionId) // change 'startGame button display to true'
     io.to(sessionId).emit('allPlayersReady', true, partyLeader)
   }
-  })
+})
 
 
 socket.on('redirect_to_game', async (sessionId, playerId) => {
@@ -792,11 +825,7 @@ socket.on('redirect_to_game', async (sessionId, playerId) => {
 
 })
 
-
-
 })
-
-
 
 
 
