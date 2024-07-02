@@ -1,0 +1,205 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #006400;
+}
+
+.table {
+    margin: auto;
+    width: 80vmin;
+    height: 80vmin;
+    background-color: #228B22;
+    border-radius: 50%;
+    position: relative;
+}
+
+.banker {
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: white;
+}
+
+.banker .bankerCards {
+    margin-top: 10px;
+    height: 100px;
+    background-color: #fff;
+    border-radius: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.players {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: -100px; 
+    left: 0;
+}
+
+.player {
+    position: absolute;
+    text-align: center;
+    color: white;
+}
+
+.player .playerCards {
+    margin-top: 10px;
+    height: 200px; /* Adjust height to accommodate card fan */
+    width: 100%; /* Ensure full width */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative; /* Position relative for absolute positioning of card images */
+}
+
+.player .playerCards img {
+    position: absolute; /* Position card images absolutely within the .playerCards div */
+    height: 150px;
+    transition: transform 0.5s ease, left 0.5s ease, top 0.5s ease; 
+    transition: top 0.2s ease;
+    top: 30px; 
+
+}
+
+.player .playerCards img:hover {
+    top:-10px;
+}
+
+/* Buttons Section */
+.buttons{
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* #playerReady {
+  width: fit-content;
+  text-align: center;
+  margin: 0 auto 10px auto;
+} */
+
+.playerActions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+
+#playerReady{
+  text-align: center;
+  display: inline-block;
+  margin: 10px auto 10px auto;
+  font-weight: bold;
+  padding: 10px 0 10px 0;
+  width: 200px;
+  color: gray;
+  background-color: lightgray;
+  text-shadow: -1px -1px black, 1px 1px white;
+  -webkit-border-radius: 7px;
+  -moz-border-radius: 7px;
+  -o-border-radius: 7px;
+  border-radius: 7px;
+  box-shadow: 0 .2em gray; 
+  cursor: pointer;
+}
+
+#playerReady:active {
+	box-shadow: none;
+	position: relative;
+	top: .2em;
+}
+
+
+#restart{
+    display: block;
+    margin: 20px auto 0 auto;
+}
+
+#message{
+  color: white;
+  font-size: 16px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+
+/* Chat Section*/
+.chat-container {
+    font-size: 14px;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 30%;
+    background-color: #333;
+    color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.5);
+    transition: transform 0.3s;
+  }
+  
+  .chat-header {
+    padding: 10px;
+    background-color: #444;
+    border-bottom: 1px solid #555;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+  }
+  
+  .chat-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s;
+  }
+  
+  .chat-messages {
+    height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #222;
+  }
+  
+  .chat-messages::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .chat-messages::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 3px;
+  }
+  
+  .chat-input {
+    display: flex;
+    border-top: 1px solid #555;
+  }
+  
+  #chat-input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+  }
+  
+  #chat-input::placeholder {
+    color: #999;
+  }
+  
+  .chat-input button {
+    padding: 10px 15px;
+    background-color: #444;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .chat-input button:hover {
+    background-color: #555;
+}
