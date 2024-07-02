@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project: Bunluck</title>
     <link rel="stylesheet" href="play.css">
+    <link rel="stylesheet" href="chips.css">
+
+
 </head>
 <body>
 
@@ -14,6 +17,47 @@
         </div>
         <input id="chat-input" class="chat-input" type="text" placeholder="Type a message...">
     </div>
+
+
+    <div class="bettingOverlay">
+        <div class="background">
+            <div class="chip" data-value="1">
+                <img src="images/chips/chip_black_top_large.png" alt="Chip $1">
+                <span class="denomination">$1</span>
+            </div>
+            <div class="chip" data-value="5">
+                <img src="images/chips/chip_green_top_large.png" alt="Chip $5">
+                <span class="denomination">$5</span>
+            </div>
+            <div class="chip" data-value="25">
+                <img src="images/chips/chip_lightblue_top_large.png" alt="Chip $25">
+                <span class="denomination">$25</span>
+            </div>
+            <div class="chip" data-value="50">
+                <img src="images/chips/chip_purple_top_large.png" alt="Chip $50">
+                <span class="denomination">$50</span>
+            </div>
+            <div class="chip" data-value="100">
+                <img src="images/chips/chip_red_top_large.png" alt="Chip $100">
+                <span class="denomination">$100</span>
+            </div>
+
+            <div class="chip" data-value="500">
+                <img src="images/chips/chip_white_top_large.png" alt="Chip $100">
+                <span class="denomination">$500</span>
+            </div>
+        </div>
+
+        <!-- TO BE REMOVED -->
+        <div class="betting-area">
+            <div class="stacked-chips" id="stacked-chips"></div>
+            <div class="bet-amount">Total Bet: $<span id="total-bet">0</span></div>
+        </div>
+        <!-- TO BE REMOVED -->
+    </div>
+
+
+
 
 
     <div class="table">
@@ -70,5 +114,7 @@
     </div>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
     <script src="play.js"></script>
+    <script src="chips.js"></script>
+
 </body>
 </html>

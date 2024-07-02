@@ -674,10 +674,10 @@ socket.on('sessionId', async (sessionId, playerId) => {
           const currentGameStatus = await getGameStatus(sessionId)
           
           if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
-            startGame(socket, sessionId, currentPlayers)
+            // startGame(socket, sessionId, currentPlayers)
 
             // chanage gameStatus to in progress
-            changeGameStatus(sessionId, 'inProgress')
+            // changeGameStatus(sessionId, 'inProgress')
           }
           else{
             // console.log("[ Load Existing Session ]")
@@ -781,10 +781,7 @@ socket.on('restartGame', async (sessionId, playerId) => {
 
   // Handle client disconnect
 socket.on('disconnect', () => {
-    // if (socket.sessionId){
-    //   deleteSession(socket.sessionId)
-    // }
-    // console.log('A client disconnected');
+
 });
 
 socket.on('waitingRoom', async (sessionId) => {
