@@ -674,10 +674,11 @@ socket.on('sessionId', async (sessionId, playerId) => {
           const currentGameStatus = await getGameStatus(sessionId)
           
           if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
-            // startGame(socket, sessionId, currentPlayers)
-
+            
+            startGame(socket, sessionId, currentPlayers)
             // chanage gameStatus to in progress
-            // changeGameStatus(sessionId, 'inProgress')
+            
+            changeGameStatus(sessionId, 'inProgress')
           }
           else{
             // console.log("[ Load Existing Session ]")

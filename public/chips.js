@@ -51,28 +51,7 @@ document.querySelectorAll('.chip').forEach(chip => {
   });
 });
 
-document.getElementById('confirm-bet').addEventListener('click', () => {
-  if (totalBet > 0) {
-    fetch('/place-bet', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ amount: totalBet })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert('Bet placed successfully!');
-        resetBet();
-      } else {
-        alert('Failed to place bet.');
-      }
-    });
-  } else {
-    alert('Please place a bet.');
-  }
-});
+
 
 function addChipToStack(value) {
   const stackedChips = document.getElementById('stacked-chips');
@@ -82,7 +61,7 @@ function addChipToStack(value) {
   chipElement.className = 'stacked-chip';
   chipElement.style.bottom = `${stackHeight}px`;
   stackedChips.appendChild(chipElement);
-  stackHeight += 10; // Adjust this value to control the overlap of chips
+  stackHeight += 5; 
 }
 
 function resetBet() {
