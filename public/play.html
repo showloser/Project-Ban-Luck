@@ -21,6 +21,11 @@
 
     <div class="bettingOverlay">
         <div class="background">
+            <div class="bettingOptionButtons">
+                <span>UNDO</span>
+                <img src="images/chips/undo.png" alt="">
+            </div>
+
             <div class="chip" data-value="1">
                 <img src="images/chips/chip_black_top_large.png" alt="Chip $1">
                 <span class="denomination">$1</span>
@@ -45,6 +50,11 @@
             <div class="chip" data-value="500">
                 <img src="images/chips/chip_white_top_large.png" alt="Chip $100">
                 <span class="denomination">$500</span>
+            </div>
+
+            <div class="bettingOptionButtons">
+                <img src="images/chips/remove.png" onclick="resetBet()" alt="">
+                <span>REMOVE</span>
             </div>
         </div>
 
@@ -75,7 +85,7 @@
             </div>
         </div>
 
-        <div id="playersContainer" class="players">
+        <!-- <div id="playersContainer" class="players"> -->
             <!-- <div class="player">
                 <div class="betAmount"></div>
                 <div class="cards">

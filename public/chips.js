@@ -46,23 +46,47 @@ document.querySelectorAll('.chip').forEach(chip => {
     // Remove the chip after animation
     chipClone.addEventListener('animationend', () => {
       chipClone.remove();
-      addChipToStack(value);
+
+      var denomination = getChipDenominations(totalBet)
+      addChipToStack(denomination);
     });
   });
 });
 
-
-
-function addChipToStack(value) {
+function addChipToStack(chipCounts) {
   const stackedChips = document.getElementById('stacked-chips');
-  const chipImage = chipImages[value];
-  const chipElement = document.createElement('img');
-  chipElement.src = chipImage;
-  chipElement.className = 'stacked-chip';
-  chipElement.style.bottom = `${stackHeight}px`;
-  stackedChips.appendChild(chipElement);
-  stackHeight += 5; 
+  stackedChips.innerHTML = ''; // Clear the current stacked chips
+  let stackHeight = 0;
+
+  // Iterate through the chipCounts object in descending order of denominations
+  const denominations = [500, 100, 50, 25, 5, 1];
+  denominations.forEach(denomination => {
+    const count = chipCounts[denomination];
+    for (let i = 0; i < count; i++) {
+      const chipImage = chipImages[denomination];
+      const chipElement = document.createElement('img');
+      chipElement.src = chipImage;
+      chipElement.className = 'stacked-chip';
+      chipElement.style.bottom = `${stackHeight}px`;
+      stackedChips.appendChild(chipElement);
+      stackHeight += 5; // Adjust the stack height for the next chip
+    }
+  });
 }
+
+function getChipDenominations(value) { // get biggest possible denomination
+  const denominations = [500, 100, 50, 25, 5, 1];
+  const result = {};
+
+  denominations.forEach(denomination => {
+    result[denomination] = Math.floor(value / denomination);
+    value %= denomination;
+  });
+
+  return result;
+}
+
+
 
 function resetBet() {
   totalBet = 0;
@@ -70,3 +94,5 @@ function resetBet() {
   document.getElementById('total-bet').innerText = totalBet;
   document.getElementById('stacked-chips').innerHTML = '';
 }
+
+

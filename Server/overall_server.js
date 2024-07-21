@@ -675,7 +675,7 @@ socket.on('sessionId', async (sessionId, playerId) => {
           
           if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
             
-            startGame(socket, sessionId, currentPlayers)
+            // startGame(socket, sessionId, currentPlayers)
             // chanage gameStatus to in progress
             
             changeGameStatus(sessionId, 'inProgress')

@@ -21,6 +21,29 @@
     background: rgba(139, 69, 19, 0.7)
 }
 
+.bettingOptionButtons{
+  display: flex;
+  gap: 5px;
+}
+
+.bettingOptionButtons span{
+  font-size: 20px;
+  color: #efefef;
+  justify-content: center;
+  align-self: center;  
+}
+
+.bettingOptionButtons img{
+  width: 70px;
+  /* height: 70px; */
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.bettingOptionButtons img:hover{
+  opacity: 1;
+}
+
 .chips {
   display: flex;
   gap: 10px;
