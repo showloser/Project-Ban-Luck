@@ -1,3 +1,5 @@
+let balance = localStorage.getItem('balance')
+
 let totalBet = 0;
 let stackHeight = 0;
 
@@ -12,44 +14,57 @@ const chipImages = {
 
 
 document.querySelectorAll('.chip').forEach(chip => {
-  chip.addEventListener('click', (event) => {
+  // default blur-ing of chips
+  blurChips(balance,0)
+
+  chip.addEventListener('click', (event) => {    
     const value = parseInt(chip.dataset.value, 10);
-    totalBet += value;
-    document.getElementById('total-bet').innerText = totalBet;
 
-    // Get chip's bounding box to calculate its position
-    const chipRect = chip.getBoundingClientRect();
-    const bettingAreaRect = document.querySelector('.betting-area').getBoundingClientRect();
-    const startX = chipRect.left + window.scrollX;
-    const startY = chipRect.top + window.scrollY;
-    const endX = bettingAreaRect.left + window.scrollX + bettingAreaRect.width / 2 - chipRect.width / 2;
-    const endY = bettingAreaRect.top + window.scrollY + bettingAreaRect.height / 2 - chipRect.height / 2;
-
-    // Clone the chip to animate it
-    const chipClone = chip.cloneNode(true);
-    document.body.appendChild(chipClone);
-    chipClone.classList.add('animate-chip');
-
-    // Set the initial position
-    chipClone.style.left = startX + 'px';
-    chipClone.style.top = startY + 'px';
-
-    // Force reflow to apply initial position
-    chipClone.offsetHeight;
-
-    // Set the target position using transform
-    chipClone.style.setProperty('--start-x', '0px');
-    chipClone.style.setProperty('--start-y', '0px');
-    chipClone.style.setProperty('--end-x', `${endX - startX}px`);
-    chipClone.style.setProperty('--end-y', `${endY - startY}px`);
-
-    // Remove the chip after animation
-    chipClone.addEventListener('animationend', () => {
-      chipClone.remove();
-
-      var denomination = getChipDenominations(totalBet)
-      addChipToStack(denomination);
-    });
+    if (value > balance || value > (balance - totalBet)){
+      return
+    }
+    else{
+      totalBet += value;
+      document.getElementById('total-bet').innerText = totalBet;
+  
+      // Get chip's bounding box to calculate its position
+      const chipRect = chip.getBoundingClientRect();
+      const bettingAreaRect = document.querySelector('.betting-area').getBoundingClientRect();
+      const startX = chipRect.left + window.scrollX;
+      const startY = chipRect.top + window.scrollY;
+      const endX = bettingAreaRect.left + window.scrollX + bettingAreaRect.width / 2 - chipRect.width / 2;
+      const endY = bettingAreaRect.top + window.scrollY + bettingAreaRect.height / 2 - chipRect.height / 2;
+  
+      // Clone the chip to animate it
+      const chipClone = chip.cloneNode(true);
+      document.body.appendChild(chipClone);
+      chipClone.classList.add('animate-chip');
+  
+      // Set the initial position
+      chipClone.style.left = startX + 'px';
+      chipClone.style.top = startY + 'px';
+  
+      // Force reflow to apply initial position
+      chipClone.offsetHeight;
+  
+      // Set the target position using transform
+      chipClone.style.setProperty('--start-x', '0px');
+      chipClone.style.setProperty('--start-y', '0px');
+      chipClone.style.setProperty('--end-x', `${endX - startX}px`);
+      chipClone.style.setProperty('--end-y', `${endY - startY}px`);
+  
+      // Remove the chip after animation
+      chipClone.addEventListener('animationend', () => {
+        chipClone.remove();
+  
+        var denomination = getChipDenominations(totalBet)
+        addChipToStack(denomination);
+  
+        // re-blur chips
+        blurChips(balance, totalBet)
+  
+      });
+    }
   });
 });
 
@@ -93,6 +108,58 @@ function resetBet() {
   stackHeight = 0;
   document.getElementById('total-bet').innerText = totalBet;
   document.getElementById('stacked-chips').innerHTML = '';
+  blurChips(balance, 0)
 }
 
 
+function blurChips(balance, totalBet){
+  denomination = [500, 100, 50, 25, 5, 1]
+  for (let i = 0; i < denomination.length; i++){
+    let chip = document.getElementsByClassName(`denomination${denomination[i]}`)
+    chip[0].classList.remove('blur')
+    if (balance < denomination[i] || (balance - totalBet) < denomination[i]){
+        chip[0].classList.add('blur')
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+//  timer
+const FULL_DASH_ARRAY = 2 * Math.PI * 52;
+const TIME_LIMIT = 30;
+let timePassed = 0;
+let timeLeft = TIME_LIMIT;
+let timerInterval = null;
+const timerElement = document.getElementById('timer');
+const progressCircle = document.querySelector('.progress-ring__circle');
+
+progressCircle.style.strokeDasharray = FULL_DASH_ARRAY;
+progressCircle.style.strokeDashoffset = calculateOffset(timeLeft);
+
+function calculateOffset(timeLeft) {
+  return FULL_DASH_ARRAY - (timeLeft / TIME_LIMIT) * FULL_DASH_ARRAY;
+}
+
+function updateTimer() {
+  timeLeft--;
+  timerElement.textContent = timeLeft;
+  progressCircle.style.strokeDashoffset = calculateOffset(timeLeft);
+
+  if (timeLeft > 0) {
+    setTimeout(updateTimer, 1000);
+  }
+}
+
+function startTimer() {
+  updateTimer();
+}
+
+startTimer();

@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadGameElements(gameData){
+    console.log(gameData)
     const playersContainer = document.getElementById('playersContainer')
     playersContainer.innerHTML = '' // clear all existing elements (refresh)
 
@@ -39,6 +40,7 @@ function loadGameElements(gameData){
 
         // load card images
         if (playerId == clientPlayerId){
+            // current player
             const playerDiv = document.createElement('div');
             playerDiv.className = 'player';
             playerDiv.id = playerId;
@@ -57,8 +59,12 @@ function loadGameElements(gameData){
             `;
             playersContainer.appendChild(playerDiv);
             addCards(playerId, playerInfo.currentHand, true)
+            
+            // set currentPlayer's balance
+            localStorage.setItem('balance', playerInfo.bets.playerBalance)
         }
         else{
+            // other players
             const playerDiv = document.createElement('div');
             playerDiv.className = 'player';
             playerDiv.id = playerId;

@@ -20,34 +20,46 @@
 
 
     <div class="bettingOverlay">
+
+
+        <!--  test timer -->
+        <div class="timer-container">
+            <svg class="progress-ring" width="120" height="120">
+              <circle class="progress-ring__circle" stroke="green" stroke-width="10" fill="transparent" r="52" cx="60" cy="60"/>
+            </svg>
+            <div id="timer" class="timer">30</div>
+          </div>
+        <!--  test timer -->
+
+
         <div class="background">
             <div class="bettingOptionButtons">
                 <span>UNDO</span>
                 <img src="images/chips/undo.png" alt="">
             </div>
 
-            <div class="chip" data-value="1">
+            <div class="chip denomination1" data-value="1">
                 <img src="images/chips/chip_black_top_large.png" alt="Chip $1">
                 <span class="denomination">$1</span>
             </div>
-            <div class="chip" data-value="5">
+            <div class="chip denomination5" data-value="5">
                 <img src="images/chips/chip_green_top_large.png" alt="Chip $5">
                 <span class="denomination">$5</span>
             </div>
-            <div class="chip" data-value="25">
+            <div class="chip denomination25" data-value="25">
                 <img src="images/chips/chip_lightblue_top_large.png" alt="Chip $25">
                 <span class="denomination">$25</span>
             </div>
-            <div class="chip" data-value="50">
+            <div class="chip denomination50" data-value="50">
                 <img src="images/chips/chip_purple_top_large.png" alt="Chip $50">
                 <span class="denomination">$50</span>
             </div>
-            <div class="chip" data-value="100">
+            <div class="chip denomination100" data-value="100">
                 <img src="images/chips/chip_red_top_large.png" alt="Chip $100">
                 <span class="denomination">$100</span>
             </div>
 
-            <div class="chip" data-value="500">
+            <div class="chip denomination500" data-value="500">
                 <img src="images/chips/chip_white_top_large.png" alt="Chip $100">
                 <span class="denomination">$500</span>
             </div>
@@ -85,7 +97,7 @@
             </div>
         </div>
 
-        <!-- <div id="playersContainer" class="players"> -->
+        <div id="playersContainer" class="players">
             <!-- <div class="player">
                 <div class="betAmount"></div>
                 <div class="cards">
@@ -115,7 +127,7 @@
 
 
     <div class="gameFooter">
-        <div class="balance">Balance: $1000</div>
+        <div class="balance">Balance: $<span id="playerBalance">1000</span></div>
         <div class="buttons">
             <span id="hitButton" class="pixelButton" onclick="playerHit()">Hit</span>
             <span id="standButton" class="pixelButton" onclick="null()">Stand</span>

@@ -346,7 +346,11 @@ function createSession(username) {
     value : 'undefined',
     endTurn: 'undefined',
     banker: 'False',
-    readyStatus: 'False'
+    readyStatus: 'False',
+    bets: {
+      playerBalance: 1000,
+      currentBet: 0
+    }
   });
 
   return { sessionId: sessionId, playerId: playerId, sessionCode: sessionCode };
@@ -363,7 +367,11 @@ function writePlayerToSession(sessionId, username){
     value : 'undefined',
     endTurn: 'undefined',
     banker: 'False',
-    readyStatus: 'False'
+    readyStatus: 'False',
+    bets: {
+      playerBalance: 1000,
+      currentBet: 0
+    }
   });
 
   return { sessionId: sessionId, playerId: playerId};

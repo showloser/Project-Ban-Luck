@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 /* Press Start 2P */
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap');
+/* DotGothic16 */
 
 
 .bettingOverlay{
@@ -54,13 +56,14 @@
   position: relative;
   width: 70px;
   height: 70px;
-  cursor: pointer;
   margin: 0 10px 0 10px;
 }
 
 .chip img {
   width: 100%;
   height: 100%;
+  cursor: pointer;
+
 }
 
 .denomination {
@@ -78,8 +81,10 @@
 .betting-area {
   margin-top: 20px;
   padding: 10px;
-  border: 2px solid #000;
-  width: 200px;
+  /* border: 2px solid #fff; */
+  /* width: 100px;
+  height: 100px; */
+  color: white;
 }
 
 .stacked-chips {
@@ -121,4 +126,42 @@
 .animate-chip {
   position: absolute;
   animation: moveToBettingArea 0.3s forwards;
+}
+
+/* to blur chips (when balance < chip value) */
+.blur{
+  opacity: 0.5 !important;
+  cursor: default !important;
+}
+
+
+
+
+
+
+
+
+
+/* timer */
+.timer-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.timer {
+  position: absolute;
+  font-size: 42px;
+  color: white;
+  font-family: 'DotGothic16', sans-serif;
+  z-index: 1;
+}
+
+.progress-ring__circle {
+  transition: stroke-dashoffset 1s linear;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
 }
