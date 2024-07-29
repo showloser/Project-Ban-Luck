@@ -684,6 +684,18 @@ socket.on('sessionId', async (sessionId, playerId) => {
 
           
           function placeBets(sessionId){
+
+            function bettingTimer(){
+              const db = getDatabase()
+              let countdownEndTime = Date.now() + 30 * 1000; // 30 seconds countdown
+
+              const bettingTimerRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/bettingTimer`)
+                // Update the value of restartRef to 'False'
+              set(bettingTimerRef, countdownEndTime);
+            }
+
+            // write a function to get the time left and send it to client
+
             io.to(sessionId).emit('placeBets', 'True')
             socket.on('ConfirmBets', (data) => {
               console.log(data)
