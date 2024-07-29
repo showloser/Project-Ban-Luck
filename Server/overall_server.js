@@ -337,7 +337,8 @@ function createSession(username) {
     sessionCode: sessionCode,
     partyLeader: playerId,
     gameStatus: 'undefined',
-    winner: 'undefined'
+    winner: 'undefined',
+    bettingTimer: 'undefined'
   })
   
   set(playerRef, {
