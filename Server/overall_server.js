@@ -680,19 +680,33 @@ socket.on('sessionId', async (sessionId, playerId) => {
 
         if (currentPlayers.length){ // [IMPT change back to >= 2]
           const currentGameStatus = await getGameStatus(sessionId)
+
           
-          if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
-            
-            // startGame(socket, sessionId, currentPlayers)
-            // chanage gameStatus to in progress
-            
-            changeGameStatus(sessionId, 'inProgress')
+          function placeBets(sessionId){
+            io.to(sessionId).emit('placeBets', 'True')
+            socket.on('ConfirmBets', (data) => {
+              console.log(data)
+            })
+          
           }
-          else{
-            // console.log("[ Load Existing Session ]")
-            let sessionData = await loadExistingSession(sessionId)
-            socket.emit('loadExistingSession', sessionData)
-          }
+
+          // testing
+          placeBets(sessionId)
+
+
+
+          // if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
+            
+          //   // startGame(socket, sessionId, currentPlayers)
+          //   // chanage gameStatus to in progress
+            
+          //   changeGameStatus(sessionId, 'inProgress')
+          // }
+          // else{
+          //   // console.log("[ Load Existing Session ]")
+          //   let sessionData = await loadExistingSession(sessionId)
+          //   socket.emit('loadExistingSession', sessionData)
+          // }
         }
         else{
           socket.emit('NotEnoughPlayers')
@@ -837,7 +851,6 @@ socket.on('redirect_to_game', async (sessionId, playerId) => {
 })
 
 
-
 // handle data from index.html
 app.post('/form_createRoom', (req, res) => {
   const username = req.body.username;
@@ -876,6 +889,14 @@ app.post('/form_joinRoom', async (req, res) => {
   //   console.log(error)
   // }
 })
+
+
+
+
+
+
+
+
 
 
 

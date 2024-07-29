@@ -125,41 +125,59 @@ function blurChips(balance, totalBet){
 
 
 
+function runTimer(TIME_PASSED=0) {
+  const FULL_DASH_ARRAY = 2 * Math.PI * 52;
+  const TIME_LIMIT = 5; // Set the time limit to 30 seconds
+  let timeLeft = TIME_LIMIT - TIME_PASSED;
+  const timerElement = document.getElementById('timer');
+  const progressCircle = document.querySelector('.progress-ring__circle');
+  const bettingInterface = document.getElementById('bettingOverlay');
 
-
-
-
-
-
-
-//  timer
-const FULL_DASH_ARRAY = 2 * Math.PI * 52;
-const TIME_LIMIT = 30;
-let timePassed = 0;
-let timeLeft = TIME_LIMIT;
-let timerInterval = null;
-const timerElement = document.getElementById('timer');
-const progressCircle = document.querySelector('.progress-ring__circle');
-
-progressCircle.style.strokeDasharray = FULL_DASH_ARRAY;
-progressCircle.style.strokeDashoffset = calculateOffset(timeLeft);
-
-function calculateOffset(timeLeft) {
-  return FULL_DASH_ARRAY - (timeLeft / TIME_LIMIT) * FULL_DASH_ARRAY;
-}
-
-function updateTimer() {
-  timeLeft--;
-  timerElement.textContent = timeLeft;
+  progressCircle.style.strokeDasharray = FULL_DASH_ARRAY;
   progressCircle.style.strokeDashoffset = calculateOffset(timeLeft);
 
-  if (timeLeft > 0) {
-    setTimeout(updateTimer, 1000);
+  function calculateOffset(timeLeft) {
+    return FULL_DASH_ARRAY - (timeLeft / TIME_LIMIT) * FULL_DASH_ARRAY;
   }
-}
 
-function startTimer() {
+  function updateTimer() {
+    if (timeLeft > 0) {
+      timeLeft--;
+      timerElement.textContent = timeLeft;
+      progressCircle.style.strokeDashoffset = calculateOffset(timeLeft);
+      setTimeout(updateTimer, 1000);
+    } else {
+      setTimeout(() => {
+        fadeOutBettingInterface();
+      }, 300); // Delay for smooth transition
+
+      // send bet amount to server.
+      socket.emit('ConfirmBets', {'sessionId' : sessionId,'player' : clientPlayerId, 'betAmount' : totalBet})
+    }
+  }
+
+  function fadeOutBettingInterface() {
+    bettingInterface.classList.remove('show');
+  }
+
   updateTimer();
 }
 
-startTimer();
+
+
+
+
+
+socket.on('placeBets' , (timeLeft) => {
+
+  // Show Betting Interface + Animation
+  const bettingInterface = document.getElementById('bettingOverlay');
+  setTimeout(() => {
+    bettingInterface.classList.add('show');
+  }, 300); // Delay for 300ms for smooth transisition.
+
+  runTimer(timeLeft=0)
+
+})
+
+

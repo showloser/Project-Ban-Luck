@@ -13,7 +13,17 @@
     justify-content: center;
     align-items: center;
     z-index: 999;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 1s ease-out, transform 1s ease-out;
 }
+
+
+.bettingOverlay.show{
+  opacity: 1;
+  transform: translateY(0);
+}
+
 
 .background{
     display: flex;
@@ -165,3 +175,10 @@
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
 }
+
+.bettingText {
+  font-family: 'Press Start 2P';
+  color: white;
+}
+
+
