@@ -101,8 +101,6 @@ function getChipDenominations(value) { // get biggest possible denomination
   return result;
 }
 
-
-
 function resetBet() {
   totalBet = 0;
   stackHeight = 0;
@@ -125,34 +123,41 @@ function blurChips(balance, totalBet){
 
 
 
-function runTimer(TIME_PASSED=0) {
+function runTimer(endTimeEpoch) {
   const FULL_DASH_ARRAY = 2 * Math.PI * 52;
-  const TIME_LIMIT = 5; // Set the time limit to 30 seconds
-  let timeLeft = TIME_LIMIT - TIME_PASSED;
+  const MAX_TIME = 30; // Max time is 30 seconds
   const timerElement = document.getElementById('timer');
   const progressCircle = document.querySelector('.progress-ring__circle');
   const bettingInterface = document.getElementById('bettingOverlay');
 
-  progressCircle.style.strokeDasharray = FULL_DASH_ARRAY;
-  progressCircle.style.strokeDashoffset = calculateOffset(timeLeft);
-
   function calculateOffset(timeLeft) {
-    return FULL_DASH_ARRAY - (timeLeft / TIME_LIMIT) * FULL_DASH_ARRAY;
+    return FULL_DASH_ARRAY - (timeLeft / MAX_TIME) * FULL_DASH_ARRAY;
   }
 
   function updateTimer() {
+    const now = Date.now();
+    let timeLeft = Math.max(0, (endTimeEpoch - now) / 1000); // Convert milliseconds to seconds
+    if (timeLeft > MAX_TIME) {
+      timeLeft = MAX_TIME;
+    }
+
     if (timeLeft > 0) {
-      timeLeft--;
-      timerElement.textContent = timeLeft;
+      timerElement.textContent = Math.ceil(timeLeft);
       progressCircle.style.strokeDashoffset = calculateOffset(timeLeft);
       setTimeout(updateTimer, 1000);
     } else {
+      timerElement.textContent = 0;
+      progressCircle.style.strokeDashoffset = calculateOffset(0);
       setTimeout(() => {
         fadeOutBettingInterface();
       }, 300); // Delay for smooth transition
 
-      // send bet amount to server.
-      socket.emit('ConfirmBets', {'sessionId' : sessionId,'player' : clientPlayerId, 'betAmount' : totalBet})
+      // Send bet amount to server
+      socket.emit('playerBets', {
+        'sessionId': sessionId,
+        'playerId': clientPlayerId,
+        'betAmount': totalBet
+      });
     }
   }
 
@@ -160,15 +165,16 @@ function runTimer(TIME_PASSED=0) {
     bettingInterface.classList.remove('show');
   }
 
+  progressCircle.style.strokeDasharray = FULL_DASH_ARRAY;
+  progressCircle.style.strokeDashoffset = calculateOffset(MAX_TIME);
+
   updateTimer();
 }
 
 
 
 
-
-
-socket.on('placeBets' , (timeLeft) => {
+socket.on('bettingPhase' , (bettingTimerEnd) => {
 
   // Show Betting Interface + Animation
   const bettingInterface = document.getElementById('bettingOverlay');
@@ -176,8 +182,7 @@ socket.on('placeBets' , (timeLeft) => {
     bettingInterface.classList.add('show');
   }, 300); // Delay for 300ms for smooth transisition.
 
-  runTimer(timeLeft=0)
-
+  runTimer(bettingTimerEnd)
 })
 
 

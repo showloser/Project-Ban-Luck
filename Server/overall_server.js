@@ -338,7 +338,10 @@ function createSession(username) {
     partyLeader: playerId,
     gameStatus: 'undefined',
     winner: 'undefined',
-    bettingTimer: 'undefined'
+    Bets: {
+      bettingTimerEnd: 'undefined',
+      resetTimerBoolean: 'True'
+    }
   })
   
   set(playerRef, {
@@ -483,8 +486,46 @@ function changeGameStatus(sessionId, gameStatus){
     return true
   })
   .catch( (error) => {
-    console.error('[Write Value] Error writing hand data to the database:', error);
+    console.error('[Write Value] Error writing hand data to the database: ', error);
   })
+
+}
+
+function generateNewBettingPhaseEndtime(sessionId, timeAllocated){
+  const db = getDatabase()
+  const dbRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Bets/bettingTimerEnd`)
+
+  set(dbRef, (Date.now() + parseInt(timeAllocated) * 1000))
+  .then(() => {
+    // toogle [resetTimerBoolean] to false
+    set(ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Bets/resetTimerBoolean`) , 'False')
+    .then(() => {
+      return true
+    })
+    .catch( (error) => {
+      console.error('[bettingPhaseTimer] Error writing data to the database: ', error);
+    })
+  })
+  .catch( (error) => {
+    console.error('[bettingPhaseTimer] Error writing data to the database: ', error);
+  })
+}
+
+
+
+function writePlayerBets(sessionId, playerId, betAmount){
+  const db = getDatabase()
+  dbRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/bets/currentBet`)
+
+  set(dbRef, betAmount)
+  .then( () => {
+    return true
+  })
+  .catch( (error) => {
+    console.error('[Write Value] Error writing hand data to the database: ', error);
+  })
+
+
 
 }
 
@@ -652,9 +693,52 @@ function escapeHtml(str){
   return str.replace(/[&<>"']/g, (char) => htmlEscapes[char]);  
 }
 
+async function getBettingPhaseInfo(sessionId){
+  const db = getDatabase()
+  dbRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Bets`)
+
+  try{
+    const snapshot = await get(dbRef)
+    if (snapshot.exists()){
+      return snapshot.val()
+    }
+    else{
+      console.log('[NO DATA] @ FUNCTION [checkBettingPhaseTimer]')
+    }
+  }
+  catch (error) {
+    console.log('[Error] @ FUNCTION [checkBettingPhaseTimer]')
+  }
+}
+
+// other Functions:
+async function bettingPhase(socket, sessionId){
+  // define time allowed for betting: (15 seconds)
+  timeAllocated = 5
+
+  // check if bettingPhaseTimer needs reset:
+  overwriteBettingPhaseEndtime = await getBettingPhaseInfo(sessionId)
+
+  // overwrite current bettingEndTime
+  if (overwriteBettingPhaseEndtime['resetTimerBoolean'] == 'True'){
+    generateNewBettingPhaseEndtime(sessionId, timeAllocated)
+    overwriteBettingPhaseEndtime = await getBettingPhaseInfo(sessionId)
+  }     
+
+
+  // send bettingTime to clients
+  io.to(sessionId).emit('bettingPhase', overwriteBettingPhaseEndtime['bettingTimerEnd'])
+  socket.on('playerBets', (dataObj) => {
+    writePlayerBets(dataObj['sessionId'], dataObj['playerId'], dataObj['betAmount'])
+  })
+}
+
+
 
 // CONNECTION LOGIC:
 // Handle 'connect' event
+
+
 
 
 io.on('connection', (socket) => {
@@ -680,34 +764,10 @@ socket.on('sessionId', async (sessionId, playerId) => {
         const currentPlayers = await getPlayersId(sessionId)
 
         if (currentPlayers.length){ // [IMPT change back to >= 2]
-          const currentGameStatus = await getGameStatus(sessionId)
 
-          
-          function placeBets(sessionId){
+          bettingPhase(socket, sessionId)
 
-            function bettingTimer(){
-              const db = getDatabase()
-              let countdownEndTime = Date.now() + 30 * 1000; // 30 seconds countdown
-
-              const bettingTimerRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/bettingTimer`)
-                // Update the value of restartRef to 'False'
-              set(bettingTimerRef, countdownEndTime);
-            }
-
-            // write a function to get the time left and send it to client
-
-            io.to(sessionId).emit('placeBets', 'True')
-            socket.on('ConfirmBets', (data) => {
-              console.log(data)
-            })
-          
-          }
-
-          // testing
-          placeBets(sessionId)
-
-
-
+          // const currentGameStatus = await getGameStatus(sessionId)
           // if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
             
           //   // startGame(socket, sessionId, currentPlayers)
