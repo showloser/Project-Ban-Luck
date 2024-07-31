@@ -315,78 +315,6 @@ function addCards(playerId, cardData, facedUpOrDown) {
     }
 }
 
-// function dealCard(playerId, card, facedUpOrDown, cardContainer, promises) {
-//     const cardPile = document.getElementById('cardPile');
-//     if (!cardPile) {
-//         console.error('Card pile element not found.');
-//         return;
-//     }
-
-//     const player = document.getElementById(playerId);
-//     if (!player) {
-//         console.error(`Player with ID ${playerId} not found.`);
-//         return;
-//     }
-
-//     const cardPileRect = cardPile.getBoundingClientRect();
-//     const playerRect = player.getBoundingClientRect();
-
-
-//     const newCard = document.createElement('img');
-//     newCard.src = facedUpOrDown ? `images/pixelCards/${card}.png` : `images/pixelCards/Back1.png`;
-//     newCard.alt = `${card}`;
-//     newCard.classList.add('currentPlayerImgElement');
-//     newCard.style.position = 'absolute';
-
-//     newCard.style.left = `${cardPileRect.left}px !important`; // Offset relative to cardPile
-//     newCard.style.top = `${cardPileRect.top}px !important`; // Offset relative to cardPile
-//     newCard.style.zIndex = '9999'; // Ensure it's on top of other content
-
-
-//     cardPile.appendChild(newCard); // Stack the card on top of the card pile
-
-
-//     // Calculate destination position
-//     const destLeft = playerRect.left + (playerRect.width / 2) - (newCard.clientWidth / 2);
-//     const destTop = playerRect.top + (playerRect.height / 2) - (newCard.clientHeight / 2);
-
-//     // Animate the card
-//     newCard.animate([
-//         { transform: `translate(${cardPileRect.left - cardPileRect.left}px, ${cardPileRect.top - cardPileRect.top}px)`},
-//         { transform: `translate(${destLeft - cardPileRect.left}px, ${destTop - cardPileRect.top}px)`}
-//     ], {
-//         duration: 1500,
-//         easing: 'ease-in-out'
-//     }).onfinish = () => {
-//         // Move the card to the player's card container
-//         cardContainer.appendChild(newCard);
-//     };
-
-//     const promise = new Promise((resolve) => {
-//         newCard.onload = resolve;
-//     });
-//     promises.push(promise);
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function dealCard(playerId, card, facedUpOrDown, cardContainer, promises) {
     const cardPile = document.getElementById('cardPile');
     if (!cardPile) {
@@ -452,32 +380,6 @@ function dealCard(playerId, card, facedUpOrDown, cardContainer, promises) {
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function cardFan (playerId){
