@@ -50,6 +50,7 @@ const { type } = require('os');
 const { error, timeStamp } = require('console');
 const { randomBytes } = require('crypto');
 const { read } = require('fs');
+const { promises } = require('dns');
 
 const firebaseConfig = {
   apiKey: "AIzaSyAlJ1gEXCOAIEN2Q1w69sKnzuxeUvpYge4",
@@ -118,7 +119,6 @@ async function startGame(socket, sessionId, players) {
   io.to(sessionId).emit('loadExistingSession', sessionData)
 
   await changeSessionRestartStatus(sessionId)
-
 }
 
 async function drawInitialHand(sessionId, playerId) {
@@ -713,25 +713,37 @@ async function getBettingPhaseInfo(sessionId){
 
 // other Functions:
 async function bettingPhase(socket, sessionId){
-  // define time allowed for betting: (15 seconds)
-  timeAllocated = 5
+  // define time allowed for betting: (e.g. 15 seconds)
+  timeAllocated = 15
 
   // check if bettingPhaseTimer needs reset:
   overwriteBettingPhaseEndtime = await getBettingPhaseInfo(sessionId)
 
   // overwrite current bettingEndTime
   if (overwriteBettingPhaseEndtime['resetTimerBoolean'] == 'True'){
-    generateNewBettingPhaseEndtime(sessionId, timeAllocated)
+    await generateNewBettingPhaseEndtime(sessionId, timeAllocated)
     overwriteBettingPhaseEndtime = await getBettingPhaseInfo(sessionId)
   }     
 
-
   // send bettingTime to clients
   io.to(sessionId).emit('bettingPhase', overwriteBettingPhaseEndtime['bettingTimerEnd'])
-  socket.on('playerBets', (dataObj) => {
-    writePlayerBets(dataObj['sessionId'], dataObj['playerId'], dataObj['betAmount'])
+
+
+  // new promise which resolves when bettingPhase timer completes
+  return new Promise( (resolve) => {
+    const bettingPhaseDuration = timeAllocated * 1000
+    const timer = setTimeout( () => {
+      resolve()
+    }, bettingPhaseDuration)
+
+    socket.on('playerBets', (dataObj) => {
+      writePlayerBets(dataObj['sessionId'], dataObj['playerId'], dataObj['betAmount'])
+    })
+
   })
 }
+
+
 
 
 
@@ -765,21 +777,21 @@ socket.on('sessionId', async (sessionId, playerId) => {
 
         if (currentPlayers.length){ // [IMPT change back to >= 2]
 
-          bettingPhase(socket, sessionId)
+          // await bettingPhase(socket, sessionId);
 
-          // const currentGameStatus = await getGameStatus(sessionId)
-          // if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
+          const currentGameStatus = await getGameStatus(sessionId)
+          if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
             
-          //   // startGame(socket, sessionId, currentPlayers)
-          //   // chanage gameStatus to in progress
-            
-          //   changeGameStatus(sessionId, 'inProgress')
-          // }
-          // else{
-          //   // console.log("[ Load Existing Session ]")
-          //   let sessionData = await loadExistingSession(sessionId)
-          //   socket.emit('loadExistingSession', sessionData)
-          // }
+            startGame(socket, sessionId, currentPlayers)
+
+            // chanage gameStatus to in progress            
+            changeGameStatus(sessionId, 'inProgress')
+          }
+          else{
+            // console.log("[ Load Existing Session ]")
+            let sessionData = await loadExistingSession(sessionId)
+            socket.emit('loadExistingSession', sessionData)
+          }
         }
         else{
           socket.emit('NotEnoughPlayers')

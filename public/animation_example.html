@@ -10,7 +10,7 @@
       width: 100px;
       height: 140px;
       transform-style: preserve-3d;
-      transition: transform 0.6s;
+      transition: transform 2s ease-in-out; /* Slower flip transition */
     }
 
     .card.flip {
@@ -49,7 +49,7 @@
     }
 
     /* Example positions */
-    #position1 { top: 200px; left: 300px; }
+    #position1 { top: 100px; left: 300px; }
     #position2 { top: 200px; left: 450px; }
   </style>
 </head>
@@ -57,10 +57,10 @@
   <div class="deck">
     <div class="card">
       <div class="front">
-        <img src="/Project-Ban-Luck/public/images/pixelCards/Back7.png" alt="Facedown">
+        <img src="images/pixelCards/Back7.png" alt="Facedown">
       </div>
       <div class="back">
-        <img src="/Project-Ban-Luck/public/images/pixelCards/ace_of_hearts.png" alt="Faceup">
+        <img src="images/pixelCards/ace_of_hearts.png" alt="Faceup">
       </div>
     </div>
   </div>
@@ -84,12 +84,12 @@
       card.style.setProperty('--end-y', `${endY - startY}px`);
 
       // Apply movement animation
-      card.style.animation = 'moveCard 1s forwards';
+      card.style.animation = 'moveCard 1.5s forwards'; // Slower moveCard animation
 
       // Trigger flip animation after a delay
       setTimeout(() => {
         card.classList.add('flip');
-      }, 500); // Adjust delay as needed
+      }, 1500); // Adjust delay to sync with the moveCard animation
     }
 
     // Example usage
