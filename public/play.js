@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     resetTimeout();
 });
 
+
 function loadGameElements(gameData) {
     const playersContainer = document.getElementById('playersContainer');
     playersContainer.innerHTML = ''; // clear all existing elements (refresh)
@@ -74,7 +75,6 @@ function loadGameElements(gameData) {
 }
 
 
-
 function addCards(playerId, cardData, facedUpOrDown) {
     const player = document.getElementById(playerId);
     if (!player) {
@@ -88,20 +88,23 @@ function addCards(playerId, cardData, facedUpOrDown) {
         return;
     }
 
-    // clear previous cards
+    // Clear previous cards
     cardContainer.innerHTML = '';
     cardData = cardData.split(',');
 
-    const promises = []; // lets all img load before running 
+    const promises = []; // Array to hold promises
 
     if (facedUpOrDown) {
         cardData.forEach((card, index) => {
-            setTimeout(() => {
-                dealCard(playerId, card, true, cardContainer, promises);
-            }, index * 500); // Delay each card by 2 seconds
+            const promise = new Promise((resolve) => {
+                setTimeout(() => {
+                    dealCard(playerId, card, true, cardContainer).then(resolve);
+                }, index * 500); // Delay each card by 500ms
+            });
+            promises.push(promise);
         });
 
-        // Wait for all images to load before running cardFan
+        // Wait for all promises to resolve before running cardFan
         Promise.all(promises).then(() => {
             cardFan(playerId);
         });
@@ -121,120 +124,116 @@ function addCards(playerId, cardData, facedUpOrDown) {
 
 
 
-
-
-
-
-function dealCard(playerId, card, facedUpOrDown, cardContainer, promises) {
-    const cardPile = document.getElementById('cardPile');
-    if (!cardPile) {
-        console.error('Card pile element not found.');
-        return;
-    }
-
-    const player = document.getElementById(playerId);
-    if (!player) {
-        console.error(`Player with ID ${playerId} not found.`);
-        return;
-    }
-
-    const cardPileRect = cardPile.getBoundingClientRect();
-    const playerRect = player.getBoundingClientRect();
-
-
-    const temptCardContainer = document.createElement('div');
-    temptCardContainer.classList.add('currentPlayerImgElement');
-    temptCardContainer.style.position = 'absolute';
-    temptCardContainer.style.left = `${cardPileRect.left}px !important`;
-    temptCardContainer.style.top = `${cardPileRect.top}px !important`;
-
-    temptCardContainer.style.zIndex = '9999'; // Ensure it's on top of other content
-
-    // Add placeholder image for the back
-    const backImage = document.createElement('img');
-    backImage.src = 'images/pixelCards/Back1.png'; // Placeholder back image
-    backImage.classList.add('back');
+function dealCard(playerId, card, facedUpOrDown, cardContainer) {
+    return new Promise( (resolve) => {
+        const cardPile = document.getElementById('cardPile');
+        if (!cardPile) {
+            console.error('Card pile element not found.');
+            return;
+        }
     
-    temptCardContainer.appendChild(backImage);
-
-    // Add front image temporarily
-    const frontImage = document.createElement('img');
-    frontImage.src = facedUpOrDown ? `images/pixelCards/${card}.png` : 'images/pixelCards/Back1.png';
-    frontImage.classList.add('front');
-    temptCardContainer.appendChild(frontImage);
-
-    cardPile.appendChild(temptCardContainer); // Stack the card on top of the card pile
-
-
-
-    // Calculate destination position
-    const destLeft = playerRect.left + (playerRect.width / 2) - (temptCardContainer.clientWidth / 2);
-    const destTop = playerRect.top + (playerRect.height / 2) - (temptCardContainer.clientHeight / 2);
-
-    // Apply movement animation
-    temptCardContainer.style.setProperty('--move-x', `${destLeft - cardPileRect.left}px`);
-    temptCardContainer.style.setProperty('--move-y', `${destTop - cardPileRect.top}px`);
-    temptCardContainer.style.animation = 'moveCard 1.5s forwards';
-
-    // Trigger flip animation after a delay
-    setTimeout(() => {
-        temptCardContainer.classList.add('flip');
-    }, 1500); // Delay to sync with the moveCard animation
-
-    // Move the card to the player's card container after animations
-    setTimeout(() => {
-        cardContainer.appendChild(temptCardContainer);
-        temptCardContainer.style.animation = '';
-    }, 1500); // Adjust timing to match animation duration
-
-
+        const player = document.getElementById(playerId);
+        if (!player) {
+            console.error(`Player with ID ${playerId} not found.`);
+            return;
+        }
+    
+        const cardPileRect = cardPile.getBoundingClientRect();
+        const playerRect = player.getBoundingClientRect();
+    
+    
+        const temptCardContainer = document.createElement('div');
+        temptCardContainer.classList.add('currentPlayerImgElement');
+        temptCardContainer.style.position = 'absolute';
+        temptCardContainer.style.left = `${cardPileRect.left}px !important`;
+        temptCardContainer.style.top = `${cardPileRect.top}px !important`;
+    
+        temptCardContainer.style.zIndex = '9999'; // Ensure it's on top of other content
+    
+        // Add placeholder image for the back
+        const backImage = document.createElement('img');
+        backImage.src = 'images/pixelCards/Back1.png'; // Placeholder back image
+        backImage.classList.add('back');
+        
+        temptCardContainer.appendChild(backImage);
+    
+        // Add front image temporarily
+        const frontImage = document.createElement('img');
+        frontImage.src = facedUpOrDown ? `images/pixelCards/${card}.png` : 'images/pixelCards/Back1.png';
+        frontImage.classList.add('front');
+        temptCardContainer.appendChild(frontImage);
+    
+        cardPile.appendChild(temptCardContainer); // Stack the card on top of the card pile
+    
+    
+    
+        // Calculate destination position
+        const destLeft = playerRect.left + (playerRect.width / 2) - (temptCardContainer.clientWidth / 2);
+        const destTop = playerRect.top + (playerRect.height / 2) - (temptCardContainer.clientHeight / 2);
+    
+        // Apply movement animation
+        temptCardContainer.style.setProperty('--move-x', `${destLeft - cardPileRect.left}px`);
+        temptCardContainer.style.setProperty('--move-y', `${destTop - cardPileRect.top}px`);
+        temptCardContainer.style.animation = 'moveCard 1.5s forwards';
+    
+        // Trigger flip animation after a delay
+        setTimeout(() => {
+            temptCardContainer.classList.add('flip');
+        }, 1500); // Delay to sync with the moveCard animation
+    
+        // Move the card to the player's card container after animations
+        setTimeout(() => {
+            cardContainer.appendChild(temptCardContainer);
+            temptCardContainer.style.animation = '';
+            resolve()
+        }, 1500); // Adjust timing to match animation duration
+    })
 }
 
 
-function cardFan (playerId){
+function cardFan(playerId) {
     const player = document.getElementById(playerId);
     const playerCards = player.querySelector('.cards');
-
-
-    const cards = playerCards.querySelectorAll('img');
+    const cards = playerCards.querySelectorAll('.currentPlayerImgElement');
     const count = cards.length;
-    const spread = 40; // Total spread angle for the fan 
+    const spread = 40; // Total spread angle for the fan
     const spacing = 30; // Spacing between cards
-    
     const baseRotationAngle = spread / 2;
 
-    if (count == 2){
-        cards.forEach((card, index) => {
-            const spread = 30; 
-            // calculate the rotation angle for each card
-            const rotationAngle = (index === 0 ? -1 : 1) * spread / 2;
-            
-            // horizontal offset (leftOffset) for each card to move closer together
-            const leftOffset = index === 0 ? -card.clientWidth / 4 : card.clientWidth / 4;
-        
-            card.style.left = `calc(50% - ${card.clientWidth / 2}px + ${leftOffset}px)`;
-            card.style.transform = `rotate(${rotationAngle}deg)`;
-        });
-    }
+    // Set initial position for cards (so the fucking transition for 'left' will work)
+    cards.forEach((card) => {
+        card.style.position = 'absolute'; 
+        card.style.left = '0'; 
+    });
 
-    else{
-        cards.forEach((card, index) => {
-            const increment = spread / (count - 1); // Correctly distribute the cards
+    cards.forEach((card, index) => {
+        if (count === 2) {
+            const spread = 30;
+            const rotationAngle = (index === 0 ? -1 : 1) * spread / 2;
+            const leftOffset = index === 0 ? -card.clientWidth / 4 : card.clientWidth / 4;
+
+            card.style.left = `calc(50% - ${card.clientWidth / 2}px + ${leftOffset}px)`;
+            card.style.transform = `rotate(${rotationAngle}deg) rotateY(180deg)`;
+        } else {
+            const increment = spread / (count - 1);
             const rotationAngle = -baseRotationAngle + increment * index;
-            
+
             if (index === count - 1) {
-                // Center the last card
                 card.style.left = `calc(50%)`;
             } else {
-                const leftOffset = (index - (count - 1) / 2) * spacing; // Center the cards correctly
+                const leftOffset = (index - (count - 1) / 2) * spacing;
                 card.style.left = `calc(50% - ${card.clientWidth / 2}px + ${leftOffset}px)`;
             }
-            
-            card.style.transform = `rotate(${rotationAngle}deg)`;
-        });
-    }
 
+            card.style.transform = `rotate(${rotationAngle}deg) rotateY(180deg)`;
+        }
+    });
 }
+
+
+
+
+
 
 
 

@@ -3,7 +3,9 @@
   width: 102px; /* [IMPT] for some reason it does not work as intended */
   height: 150px;
   transform-style: preserve-3d;
-  transition: transform 1.5s ease-in-out;
+  /* transition: transform 1.5s ease-in-out; */
+  transition: transform 1s ease-in-out, left 0.7s ease-in-out; 
+
   top: 0px;
 }
 .currentPlayerImgElement:hover {
