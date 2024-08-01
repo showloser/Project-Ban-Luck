@@ -73,6 +73,8 @@ function loadGameElements(gameData) {
     }
 }
 
+
+
 function addCards(playerId, cardData, facedUpOrDown) {
     const player = document.getElementById(playerId);
     if (!player) {
@@ -93,8 +95,10 @@ function addCards(playerId, cardData, facedUpOrDown) {
     const promises = []; // lets all img load before running 
 
     if (facedUpOrDown) {
-        cardData.forEach((card) => {
-            dealCard(playerId, card, true, cardContainer, promises);
+        cardData.forEach((card, index) => {
+            setTimeout(() => {
+                dealCard(playerId, card, true, cardContainer, promises);
+            }, index * 500); // Delay each card by 2 seconds
         });
 
         // Wait for all images to load before running cardFan
@@ -114,6 +118,12 @@ function addCards(playerId, cardData, facedUpOrDown) {
         cardContainer.append(emptyDiv);
     }
 }
+
+
+
+
+
+
 
 function dealCard(playerId, card, facedUpOrDown, cardContainer, promises) {
     const cardPile = document.getElementById('cardPile');
@@ -156,7 +166,6 @@ function dealCard(playerId, card, facedUpOrDown, cardContainer, promises) {
     cardPile.appendChild(temptCardContainer); // Stack the card on top of the card pile
 
 
-    
 
     // Calculate destination position
     const destLeft = playerRect.left + (playerRect.width / 2) - (temptCardContainer.clientWidth / 2);
@@ -207,6 +216,7 @@ function cardFan (playerId){
             card.style.transform = `rotate(${rotationAngle}deg)`;
         });
     }
+
     else{
         cards.forEach((card, index) => {
             const increment = spread / (count - 1); // Correctly distribute the cards

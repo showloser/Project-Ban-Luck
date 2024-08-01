@@ -1,33 +1,33 @@
 .currentPlayerImgElement {
   position: absolute;
-  width: 102px; /* [IMPT] for some fucking strange reason it does not work as intended */
+  width: 102px; /* [IMPT] for some reason it does not work as intended */
   height: 150px;
   transform-style: preserve-3d;
-  transition: transform 1.5s ease-in-out; 
+  transition: transform 1.5s ease-in-out;
+  top: 0px;
+}
+.currentPlayerImgElement:hover {
+  top:-30px;
 }
 
 .currentPlayerImgElement.flip {
-  transform: rotateY(180deg); /* Flip direction changed to make the front visible */
+  transform: rotateY(180deg);
 }
 
 .currentPlayerImgElement img {
   position: absolute;
-  width: 100%;
-  height: 100%;
   backface-visibility: hidden;
 }
 
 .currentPlayerImgElement .front {
-  transform: rotateY(180deg); /* Rotate the back image to face away */
+  transform: rotateY(180deg);
 }
 
 @keyframes moveCard {
   from {
-      transform: translate(0, 0) rotateY(0);
+    transform: translate(0, 0) rotateY(0);
   }
   to {
-      transform: translate(var(--move-x), var(--move-y)) rotateY(180deg); /* Adjust for front image visibility */
+    transform: translate(var(--move-x), var(--move-y)) rotateY(180deg);
   }
 }
-
-
