@@ -1,3 +1,6 @@
+let playerStates = {}; // Track player states globally
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const chatWindow = document.getElementById('chat-window');
     let timeout;
@@ -22,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadGameElements(gameData) {
     const playersContainer = document.getElementById('playersContainer');
-    playersContainer.innerHTML = ''; // clear all existing elements (refresh)
 
     const playerKeys = Object.keys(gameData);
     const activePlayers = playerKeys.length;
@@ -31,36 +33,32 @@ function loadGameElements(gameData) {
         const playerId = playerKeys[i];
         const playerInfo = gameData[playerId];
 
-        // load card images
-        if (playerId === clientPlayerId) {
-            // current player
-            const playerDiv = document.createElement('div');
+        let playerDiv = document.getElementById(playerId);
+        if (!playerDiv){
+            playerDiv = document.createElement('div');
             playerDiv.className = 'player';
             playerDiv.id = playerId;
-            playerDiv.innerHTML = `
-                <div class="betAmount"></div>
-                <div class="arrow-container">
-                    <div class="arrow-label">${playerInfo.value}</div>
-                    <div class="arrow"></div>
-                </div>
-                <div style="margin-bottom: 150px;"></div>
-                <div class="cards"></div>
-                <div class="profile">
-                    <img class="playerIcon" src="images/profile_icons/1.png" alt="">
-                    <div class="playerUsername">${playerInfo.username}</div>
-                </div>
-            `;
-            playersContainer.appendChild(playerDiv);
-            addCards(playerId, playerInfo.currentHand, true);
-            
 
-            localStorage.setItem('balance', playerInfo.bets.playerBalance);
-        } else {
-            // other players
-            const playerDiv = document.createElement('div');
-            playerDiv.className = 'player';
-            playerDiv.id = playerId;
-            playerDiv.innerHTML = `
+            if (playerId === clientPlayerId) {
+                // Current player's UI structure
+                playerDiv.innerHTML = `
+                    <div class="betAmount"></div>
+                    <div class="arrow-container">
+                        <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
+                        <div class="arrow"></div>
+                    </div>
+                    <div style="margin-bottom: 150px;"></div>
+                    <div class="cards"></div>
+                    <div class="profile">
+                        <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                        <div class="playerUsername">${playerInfo.username}</div>
+                    </div>
+                `;
+                // Save balance locally for the current player
+                localStorage.setItem('balance', playerInfo.bets.playerBalance)
+            }
+            else{
+                playerDiv.innerHTML = `
                 <div class="betAmount"></div>
                 <div class="cards"></div>
                 <div class="profile">
@@ -68,10 +66,32 @@ function loadGameElements(gameData) {
                     <div class="playerUsername">${playerInfo.username}</div>
                 </div>
             `;
+            }
             playersContainer.appendChild(playerDiv);
-            addCards(playerId, playerInfo.currentHand, false);
+        }
+
+        // Only update the player's hand if it has changed
+        if (!playerStates[playerId] || playerStates[playerId].currentHand !== playerInfo.currentHand) {
+            addCards(playerId, playerInfo.currentHand, playerId === clientPlayerId);
+
+            // update global obj
+            playerStates[playerId] = { currentHand: playerInfo.currentHand };
         }
     }
+
+    // change value of arrow denoting user's card Val
+    playerKeys.forEach(playerId => {
+        if (playerId == clientPlayerId){
+            const arrowValue = document.getElementById(`${playerId}_arrow`)
+            arrowValue.textContent = gameData[playerId].value
+
+            if (gameData[playerId].value >= 22){
+                arrowValue.textContent = 'Bust'
+            }
+
+        }
+    })
+
 }
 
 
@@ -88,14 +108,19 @@ function addCards(playerId, cardData, facedUpOrDown) {
         return;
     }
 
-    // Clear previous cards
-    cardContainer.innerHTML = '';
-    cardData = cardData.split(',');
+    // Ensure playerStates[playerId] and playerStates[playerId].currentHand are initialized
+    if (!playerStates[playerId]) {
+        playerStates[playerId] = { currentHand: [] };
+    }
+
+    // query global obj to add only new cards (for animation)
+    const newCards = cardData.split(',');
+    const cardsToAdd = newCards.filter(card => !playerStates[playerId].currentHand.includes(card));
 
     const promises = []; // Array to hold promises
 
     if (facedUpOrDown) {
-        cardData.forEach((card, index) => {
+        cardsToAdd.forEach((card, index) => {
             const promise = new Promise((resolve) => {
                 setTimeout(() => {
                     dealCard(playerId, card, true, cardContainer).then(resolve);
@@ -109,7 +134,7 @@ function addCards(playerId, cardData, facedUpOrDown) {
             cardFan(playerId);
         });
     } else {
-        cardData.forEach(() => {
+        cardsToAdd.forEach(() => {
             const cardImg = document.createElement('img');
             cardImg.src = `images/pixelCards/Back1.png`;
             cardImg.alt = `cardBackImage`;
@@ -229,13 +254,6 @@ function cardFan(playerId) {
         }
     });
 }
-
-
-
-
-
-
-
 
 
 
