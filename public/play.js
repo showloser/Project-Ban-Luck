@@ -96,6 +96,7 @@ function loadGameElements(gameData) {
 
 
 function addCards(playerId, cardData, facedUpOrDown) {
+    console.log('ran')
     const player = document.getElementById(playerId);
     if (!player) {
         window.alert(`Player with ID ${playerId} not found.`);
@@ -134,12 +135,11 @@ function addCards(playerId, cardData, facedUpOrDown) {
             cardFan(playerId);
         });
     } else {
-        cardsToAdd.forEach(() => {
-            const cardImg = document.createElement('img');
-            cardImg.src = `images/pixelCards/Back1.png`;
-            cardImg.alt = `cardBackImage`;
-            cardImg.classList.add('stacked');
-            cardContainer.appendChild(cardImg);
+        cardsToAdd.forEach((card, index) => {
+            // {facedUpOrDown} Set to false, (Back Image will appear instead)
+            setTimeout(() => {
+                dealCard(playerId, card, false, cardContainer);
+            }, index * 500); // Delay each card by 500ms
         });
         const emptyDiv = document.createElement('div');
         emptyDiv.classList.add('emptyDiv');
