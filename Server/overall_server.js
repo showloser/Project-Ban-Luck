@@ -825,9 +825,9 @@ async function configuringOrder(sessionId){
 }
 
 async function assignPlayerTurn(socket, sessionId){
+
   const fullOrder = await getFullOrder(sessionId)
   const currentOrder = await getCurrentOrder(sessionId)
-
 
   socket.emit('assignPlayerTurn', currentOrder, fullOrder)
 
@@ -848,13 +848,10 @@ async function assignPlayerTurn(socket, sessionId){
         io.to(sessionId).emit('loadExistingSession', sessionData)    
       }
     }
-    else{
-      socket.emit('error', 'Not your turn la jibai')
-      console.log('not ur turn jibai')
-    }
+    else{socket.emit('error', 'Not your turn la jibai')}
   })
 
-  socket.on('playerStand', async (sessionId, playerId) => {
+  socket.once('playerStand', async (sessionId, playerId) => {
     // Check if its the player's turn.
     if (playerId == currentOrder){
       // Check if currentPlayer is the last player
@@ -862,26 +859,97 @@ async function assignPlayerTurn(socket, sessionId){
         console.log('GAME END')
       }
       else{
-        console.log(currentOrder)
+        // change [currentOrder] to next player
         setCurrentOrder( sessionId, fullOrder[(fullOrder.indexOf(currentOrder)) + 1])
-        const test = await getCurrentOrder(sessionId)
-        console.log(test)
       }
-      
-
     } 
-    else{
-      socket.emit('error', 'Not your turn la jibai')
-      console.log('not ur turn jibai')
-    }
+    else{socket.emit('error', 'Not your turn la jibai')}
 
   })
-
-
-
-
-
 }
+
+
+
+
+// CHATGPT'S WAY OF GAMELOOP USING RECURSION.
+// async function assignPlayerTurn(socket, sessionId) {
+//   const fullOrder = await getFullOrder(sessionId);
+
+//   // Function to handle the player's turn
+//   async function handlePlayerTurn(currentOrderIndex) {
+//     const currentOrder = fullOrder[currentOrderIndex];
+
+//     // Emit event to notify the current player of their turn
+//     socket.emit('assignPlayerTurn', currentOrder, fullOrder);
+
+//     // Handle playerHit request
+//     socket.once('playerHit', async (sessionId, playerId) => {
+//       if (playerId === currentOrder) {
+//         let playerHand = (await getHand(sessionId, playerId)).split(',');
+
+//         if (playerHand.length >= 5) {
+//           socket.emit('error_card_length_5');
+//         } else {
+//           await playerHit(sessionId, playerId);
+//           let sessionData = await loadExistingSession(sessionId);
+//           io.to(sessionId).emit('loadExistingSession', sessionData);
+//         }
+//       } else {
+//         socket.emit('error', 'Not your turn la jibai');
+//       }
+
+//       // Move to the next player's turn
+//       handleNextPlayer(currentOrderIndex);
+//     });
+
+//     // Handle playerStand request
+//     socket.once('playerStand', async (sessionId, playerId) => {
+//       if (playerId === currentOrder) {
+//         if (currentOrderIndex === fullOrder.length - 1) {
+//           console.log('GAME END');
+//           // You can handle end of game logic here.
+//         } else {
+//           // Move to the next player's turn
+//           handleNextPlayer(currentOrderIndex + 1);
+//         }
+//       } else {
+//         socket.emit('error', 'Not your turn la jibai');
+//       }
+//     });
+//   }
+
+//   // Function to move to the next player or end the game
+//   function handleNextPlayer(nextOrderIndex) {
+//     if (nextOrderIndex < fullOrder.length) {
+//       handlePlayerTurn(nextOrderIndex);
+//     } else {
+//       console.log('All players have taken their turn.'); 
+//       // You can reset or end the round here.
+//     }
+//   }
+
+//   // Start with the first player's turn
+//   handlePlayerTurn(0);
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // CONNECTION LOGIC:
