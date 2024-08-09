@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
     resetTimeout();
 });
 
-
 function loadGameElements(gameData) {
     const playersContainer = document.getElementById('playersContainer');
 
@@ -94,9 +93,7 @@ function loadGameElements(gameData) {
 
 }
 
-
 function addCards(playerId, cardData, facedUpOrDown) {
-    console.log('ran')
     const player = document.getElementById(playerId);
     if (!player) {
         window.alert(`Player with ID ${playerId} not found.`);
@@ -146,8 +143,6 @@ function addCards(playerId, cardData, facedUpOrDown) {
         cardContainer.append(emptyDiv);
     }
 }
-
-
 
 function dealCard(playerId, card, facedUpOrDown, cardContainer) {
     return new Promise( (resolve) => {
@@ -215,7 +210,6 @@ function dealCard(playerId, card, facedUpOrDown, cardContainer) {
     })
 }
 
-
 function cardFan(playerId) {
     const player = document.getElementById(playerId);
     const playerCards = player.querySelector('.cards');
@@ -255,9 +249,6 @@ function cardFan(playerId) {
     });
 }
 
-
-
-
 function playerHit() {
     socket.emit('playerHit', sessionId, clientPlayerId) //send request to 'hit'
 
@@ -266,10 +257,42 @@ function playerHit() {
     })
 }
 
+function playerStand(){
+    socket.emit('playerStand', sessionId, clientPlayerId)
+}
+
+
+
 function restart(){
     socket.emit('restartGame', sessionId, clientPlayerId)
     location.reload()
 }
+
+
+
+
+
+
+function deactivateButtons(){
+    const hitButton = document.getElementById('hitButton')
+    const standButton = document.getElementById('standButton')
+
+    hitButton.style.opacity = 0.5
+    hitButton.style.pointerEvents = 'none'
+    standButton.style.opacity = 0.5
+    standButton.style.pointerEvents = 'none'
+}
+
+function activateButtons(){
+    const hitButton = document.getElementById('hitButton')
+    const standButton = document.getElementById('standButton')
+
+    hitButton.style.opacity = 1
+    hitButton.style.pointerEvents = 'auto'
+    standButton.style.opacity = 1
+    standButton.style.pointerEvents = 'auto'
+}
+
 
 // socket.io connections.
 const sessionId = localStorage.getItem('sessionId')
@@ -279,9 +302,25 @@ const socket = io(); // Connect to the server
 
 socket.on('connect', () => {
     socket.emit('sessionId', sessionId, clientPlayerId) // send sessionInfo to server
+    socket.on('error', (errorMsg) => {
+        console.log(errorMsg)
+        window.alert(errorMsg)
+    })
+
 
     socket.on('loadExistingSession', (player_data) => {
         loadGameElements(player_data)
+    })
+
+    socket.on('assignPlayerTurn', (currentOrder, fullOrder) => {
+        console.log(`currentOrder: ${currentOrder}`)
+        console.log(`fullOrder: ${fullOrder}`)
+        console.log('clientId: ' + clientPlayerId)
+        
+        if (clientPlayerId != currentOrder){
+            deactivateButtons()
+        }
+
     })
 })
 

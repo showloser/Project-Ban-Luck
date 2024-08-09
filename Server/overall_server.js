@@ -306,9 +306,43 @@ async function getPartyLeader(sessionId){
 
   } catch (error){
     console.log('[Error] {getPartyLeader}')
-    throw error  }
+    throw error  
+  }
 
 }
+
+async function getFullOrder(sessionId){
+  const db = getDatabase()
+
+  orderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Order`)
+  try{
+    const snapshot = await get(orderRef)
+    if (snapshot.exists()){
+      return snapshot.val()
+    }
+
+  } catch (error){
+    console.log('[Error] {getOrder}')
+    throw error
+  }
+}
+
+async function getCurrentOrder(sessionId){
+  const db = getDatabase()
+  currentOrderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/currentOrder`)
+  try{
+    const snapshot = await get(currentOrderRef)
+    if (snapshot.exists()){
+      return snapshot.val()
+    }
+
+  } catch (error){
+    console.log('[Error] {getOrder}')
+    throw error
+  }
+}
+
+
 
 // Firebase [WRITE]
 function createSession(username) {
@@ -341,7 +375,11 @@ function createSession(username) {
     Bets: {
       bettingTimerEnd: 'undefined',
       resetTimerBoolean: 'True'
-    }
+    },
+    Order: {
+      0 : 'undefined'
+    },
+    currentOrder: 'undefined'
   })
   
   set(playerRef, {
@@ -529,6 +567,40 @@ function writePlayerBets(sessionId, playerId, betAmount){
 
 }
 
+
+async function setOrderOfPlayers(sessionId){
+  // function will overwrite previous orders
+
+  orderObj = {}
+  const db = getDatabase()
+  try {
+      // get all current players
+    currentPlayers = await getPlayersId(sessionId) // returns an array of playerIds
+    
+    currentPlayers.forEach((playerId, index) => {
+      orderObj[index] = playerId
+    })
+
+    orderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Order`)
+    set(orderRef, orderObj)
+  } catch (error){
+    console.log('[Error] {setOrderOfPlayers}')
+    throw error
+  }
+}
+
+function setCurrentOrder(sessionId, playerId){
+  const db = getDatabase()
+  currentOrderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/currentOrder`)
+  try{
+    set(currentOrderRef, playerId)
+  } catch(error) {
+    console.log('[Error] {setCurrentOrder}')
+    throw error
+  }
+}
+
+
 // Firebase [GET]
 
 async function getPlayersId(sessionId){
@@ -711,10 +783,12 @@ async function getBettingPhaseInfo(sessionId){
   }
 }
 
-// other Functions:
+
+
+// OTHER FUNCTIONS:
 async function bettingPhase(socket, sessionId){
   // define time allowed for betting: (e.g. 15 seconds)
-  timeAllocated = 15
+  timeAllocated = 5
 
   // check if bettingPhaseTimer needs reset:
   overwriteBettingPhaseEndtime = await getBettingPhaseInfo(sessionId)
@@ -743,16 +817,75 @@ async function bettingPhase(socket, sessionId){
   })
 }
 
+async function configuringOrder(sessionId){
+  // set the current order of players and set the first player to be first turn.
+  await setOrderOfPlayers(sessionId)
+  const orders =  await getFullOrder(sessionId)
+  setCurrentOrder(sessionId, orders[0])
+}
+
+async function assignPlayerTurn(socket, sessionId){
+  const fullOrder = await getFullOrder(sessionId)
+  const currentOrder = await getCurrentOrder(sessionId)
 
 
+  socket.emit('assignPlayerTurn', currentOrder, fullOrder)
+
+  // Handle player[HIT] || player[STAND] REQUESTS
+  socket.on('playerHit', async (sessionId, playerId) => {
+    // Check if its the player's turn.
+    if (playerId === currentOrder){
+      // get current player's hand
+      let playerHand = (await getHand(sessionId, playerId)).split(',')
+
+      // check card amount (card amount cannot > 5)
+      if (playerHand.length >= 5){
+        socket.emit('error_card_length_5')
+      }
+      else{
+        await playerHit(sessionId, playerId)
+        let sessionData = await loadExistingSession(sessionId)
+        io.to(sessionId).emit('loadExistingSession', sessionData)    
+      }
+    }
+    else{
+      socket.emit('error', 'Not your turn la jibai')
+      console.log('not ur turn jibai')
+    }
+  })
+
+  socket.on('playerStand', async (sessionId, playerId) => {
+    // Check if its the player's turn.
+    if (playerId == currentOrder){
+      // Check if currentPlayer is the last player
+      if (currentOrder === fullOrder[-1]){
+        console.log('GAME END')
+      }
+      else{
+        console.log(currentOrder)
+        setCurrentOrder( sessionId, fullOrder[(fullOrder.indexOf(currentOrder)) + 1])
+        const test = await getCurrentOrder(sessionId)
+        console.log(test)
+      }
+      
+
+    } 
+    else{
+      socket.emit('error', 'Not your turn la jibai')
+      console.log('not ur turn jibai')
+    }
+
+  })
+
+
+
+
+
+}
 
 
 // CONNECTION LOGIC:
 // Handle 'connect' event
-
-
-
-
 io.on('connection', (socket) => {
 socket.on('sessionId', async (sessionId, playerId) => {
     const current_sessionId = sessionId
@@ -776,16 +909,24 @@ socket.on('sessionId', async (sessionId, playerId) => {
         const currentPlayers = await getPlayersId(sessionId)
 
         if (currentPlayers.length){ // [IMPT change back to >= 2]
-
-          // await bettingPhase(socket, sessionId);
-
           const currentGameStatus = await getGameStatus(sessionId)
           if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
-            
-            startGame(socket, sessionId, currentPlayers)
 
+
+            // [START OF GAME LOGIC]
+            await configuringOrder(sessionId)
+            await bettingPhase(socket, sessionId);
+            
             // chanage gameStatus to in progress            
             changeGameStatus(sessionId, 'inProgress')
+            startGame(socket, sessionId, currentPlayers)
+
+
+            assignPlayerTurn(socket, sessionId)
+
+
+
+
           }
           else{
             // console.log("[ Load Existing Session ]")
@@ -805,64 +946,67 @@ socket.on('sessionId', async (sessionId, playerId) => {
       }
     }
 
-  // Handle [Hit]  requests
-  socket.on('playerHit', async (sessionId, playerId) => {
+  // // Handle [Hit]  requests
+  // socket.on('playerHit', async (sessionId, playerId) => {
 
-    // get current player's hand
-    let playerHand = (await getHand(sessionId, playerId)).split(',')
+  //   // get current player's hand
+  //   let playerHand = (await getHand(sessionId, playerId)).split(',')
 
-    // check card amount (card amount cannot > 5)
-    if (playerHand.length >= 5){
-      socket.emit('error_card_length_5')
-    }
-    else{
-      await playerHit(sessionId, playerId)
-      let sessionData = await loadExistingSession(sessionId)
-      io.to(sessionId).emit('loadExistingSession', sessionData)    }
-  } )
+  //   // check card amount (card amount cannot > 5)
+  //   if (playerHand.length >= 5){
+  //     socket.emit('error_card_length_5')
+  //   }
+  //   else{
+  //     await playerHit(sessionId, playerId)
+  //     let sessionData = await loadExistingSession(sessionId)
+  //     io.to(sessionId).emit('loadExistingSession', sessionData)    }
+  // } )
 
-  // // Handle [Stand] requests
 
-  //  FAKE BANKER (TO BE CHANGED TO REAL BANKER -> WILL RUN ON DEFAULT IF PLAYER UNRESPONSIVE THOUGH)
-  socket.on('playerStand', async (sessionId, playerId) => {
-    while (true){
-      let current_value = await getValue(sessionId, bankerId)
-      if (current_value.length == 1){
-        // check for BanLuck/BanBan
-        if (typeof(current_value) == 'string' || current_value > 21){
-          break
-        }
-        else if (current_value <= 16){
-          await playerHit(sessionId, bankerId)
-        }
-        else{ // values between 17 and 21
-          break 
-        }
-      }
+
+
+  // // // Handle [Stand] requests
+
+  // //  FAKE BANKER (TO BE CHANGED TO REAL BANKER -> WILL RUN ON DEFAULT IF PLAYER UNRESPONSIVE THOUGH)
+  // socket.on('playerStand', async (sessionId, playerId) => {
+  //   while (true){
+  //     let current_value = await getValue(sessionId, bankerId)
+  //     if (current_value.length == 1){
+  //       // check for BanLuck/BanBan
+  //       if (typeof(current_value) == 'string' || current_value > 21){
+  //         break
+  //       }
+  //       else if (current_value <= 16){
+  //         await playerHit(sessionId, bankerId)
+  //       }
+  //       else{ // values between 17 and 21
+  //         break 
+  //       }
+  //     }
   
-      else{
-        if ((current_value[0] >= 17 && current_value[0] <= 21) || (current_value[1] >= 17 && current_value[1] <= 21)){
-          // if (current_value[0] > current_value[1]){
-          //   return current_value[0]
-          // } else{
-          //   return current_value[1]
-          // }
-          break
-        }
-        else if ((current_value[0] > 21) && (current_value[1] > 21)){
-          break
-        }
-        else{
-          await playerHit(sessionId, bankerId)
-        }
-      }
-    }
+  //     else{
+  //       if ((current_value[0] >= 17 && current_value[0] <= 21) || (current_value[1] >= 17 && current_value[1] <= 21)){
+  //         // if (current_value[0] > current_value[1]){
+  //         //   return current_value[0]
+  //         // } else{
+  //         //   return current_value[1]
+  //         // }
+  //         break
+  //       }
+  //       else if ((current_value[0] > 21) && (current_value[1] > 21)){
+  //         break
+  //       }
+  //       else{
+  //         await playerHit(sessionId, bankerId)
+  //       }
+  //     }
+  //   }
 
-    let sessionData = await loadExistingSession(sessionId)
-    socket.emit('loadExistingSession', sessionData)
+  //   let sessionData = await loadExistingSession(sessionId)
+  //   socket.emit('loadExistingSession', sessionData)
 
 
-  })
+  // })
 
 })
 
