@@ -320,6 +320,9 @@ socket.on('connect', () => {
         if (clientPlayerId != currentOrder){
             deactivateButtons()
         }
+        else{
+            activateButtons()
+        }
 
     })
 })

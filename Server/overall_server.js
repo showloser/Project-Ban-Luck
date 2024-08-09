@@ -869,6 +869,70 @@ async function assignPlayerTurn(socket, sessionId){
 }
 
 
+// function to handle player's turn using <recursion>
+async function assignPlayerTurn(socket, sessionId){
+  const fullOrder = await getFullOrder(sessionId)
+
+  // function to handle current player's turn
+  async function handleCurrentTurn(currentPlayerOrderIndex){
+    const currentOrder = fullOrder[currentPlayerOrderIndex];
+
+    // socket broadcast current client's turn
+    io.to(sessionId).emit('assignPlayerTurn', currentOrder, fullOrder)
+
+    // Handle player[HIT] || player[STAND] REQUESTS
+    socket.once('playerHit', async (sessionId, playerId) => {
+      if (playerId === currentOrder){
+        // get current player's hand
+        let playerHand = (await getHand(sessionId, playerId)).split(',')
+  
+        // check card amount (card amount cannot > 5)
+        if (playerHand.length >= 5){
+          socket.emit('error_card_length_5')
+        }
+        else{
+          await playerHit(sessionId, playerId)
+          let sessionData = await loadExistingSession(sessionId)
+          io.to(sessionId).emit('loadExistingSession', sessionData)    
+        }
+      }
+      else{socket.emit('error', 'Not your turn la jibai')}
+
+      // Move to the next player's turn
+      handleNextPlayer(currentPlayerOrderIndex);
+    })
+
+    socket.once('playerStand', (sessionId, playerId) => {
+      if (playerId === currentOrder){
+        // check if currentPlayer is last in order:
+          if (currentPlayerOrderIndex === fullOrder.length - 1) {
+            console.log('ROUND END')
+          }
+          else{
+            // Move to the next player's turn
+            handleNextPlayer(currentPlayerOrderIndex + 1);
+          }
+      }
+      else{socket.emit('error', 'Not your turn la jibai')}
+    })
+  }
+
+  function handleNextPlayer(nextPlayerOrderIndex){
+    if (nextPlayerOrderIndex < fullOrder.length){
+      handleCurrentTurn(nextPlayerOrderIndex)
+    }
+    else{
+      console.log('all players turn have ended')
+    }
+  }
+
+  // Start turn with first index from fullOrder (first player)
+  handleCurrentTurn(0)
+
+}
+
+
+
 
 
 // CHATGPT'S WAY OF GAMELOOP USING RECURSION.
