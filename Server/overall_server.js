@@ -589,11 +589,11 @@ async function setOrderOfPlayers(sessionId){
   }
 }
 
-function setCurrentOrder(sessionId, playerId){
+function setCurrentOrder(sessionId, order){
   const db = getDatabase()
   currentOrderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/currentOrder`)
   try{
-    set(currentOrderRef, playerId)
+    set(currentOrderRef, order)
   } catch(error) {
     console.log('[Error] {setCurrentOrder}')
     throw error
@@ -788,7 +788,7 @@ async function getBettingPhaseInfo(sessionId){
 // OTHER FUNCTIONS:
 async function bettingPhase(socket, sessionId){
   // define time allowed for betting: (e.g. 15 seconds)
-  timeAllocated = 5
+  timeAllocated = 1
 
   // check if bettingPhaseTimer needs reset:
   overwriteBettingPhaseEndtime = await getBettingPhaseInfo(sessionId)
@@ -821,51 +821,7 @@ async function configuringOrder(sessionId){
   // set the current order of players and set the first player to be first turn.
   await setOrderOfPlayers(sessionId)
   const orders =  await getFullOrder(sessionId)
-  setCurrentOrder(sessionId, orders[0])
-}
-
-async function assignPlayerTurn(socket, sessionId){
-
-  const fullOrder = await getFullOrder(sessionId)
-  const currentOrder = await getCurrentOrder(sessionId)
-
-  socket.emit('assignPlayerTurn', currentOrder, fullOrder)
-
-  // Handle player[HIT] || player[STAND] REQUESTS
-  socket.on('playerHit', async (sessionId, playerId) => {
-    // Check if its the player's turn.
-    if (playerId === currentOrder){
-      // get current player's hand
-      let playerHand = (await getHand(sessionId, playerId)).split(',')
-
-      // check card amount (card amount cannot > 5)
-      if (playerHand.length >= 5){
-        socket.emit('error_card_length_5')
-      }
-      else{
-        await playerHit(sessionId, playerId)
-        let sessionData = await loadExistingSession(sessionId)
-        io.to(sessionId).emit('loadExistingSession', sessionData)    
-      }
-    }
-    else{socket.emit('error', 'Not your turn la jibai')}
-  })
-
-  socket.once('playerStand', async (sessionId, playerId) => {
-    // Check if its the player's turn.
-    if (playerId == currentOrder){
-      // Check if currentPlayer is the last player
-      if (currentOrder === fullOrder[-1]){
-        console.log('GAME END')
-      }
-      else{
-        // change [currentOrder] to next player
-        setCurrentOrder( sessionId, fullOrder[(fullOrder.indexOf(currentOrder)) + 1])
-      }
-    } 
-    else{socket.emit('error', 'Not your turn la jibai')}
-
-  })
+  setCurrentOrder(sessionId, 0)
 }
 
 
@@ -874,15 +830,20 @@ async function assignPlayerTurn(socket, sessionId){
   const fullOrder = await getFullOrder(sessionId)
 
   // function to handle current player's turn
-  async function handleCurrentTurn(currentPlayerOrderIndex){
-    const currentOrder = fullOrder[currentPlayerOrderIndex];
-
+  async function handleCurrentTurn(){
+    // get currentPlayer's turn
+    const currentOrder = fullOrder[await getCurrentOrder(sessionId)]
+    
     // socket broadcast current client's turn
     io.to(sessionId).emit('assignPlayerTurn', currentOrder, fullOrder)
 
     // Handle player[HIT] || player[STAND] REQUESTS
     socket.once('playerHit', async (sessionId, playerId) => {
-      if (playerId === currentOrder){
+
+      // get the correct order from database
+      currentPlayerIdOrderIndex = await getCurrentOrder(sessionId)
+
+      if (playerId === fullOrder[currentPlayerIdOrderIndex]){
         // get current player's hand
         let playerHand = (await getHand(sessionId, playerId)).split(',')
   
@@ -896,121 +857,42 @@ async function assignPlayerTurn(socket, sessionId){
           io.to(sessionId).emit('loadExistingSession', sessionData)    
         }
       }
-      else{socket.emit('error', 'Not your turn la jibai')}
-
+      else{
+        socket.emit('error', 'The first IF')
+      }
       // Move to the next player's turn
-      handleNextPlayer(currentPlayerOrderIndex);
+      handleNextPlayer();
     })
 
-    socket.once('playerStand', (sessionId, playerId) => {
-      if (playerId === currentOrder){
+    socket.once('playerStand', async (sessionId, playerId) => {
+
+      // get the correct order from database
+      currentPlayerIdOrderIndex = await getCurrentOrder(sessionId)
+
+      if (playerId === fullOrder[currentPlayerIdOrderIndex]){
         // check if currentPlayer is last in order:
-          if (currentPlayerOrderIndex === fullOrder.length - 1) {
+          if (currentPlayerIdOrderIndex === fullOrder.length - 1) {
             console.log('ROUND END')
           }
           else{
-            // Move to the next player's turn
-            handleNextPlayer(currentPlayerOrderIndex + 1);
+            // Change order to next person
+            setCurrentOrder(sessionId, (currentPlayerIdOrderIndex + 1))
+            handleNextPlayer();
           }
       }
-      else{socket.emit('error', 'Not your turn la jibai')}
+      else{
+        socket.emit('error', 'The Second If')
+        console.log(currentPlayerOrderIndex)
+      }
     })
   }
 
-  function handleNextPlayer(nextPlayerOrderIndex){
-    if (nextPlayerOrderIndex < fullOrder.length){
-      handleCurrentTurn(nextPlayerOrderIndex)
-    }
-    else{
-      console.log('all players turn have ended')
-    }
+  async function handleNextPlayer(){
+    handleCurrentTurn()
   }
-
-  // Start turn with first index from fullOrder (first player)
-  handleCurrentTurn(0)
-
+  
+  handleCurrentTurn()
 }
-
-
-
-
-
-// CHATGPT'S WAY OF GAMELOOP USING RECURSION.
-// async function assignPlayerTurn(socket, sessionId) {
-//   const fullOrder = await getFullOrder(sessionId);
-
-//   // Function to handle the player's turn
-//   async function handlePlayerTurn(currentOrderIndex) {
-//     const currentOrder = fullOrder[currentOrderIndex];
-
-//     // Emit event to notify the current player of their turn
-//     socket.emit('assignPlayerTurn', currentOrder, fullOrder);
-
-//     // Handle playerHit request
-//     socket.once('playerHit', async (sessionId, playerId) => {
-//       if (playerId === currentOrder) {
-//         let playerHand = (await getHand(sessionId, playerId)).split(',');
-
-//         if (playerHand.length >= 5) {
-//           socket.emit('error_card_length_5');
-//         } else {
-//           await playerHit(sessionId, playerId);
-//           let sessionData = await loadExistingSession(sessionId);
-//           io.to(sessionId).emit('loadExistingSession', sessionData);
-//         }
-//       } else {
-//         socket.emit('error', 'Not your turn la jibai');
-//       }
-
-//       // Move to the next player's turn
-//       handleNextPlayer(currentOrderIndex);
-//     });
-
-//     // Handle playerStand request
-//     socket.once('playerStand', async (sessionId, playerId) => {
-//       if (playerId === currentOrder) {
-//         if (currentOrderIndex === fullOrder.length - 1) {
-//           console.log('GAME END');
-//           // You can handle end of game logic here.
-//         } else {
-//           // Move to the next player's turn
-//           handleNextPlayer(currentOrderIndex + 1);
-//         }
-//       } else {
-//         socket.emit('error', 'Not your turn la jibai');
-//       }
-//     });
-//   }
-
-//   // Function to move to the next player or end the game
-//   function handleNextPlayer(nextOrderIndex) {
-//     if (nextOrderIndex < fullOrder.length) {
-//       handlePlayerTurn(nextOrderIndex);
-//     } else {
-//       console.log('All players have taken their turn.'); 
-//       // You can reset or end the round here.
-//     }
-//   }
-
-//   // Start with the first player's turn
-//   handlePlayerTurn(0);
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1055,8 +937,6 @@ socket.on('sessionId', async (sessionId, playerId) => {
 
 
             assignPlayerTurn(socket, sessionId)
-
-
 
 
           }
