@@ -22,6 +22,65 @@ document.addEventListener('DOMContentLoaded', () => {
     resetTimeout();
 });
 
+
+function loadUI(bankerOrPlayer){
+    console.log(bankerOrPlayer)
+    const table = document.getElementById('table')
+    table.innerHTML = ''
+    const middleArea = document.createElement('div')
+    middleArea.className = 'middleArea'
+    middleArea.innerHTML = `
+        <div class="cardPile third-column">
+            <div class="cards">
+                <div id="cardPile"></div>
+                <img src="images/pixelCards/Back1.png">
+            </div>
+    `
+    const playerContainer = document.createElement('div')
+    playerContainer.className = 'players'
+    playerContainer.id = 'playersContainer'
+
+    if (bankerOrPlayer == 'player'){
+        const bankerContainer = document.createElement('div')
+        bankerContainer.className = 'bankerContainer'
+        bankerContainer.innerHTML = `
+        <div class='banker'>
+            <div class="bankerProfile">
+                <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
+                <div class="bankerUsername">theBanker</div>
+            </div>
+            <div class="cards"><img src="images/pixelCards/king_of_diamonds.png" alt=""></div>
+        </div>
+        `
+        
+        table.append(bankerContainer)
+        table.append(middleArea)
+        table.append(playerContainer)
+    }
+    else{
+        const bankerContainer = document.createElement('div')
+        bankerContainer.className = 'bankerContainer'
+        bankerContainer.innerHTML = `
+        <div class='banker'>
+            <div class="cards">
+                <img src="images/pixelCards/king_of_diamonds.png" alt="">
+            </div>
+            <div class="profile">
+                <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
+                <div class="bankerUsername">theBanker</div>
+            </div>
+        </div>
+        `
+        table.append(playerContainer)
+        table.append(middleArea)
+        table.append(bankerContainer)
+    }
+
+
+
+}
+
+
 function loadGameElements(gameData) {
     const playersContainer = document.getElementById('playersContainer');
 
@@ -31,6 +90,13 @@ function loadGameElements(gameData) {
     for (let i = 0; i < activePlayers; i++) {
         const playerId = playerKeys[i];
         const playerInfo = gameData[playerId];
+
+
+        // [IMPT] to fix? (instead of skipping data if 'banker' == 'true' maybe can remove it from list) [NEED TO DO THIS FROM SERVER SIDE TO PREVENT CHEATING]
+        if (playerInfo['banker'] == 'True'){
+            continue
+        }
+
 
         let playerDiv = document.getElementById(playerId);
         if (!playerDiv){
@@ -298,7 +364,10 @@ function activateButtons(){
 const sessionId = localStorage.getItem('sessionId')
 const clientPlayerId = localStorage.getItem('playerId')
 const username = localStorage.getItem('username')
+const role = localStorage.getItem('role')
 const socket = io(); // Connect to the server
+
+loadUI(role)
 
 socket.on('connect', () => {
     socket.emit('sessionId', sessionId, clientPlayerId) // send sessionInfo to server
@@ -309,13 +378,22 @@ socket.on('connect', () => {
 
 
     socket.on('loadExistingSession', (player_data) => {
-        loadGameElements(player_data)
+
+        if (player_data[clientPlayerId]['banker'] == 'True'){            
+            // loadUI('banker', player_data)
+            // console.log('loadUI(banker)')
+            loadGameElements(player_data)
+        }
+        else{
+            // loadUI('player', player_data)
+            // console.log('loadUI(player)')
+            loadGameElements(player_data)
+
+
+        }
     })
 
     socket.on('assignPlayerTurn', (currentOrder, fullOrder) => {
-        console.log(`currentOrder: ${currentOrder}`)
-        console.log(`fullOrder: ${fullOrder}`)
-        console.log('clientId: ' + clientPlayerId)
         
         if (clientPlayerId != currentOrder){
             deactivateButtons()

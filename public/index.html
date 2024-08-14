@@ -70,6 +70,7 @@
         },
 
         success: function (res){
+          console.log(res)
           // Store sessionId in local storage
           localStorage.setItem('sessionId', res.sessionId)
           // Store username in local storage
@@ -78,6 +79,8 @@
           localStorage.setItem('playerId', res.playerId)
           //Store sessionCode in local storage
           localStorage.setItem('sessionCode', res.sessionCode)
+          //Store role in local storage
+          localStorage.setItem('role', res.role)
 
           // Redirect user to poker.html
           window.location.href = `waiting.html?code=${res.sessionCode}`;
@@ -116,6 +119,8 @@
           localStorage.setItem('playerId', res.playerId)
           //Store sessionCode in local storage
           localStorage.setItem('sessionCode', sessionCode)
+          //Store role in local storage
+          localStorage.setItem('role', res.role)
 
           // Redirect user to poker.html
           window.location.href = `waiting.html?code=${sessionCode}`;

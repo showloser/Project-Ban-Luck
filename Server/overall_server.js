@@ -387,7 +387,7 @@ function createSession(username) {
     currentHand : 'undefined',
     value : 'undefined',
     endTurn: 'undefined',
-    banker: 'False',
+    banker: 'True',
     readyStatus: 'False',
     bets: {
       playerBalance: 1000,
@@ -395,7 +395,7 @@ function createSession(username) {
     }
   });
 
-  return { sessionId: sessionId, playerId: playerId, sessionCode: sessionCode };
+  return { sessionId: sessionId, playerId: playerId, sessionCode: sessionCode, role: 'banker'};
 }
 
 function writePlayerToSession(sessionId, username){
@@ -416,7 +416,7 @@ function writePlayerToSession(sessionId, username){
     }
   });
 
-  return { sessionId: sessionId, playerId: playerId};
+  return { sessionId: sessionId, playerId: playerId, role: 'player'};
 
 
 }
@@ -861,7 +861,8 @@ async function assignPlayerTurn(socket, sessionId){
         socket.emit('error', 'The first IF')
       }
       // Move to the next player's turn
-      handleNextPlayer();
+      // handleNextPlayer();
+      handleCurrentTurn()
     })
 
     socket.once('playerStand', async (sessionId, playerId) => {
@@ -877,7 +878,8 @@ async function assignPlayerTurn(socket, sessionId){
           else{
             // Change order to next person
             setCurrentOrder(sessionId, (currentPlayerIdOrderIndex + 1))
-            handleNextPlayer();
+            // handleNextPlayer();
+            handleCurrentTurn()
           }
       }
       else{
@@ -887,11 +889,17 @@ async function assignPlayerTurn(socket, sessionId){
     })
   }
 
-  async function handleNextPlayer(){
-    handleCurrentTurn()
-  }
+  // async function handleNextPlayer(){
+  //   handleCurrentTurn()
+  // }
   
   handleCurrentTurn()
+}
+
+
+
+function bankerTurn(){
+
 }
 
 
@@ -937,6 +945,8 @@ socket.on('sessionId', async (sessionId, playerId) => {
 
 
             assignPlayerTurn(socket, sessionId)
+
+            // function to end the game.
 
 
           }
@@ -1100,7 +1110,7 @@ app.post('/form_createRoom', (req, res) => {
     data = createSession(username)
 
     // send success response with generated session ID
-    res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId, sessionCode: data.sessionCode});
+    res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId, sessionCode: data.sessionCode, role: data.role});
   }
   catch(e){
     console.log(e)
@@ -1121,7 +1131,7 @@ app.post('/form_joinRoom', async (req, res) => {
       // add player into database
       data = writePlayerToSession(sessionId, username)
 
-      res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId, sessionCode: sessionCode});
+      res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId, sessionCode: sessionCode, role: data.role});
     }
     else{
       res.status(404).json({ success: false, message: "Session not found" });
