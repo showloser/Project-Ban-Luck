@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 function loadUI(bankerOrPlayer){
-    console.log(bankerOrPlayer)
     const table = document.getElementById('table')
     table.innerHTML = ''
     const middleArea = document.createElement('div')
