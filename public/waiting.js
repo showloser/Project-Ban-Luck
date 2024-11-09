@@ -6,6 +6,10 @@ const socket = io(); // Connect to the server
 
 document.getElementById('roomIdDisplay').textContent = sessionCode
 
+function copyText(){
+    navigator.clipboard.writeText(sessionCode)
+}
+
 function renderUI(sessionData){
     const playerContainer = document.getElementById('playerList')
     playerContainer.textContent = '' // clear previous player elements

@@ -123,3 +123,19 @@ footer p {
     border: 6px solid #39ff02;
     animation: readyAnimation 1s infinite;
 }
+
+#copyIcon{
+    height: 20px;
+    cursor: pointer;
+    margin: auto 0 auto 5px;
+}
+
+.wrapper_R{
+    display: flex;
+    justify-content: center;
+    margin-bottom: -10px;
+}
+
+#roomIdDisplay{
+    font-weight: bold;
+}

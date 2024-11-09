@@ -601,6 +601,87 @@ function setCurrentOrder(sessionId, order){
 }
 
 
+// DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
+// DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
+// DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
+
+async function showdown(sessionId){
+  // get all data:  (append to a json)
+  // 1) all players in session
+  // 2) get hands
+  // 3) banker or player
+  const data = await getAllInfo(sessionId)
+  
+  // console.log(allPlayers)
+
+  const outcome = {
+    winners: [],
+    losers: [],
+    draws: []
+  };
+
+
+  let bankerValue = null;
+  for (let key in data) {
+      if (data[key].banker === 'True') {
+          bankerValue = data[key].value[0];
+          break;
+      }
+  }
+
+  // Check each player's value against the banker's value
+  for (let key in data) {
+    const player = data[key];
+    const playerValue = player.value[0];
+
+    // Skip the banker in the results
+    if (player.banker === 'True') continue;
+
+    // Determine if the player wins, loses, or draws against the banker
+    if (playerValue > 21) {
+        outcome.losers.push(player.username); // Player busts
+    } else if (bankerValue > 21 || playerValue > bankerValue) {
+        outcome.winners.push(player.username); // Player wins
+    } else if (playerValue < bankerValue) {
+        outcome.losers.push(player.username); // Player loses
+    } else {
+        outcome.draws.push(player.username); // Player draws
+    }
+  }
+
+  // return outcome;
+  console.log(outcome)
+
+}
+
+
+
+
+
+
+async function getAllInfo(sessionId){
+  const db = getDatabase()
+  sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/players`)
+  try{
+    const snapshot = await get(sessionRef)
+    return snapshot.val()
+  } catch (error) {
+    console.log('[Error] {loadExistingSession}')
+    throw error
+  }
+}
+
+
+// DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
+// DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
+// DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
+
+
+
+
+// 
+
+
 // Firebase [GET]
 
 async function getPlayersId(sessionId){
@@ -874,6 +955,7 @@ async function assignPlayerTurn(socket, sessionId){
         // check if currentPlayer is last in order:
           if (currentPlayerIdOrderIndex === fullOrder.length - 1) {
             console.log('ROUND END')
+            await showdown(sessionId)
           }
           else{
             // Change order to next person
