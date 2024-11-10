@@ -41,16 +41,20 @@ function loadUI(bankerOrPlayer){
 
     if (bankerOrPlayer == 'player'){
         const bankerContainer = document.createElement('div')
-        bankerContainer.className = 'bankerContainer'
-        bankerContainer.innerHTML = `
-        <div class='banker'>
-            <div class="bankerProfile">
-                <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
-                <div class="bankerUsername">theBanker</div>
-            </div>
-            <div class="cards"><img src="images/pixelCards/king_of_diamonds.png" alt=""></div>
-        </div>
-        `
+        bankerContainer.className = 'bankers'
+        bankerContainer.id = 'bankerContainer'
+
+
+        // bankerContainer.className = 'bankerContainer'
+        // bankerContainer.innerHTML = `
+        // <div class='banker'>
+        //     <div class="bankerProfile">
+        //         <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
+        //         <div class="bankerUsername">theBanker</div>
+        //     </div>
+        //     <div class="cards"><img src="images/pixelCards/king_of_diamonds.png" alt=""></div>
+        // </div>
+        // `
         
         table.append(bankerContainer)
         table.append(middleArea)
@@ -58,18 +62,22 @@ function loadUI(bankerOrPlayer){
     }
     else{
         const bankerContainer = document.createElement('div')
-        bankerContainer.className = 'bankerContainer'
-        bankerContainer.innerHTML = `
-        <div class='banker'>
-            <div class="cards">
-                <img src="images/pixelCards/king_of_diamonds.png" alt="">
-            </div>
-            <div class="profile">
-                <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
-                <div class="bankerUsername">theBanker</div>
-            </div>
-        </div>
-        `
+        bankerContainer.className = 'bankers'
+        bankerContainer.id = 'bankerContainer'
+
+        
+
+        // bankerContainer.innerHTML = `
+        // <div class='banker'>
+        //     <div class="cards">
+        //         <img src="images/pixelCards/king_of_diamonds.png" alt="">
+        //     </div>
+        //     <div class="profile">
+        //         <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
+        //         <div class="bankerUsername">theBanker</div>
+        //     </div>
+        // </div>
+        // `
         table.append(playerContainer)
         table.append(middleArea)
         table.append(bankerContainer)
@@ -78,6 +86,207 @@ function loadUI(bankerOrPlayer){
 
 
 }
+
+
+
+
+
+
+function loadGameElements_NEW(gameData, role) {
+    if (role == 'player'){
+        const playersContainer = document.getElementById('playersContainer');
+        const bankerContainer = document.getElementById('bankerContainer')
+        const playerKeys = Object.keys(gameData);
+        const activePlayers = playerKeys.length;
+    
+        for (let i = 0; i < activePlayers; i++) {
+            const playerId = playerKeys[i];
+            const playerInfo = gameData[playerId];
+    
+    
+            // [IMPT] to fix? (instead of skipping data if 'banker' == 'true' maybe can remove it from list) [NEED TO DO THIS FROM SERVER SIDE TO PREVENT CHEATING]
+            if (playerInfo['banker'] == 'True'){
+                bankerDiv = document.createElement('div')
+                bankerDiv.className = 'banker'
+                bankerDiv.id = playerId
+                bankerDiv.innerHTML = `
+                <div class="cards"></div>
+                <div class="profile">
+                    <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                    <div class="playerUsername">${playerInfo.username}</div>
+                </div>
+                <div class="betAmount"></div>
+                `
+                bankerContainer.appendChild(bankerDiv)
+            }   
+            else{
+                let playerDiv = document.getElementById(playerId);
+                if (!playerDiv){
+                    playerDiv = document.createElement('div');
+                    playerDiv.className = 'player';
+                    playerDiv.id = playerId;
+        
+                    if (playerId === clientPlayerId) {
+                        // Current player's UI structure
+                        playerDiv.innerHTML = `
+                            <div class="betAmount"></div>
+                            <div class="arrow-container">
+                                <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
+                                <div class="arrow"></div>
+                            </div>
+                            <div style="margin-bottom: 150px;"></div>
+                            <div class="cards"></div>
+                            <div class="profile">
+                                <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                                <div class="playerUsername">${playerInfo.username}</div>
+                            </div>
+                        `;
+                        // Save balance locally for the current player
+                        localStorage.setItem('balance', playerInfo.bets.playerBalance)
+                    }
+                    else{
+                        playerDiv.innerHTML = `
+                        <div class="betAmount"></div>
+                        <div class="cards"></div>
+                        <div class="profile">
+                            <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                            <div class="playerUsername">${playerInfo.username}</div>
+                        </div>
+                    `;
+                    }
+                }
+                playersContainer.appendChild(playerDiv);
+            }
+
+    
+            // Only update the player's hand if it has changed
+            if (!playerStates[playerId] || playerStates[playerId].currentHand !== playerInfo.currentHand) {
+                addCards(playerId, playerInfo.currentHand, playerId === clientPlayerId);
+    
+                // update global obj
+                playerStates[playerId] = { currentHand: playerInfo.currentHand };
+            }
+        }
+
+        // change value of arrow denoting user's card Val
+        playerKeys.forEach(playerId => {
+            if (playerId == clientPlayerId){
+                const arrowValue = document.getElementById(`${playerId}_arrow`)
+                arrowValue.textContent = gameData[playerId].value
+    
+                if (gameData[playerId].value >= 22){
+                    arrowValue.textContent = 'Bust'
+                }
+            }
+        })   
+    }
+    else{
+        const playersContainer = document.getElementById('playersContainer');
+        const bankerContainer = document.getElementById('bankerContainer')
+        const playerKeys = Object.keys(gameData);
+        const activePlayers = playerKeys.length;
+    
+        for (let i = 0; i < activePlayers; i++) {
+            const playerId = playerKeys[i];
+            const playerInfo = gameData[playerId];
+    
+    
+            // [IMPT] to fix? (instead of skipping data if 'banker' == 'true' maybe can remove it from list) [NEED TO DO THIS FROM SERVER SIDE TO PREVENT CHEATING]
+            if (playerInfo['banker'] == 'True'){
+                bankerDiv = document.createElement('div')
+                bankerDiv.className = 'banker'
+                bankerDiv.id = playerId
+                bankerDiv.innerHTML = `
+                <div class="arrow-container">
+                    <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
+                    <div class="arrow"></div>
+                </div>
+                <div style="margin-bottom: 150px;"></div>
+                <div class="cards"></div>
+                <div class="profile">
+                    <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                    <div class="playerUsername">${playerInfo.username}</div>
+                </div>
+                `
+                bankerContainer.appendChild(bankerDiv)
+            }   
+            else{
+                let playerDiv = document.getElementById(playerId);
+                if (!playerDiv){
+                    playerDiv = document.createElement('div');
+                    playerDiv.className = 'player';
+                    playerDiv.id = playerId;
+
+                    playerDiv.innerHTML = `
+                    <div class="betAmount"></div>
+                    <div class="cards"></div>
+                    <div class="profile">
+                        <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                        <div class="playerUsername">${playerInfo.username}</div>
+                    </div>
+                `;
+                    
+                }
+                playersContainer.appendChild(playerDiv);
+            }
+
+    
+            // Only update the player's hand if it has changed
+            if (!playerStates[playerId] || playerStates[playerId].currentHand !== playerInfo.currentHand) {
+                addCards(playerId, playerInfo.currentHand, playerId === clientPlayerId);
+    
+                // update global obj
+                playerStates[playerId] = { currentHand: playerInfo.currentHand };
+            }
+        }
+
+        // change value of arrow denoting user's card Val
+        playerKeys.forEach(playerId => {
+            if (playerId == clientPlayerId){
+                const arrowValue = document.getElementById(`${playerId}_arrow`)
+                arrowValue.textContent = gameData[playerId].value
+    
+                if (gameData[playerId].value >= 22){
+                    arrowValue.textContent = 'Bust'
+                }
+            }
+        }) 
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 function loadGameElements(gameData) {
@@ -326,8 +535,6 @@ function playerStand(){
     socket.emit('playerStand', sessionId, clientPlayerId)
 }
 
-
-
 function restart(){
     socket.emit('restartGame', sessionId, clientPlayerId)
     location.reload()
@@ -379,14 +586,10 @@ socket.on('connect', () => {
     socket.on('loadExistingSession', (player_data) => {
 
         if (player_data[clientPlayerId]['banker'] == 'True'){            
-            // loadUI('banker', player_data)
-            // console.log('loadUI(banker)')
-            loadGameElements(player_data)
+            loadGameElements_NEW(player_data, role)
         }
         else{
-            // loadUI('player', player_data)
-            // console.log('loadUI(player)')
-            loadGameElements(player_data)
+            loadGameElements_NEW(player_data, role)
 
 
         }

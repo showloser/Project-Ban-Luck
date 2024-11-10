@@ -371,7 +371,6 @@ function createSession(username) {
     sessionCode: sessionCode,
     partyLeader: playerId,
     gameStatus: 'undefined',
-    winner: 'undefined',
     Bets: {
       bettingTimerEnd: 'undefined',
       resetTimerBoolean: 'True'
@@ -379,7 +378,12 @@ function createSession(username) {
     Order: {
       0 : 'undefined'
     },
-    currentOrder: 'undefined'
+    currentOrder: {
+      winners: 'undefined',
+      losers: 'undefined',
+      draws: 'undefined'
+    },
+    outcome: 'undefined'
   })
   
   set(playerRef, {
@@ -397,7 +401,6 @@ function createSession(username) {
 
   return { sessionId: sessionId, playerId: playerId, sessionCode: sessionCode, role: 'banker'};
 }
-
 function writePlayerToSession(sessionId, username){
   const db = getDatabase()
   const playerRef = push(ref(db, `/project-bunluck/sessions/${sessionId}/players`)); // Generate unique player ID
@@ -605,15 +608,21 @@ function setCurrentOrder(sessionId, order){
 // DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
 // DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
 
-async function showdown(sessionId){
+// There will be 3 different types of ways to 'EndGame'
+// 1) Normal open all (endGameOpenAll)
+// 2) Open single (banker Only)
+// 3) Open single (player)
+// 3) Open at the start (only for banban and banluck)
+// 4) WU LONG 5 Card
+
+
+async function endGameOpenAll(sessionId){
   // get all data:  (append to a json)
   // 1) all players in session
   // 2) get hands
   // 3) banker or player
   const data = await getAllInfo(sessionId)
   
-  // console.log(allPlayers)
-
   const outcome = {
     winners: [],
     losers: [],
@@ -638,20 +647,26 @@ async function showdown(sessionId){
     if (player.banker === 'True') continue;
 
     // Determine if the player wins, loses, or draws against the banker
-    if (playerValue > 21) {
-        outcome.losers.push(player.username); // Player busts
-    } else if (bankerValue > 21 || playerValue > bankerValue) {
-        outcome.winners.push(player.username); // Player wins
-    } else if (playerValue < bankerValue) {
-        outcome.losers.push(player.username); // Player loses
-    } else {
-        outcome.draws.push(player.username); // Player draws
+    if (playerValue > 21){
+      if (bankerValue > 21){
+        outcome.draws.push(key)
+      }
+      else{
+        outcome.losers.push(key)
+      }
+    }
+    else if ( bankerValue > 21 || playerValue <= 21 && playerValue > bankerValue){
+      outcome.winners.push(key)
+    }
+    else if (playerValue < bankerValue){
+      outcome.losers.push(key)
+    }
+    else { 
+      outcome.draws.push(key)
     }
   }
 
-  // return outcome;
-  console.log(outcome)
-
+  return outcome;
 }
 
 
@@ -670,6 +685,19 @@ async function getAllInfo(sessionId){
     throw error
   }
 }
+
+async function writeOutcome(sessionId, outcome){
+  const db = getDatabase()
+  sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/outcome`)
+  set(sessionRef, {
+    winners: outcome.winners,
+    losers: outcome.losers,
+    draws: outcome.draws
+  })
+
+}
+
+
 
 
 // DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
@@ -955,7 +983,13 @@ async function assignPlayerTurn(socket, sessionId){
         // check if currentPlayer is last in order:
           if (currentPlayerIdOrderIndex === fullOrder.length - 1) {
             console.log('ROUND END')
-            await showdown(sessionId)
+            const outcome = await endGameOpenAll(sessionId)
+            console.log(outcome)
+            writeOutcome(sessionId, outcome)
+
+
+
+
           }
           else{
             // Change order to next person
