@@ -106,18 +106,21 @@ function loadGameElements_NEW(gameData, role) {
     
             // [IMPT] to fix? (instead of skipping data if 'banker' == 'true' maybe can remove it from list) [NEED TO DO THIS FROM SERVER SIDE TO PREVENT CHEATING]
             if (playerInfo['banker'] == 'True'){
-                bankerDiv = document.createElement('div')
-                bankerDiv.className = 'banker'
-                bankerDiv.id = playerId
-                bankerDiv.innerHTML = `
-                <div class="cards"></div>
-                <div class="profile">
-                    <img class="playerIcon" src="images/profile_icons/1.png" alt="">
-                    <div class="playerUsername">${playerInfo.username}</div>
-                </div>
-                <div class="betAmount"></div>
-                `
-                bankerContainer.appendChild(bankerDiv)
+                let bankerDiv = document.getElementById(playerId)
+                if (!bankerDiv){
+                    bankerDiv = document.createElement('div')
+                    bankerDiv.className = 'banker'
+                    bankerDiv.id = playerId
+                    bankerDiv.innerHTML = `
+                    <div class="cards"></div>
+                    <div class="profile">
+                        <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                        <div class="playerUsername">${playerInfo.username}</div>
+                    </div>
+                    <div class="betAmount"></div>
+                    `
+                    bankerContainer.appendChild(bankerDiv)
+                } 
             }   
             else{
                 let playerDiv = document.getElementById(playerId);
@@ -193,22 +196,25 @@ function loadGameElements_NEW(gameData, role) {
     
             // [IMPT] to fix? (instead of skipping data if 'banker' == 'true' maybe can remove it from list) [NEED TO DO THIS FROM SERVER SIDE TO PREVENT CHEATING]
             if (playerInfo['banker'] == 'True'){
-                bankerDiv = document.createElement('div')
-                bankerDiv.className = 'banker'
-                bankerDiv.id = playerId
-                bankerDiv.innerHTML = `
-                <div class="arrow-container">
-                    <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
-                    <div class="arrow"></div>
-                </div>
-                <div style="margin-bottom: 150px;"></div>
-                <div class="cards"></div>
-                <div class="profile">
-                    <img class="playerIcon" src="images/profile_icons/1.png" alt="">
-                    <div class="playerUsername">${playerInfo.username}</div>
-                </div>
-                `
-                bankerContainer.appendChild(bankerDiv)
+                let bankerDiv = document.getElementById(playerId)
+                if (!bankerDiv){
+                    bankerDiv = document.createElement('div')
+                    bankerDiv.className = 'banker'
+                    bankerDiv.id = playerId
+                    bankerDiv.innerHTML = `
+                    <div class="arrow-container">
+                        <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
+                        <div class="arrow"></div>
+                    </div>
+                    <div style="margin-bottom: 150px;"></div>
+                    <div class="cards"></div>
+                    <div class="profile">
+                        <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                        <div class="playerUsername">${playerInfo.username}</div>
+                    </div>
+                    `
+                    bankerContainer.appendChild(bankerDiv)
+                }
             }   
             else{
                 let playerDiv = document.getElementById(playerId);
