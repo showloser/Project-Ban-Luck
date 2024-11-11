@@ -987,9 +987,6 @@ async function assignPlayerTurn(socket, sessionId){
             console.log(outcome)
             writeOutcome(sessionId, outcome)
 
-
-
-
           }
           else{
             // Change order to next person
@@ -1062,7 +1059,9 @@ socket.on('sessionId', async (sessionId, playerId) => {
 
             assignPlayerTurn(socket, sessionId)
 
+
             // function to end the game.
+
 
 
           }
