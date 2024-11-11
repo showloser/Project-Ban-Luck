@@ -1,1 +1,9 @@
-1. Initial Error with card deals (4 card)
+1. Initial Error with card deals (4 card) [DONE]
+2. Add in chat functionality. --> send all data to server. server will echo back. For connected users: append the echo-ed message. For "Load existing": fetch all data
+  // improvements to make:
+  // a. if client is connected: only send the new message [DONE]
+  // b. if client is new, send the latest 50 message
+  // c. every 10mins, refresh the chat (delete everything except the latest 50 message) 
+
+3. Add in chat functionality. --> send data to database and display. Limit to only 50 messages.
+4. Add in feature. Instead of using just "join room", allows user to join via link. (e.g. 127.0.0.1:8889/waiting.html?code=IFB49J)

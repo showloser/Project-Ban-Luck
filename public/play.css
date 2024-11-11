@@ -41,6 +41,10 @@ body {
     overflow-y: auto;
 }
 
+.chatWrapper{
+    display: flex;
+}
+
 .chat-input {
     border: none;
     padding: 10px;
@@ -53,6 +57,11 @@ body {
 
 .chat-input:focus{
     outline: none;
+}
+
+.chatButton{
+    padding: 10px 15px;
+    cursor: pointer;
 }
 /* Chat [End]*/
 

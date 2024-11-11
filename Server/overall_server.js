@@ -1047,13 +1047,14 @@ socket.on('sessionId', async (sessionId, playerId) => {
           const currentGameStatus = await getGameStatus(sessionId)
           if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
 
+            // chanage gameStatus to in progress            
+            changeGameStatus(sessionId, 'inProgress')
 
             // [START OF GAME LOGIC]
             await configuringOrder(sessionId)
             await bettingPhase(socket, sessionId);
             
-            // chanage gameStatus to in progress            
-            changeGameStatus(sessionId, 'inProgress')
+
             startGame(socket, sessionId, currentPlayers)
 
 
@@ -1061,8 +1062,6 @@ socket.on('sessionId', async (sessionId, playerId) => {
 
 
             // function to end the game.
-
-
 
           }
           else{
@@ -1157,10 +1156,9 @@ socket.on('chat', async (sessionId, playerId, username, chatData) => {
   // send this data to everyone (including sender) [!! Only sends the new message !!]
   // improvements to make:
   // 1) if client is connected: only send the new message
-  // 2) if client is new, send the latest 20 message
-  // 3) every 10mins, refresh the chat (delete everything except the latest 20 message) 
-  socket.emit('chat_broadcast', sanitizedUsername, sanitizedChatData)
-
+  // 2) if client is new, send the latest 50 message
+  // 3) every 10mins, refresh the chat (delete everything except the latest 50 message) 
+  io.to(sessionId).emit('chatBroadcast', sanitizedUsername, sanitizedChatData)
 })
 
 
@@ -1268,7 +1266,7 @@ app.post('/form_joinRoom', async (req, res) => {
 
 
 // Start the server
-const PORT = process.env.PORT || 8888;
+const PORT = process.env.PORT || 8889;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
