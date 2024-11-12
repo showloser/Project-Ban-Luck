@@ -150,27 +150,6 @@ sample_data1_session3 = {
   end_turn : true 
 }
 
-// DATABASE FUNCTION APIS
-// get_all_data(db)
-// update_data_in_session(db, sample_data1_session1)
-// update_data_in_session(db, sample_data2_session1)
-// update_data_in_session(db, sample_data1_session2)
-// update_data_in_session(db, sample_data2_session2)
-// update_data_in_session(db, sample_data3_session2)
-// update_data_in_session(db, sample_data1_session3)
-
-
-
-// delete_all_data_in_session(db,'bc48c1b3e2454adf0bd8b9c23f2bc125742b7a57377c3f8a36fb36cb9753c870')
-
-// get_data_from_session_userid(db, '1cc4a70c68d7acd59a151eee752c0e17ff4b4e2fd96e12fa6645a8771f2675de', '-NveF1uGN7j7Iar92N6r')
-
-
-
-
-
-
-
 
 
 //  export functions
