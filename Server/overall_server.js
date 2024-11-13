@@ -47,7 +47,7 @@ const { initializeApp, SDK_VERSION } = require('firebase/app');
 const { getDatabase, ref, get, child, set, update, remove, push, onValue } = require('firebase/database');
 const { create } = require('domain');
 const { type } = require('os');
-const { error, timeStamp } = require('console');
+const { error, timeStamp, clear } = require('console');
 const { randomBytes } = require('crypto');
 const { read } = require('fs');
 const { promises } = require('dns');
@@ -697,7 +697,29 @@ async function writeOutcome(sessionId, outcome){
 
 }
 
+function rewriteDatabaseGameEnd(sessionId){
+  const db = getDatabase()
+  sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}`)
+}
 
+async function clearPlayerHands(sessionId){
+  // get all current info
+  const oldData = await getAllInfo(sessionId)
+
+  console.log(oldData)
+}
+
+
+async function endGame(sessionId){
+  // reshuffle deck
+  const deck = initializeDeck()
+
+  // rewrite new deck to db
+  writeDeckToDatabase(sessionId, deck)
+
+
+
+}
 
 
 // DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
@@ -948,7 +970,6 @@ async function assignPlayerTurn(socket, sessionId){
 
     // Handle player[HIT] || player[STAND] REQUESTS
     socket.once('playerHit', async (sessionId, playerId) => {
-
       // get the correct order from database
       currentPlayerIdOrderIndex = await getCurrentOrder(sessionId)
 
@@ -970,12 +991,10 @@ async function assignPlayerTurn(socket, sessionId){
         socket.emit('error', 'The first IF')
       }
       // Move to the next player's turn
-      // handleNextPlayer();
       handleCurrentTurn()
     })
 
     socket.once('playerStand', async (sessionId, playerId) => {
-
       // get the correct order from database
       currentPlayerIdOrderIndex = await getCurrentOrder(sessionId)
 
@@ -986,6 +1005,10 @@ async function assignPlayerTurn(socket, sessionId){
             const outcome = await endGameOpenAll(sessionId)
             console.log(outcome)
             writeOutcome(sessionId, outcome)
+
+
+            // function to end game
+            endGame(sessionId)
 
           }
           else{
@@ -1060,7 +1083,6 @@ socket.on('sessionId', async (sessionId, playerId) => {
 
             assignPlayerTurn(socket, sessionId)
 
-
             // function to end the game.
 
           }
@@ -1079,6 +1101,8 @@ socket.on('sessionId', async (sessionId, playerId) => {
         console.log("[ Load Existing Session ]")
         let sessionData = await loadExistingSession(sessionId)
         socket.emit('loadExistingSession', sessionData)
+        assignPlayerTurn(socket, sessionId)
+
       }
     }
 
@@ -1260,7 +1284,7 @@ app.post('/form_joinRoom', async (req, res) => {
 
 
 
-
+clearPlayerHands('-OB__PgF-7_JKnMeQmIw')
 
 
 

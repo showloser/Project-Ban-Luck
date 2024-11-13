@@ -3,7 +3,10 @@
   // improvements to make:
   // a. if client is connected: only send the new message [DONE]
   // b. if client is new, send the latest 50 message
-  // c. every 10mins, refresh the chat (delete everything except the latest 50 message) 
+  // c. every 10mins, refresh the chat (delete everything except the latest 50 message)git  
 
 3. Add in chat functionality. --> send data to database and display. Limit to only 50 messages.
 4. Add in feature. Instead of using just "join room", allows user to join via link. (e.g. 127.0.0.1:8889/waiting.html?code=IFB49J)
+5. add in game end logic [In Progress]
+  -> FIX SOCKET ISSUE. MULTIPLE INSTANCES CURRENTLY SENDING REQUEST
+  -> [In Progress] basically, i want you to clear the currentHand and update it into the database.
