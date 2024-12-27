@@ -274,80 +274,80 @@ function loadGameElements_NEW(gameData, role) {
 function loadGameElements(gameData) {
     const playersContainer = document.getElementById('playersContainer');
 
-//     const playerKeys = Object.keys(gameData);
-//     const activePlayers = playerKeys.length;
+    const playerKeys = Object.keys(gameData);
+    const activePlayers = playerKeys.length;
 
-//     for (let i = 0; i < activePlayers; i++) {
-//         const playerId = playerKeys[i];
-//         const playerInfo = gameData[playerId];
-
-
-//         // [IMPT] to fix? (instead of skipping data if 'banker' == 'true' maybe can remove it from list) [NEED TO DO THIS FROM SERVER SIDE TO PREVENT CHEATING]
-//         if (playerInfo['banker'] == 'True'){
-//             continue
-//         }
+    for (let i = 0; i < activePlayers; i++) {
+        const playerId = playerKeys[i];
+        const playerInfo = gameData[playerId];
 
 
-//         let playerDiv = document.getElementById(playerId);
-//         if (!playerDiv){
-//             playerDiv = document.createElement('div');
-//             playerDiv.className = 'player';
-//             playerDiv.id = playerId;
+        // [IMPT] to fix? (instead of skipping data if 'banker' == 'true' maybe can remove it from list) [NEED TO DO THIS FROM SERVER SIDE TO PREVENT CHEATING]
+        if (playerInfo['banker'] == 'True'){
+            continue
+        }
 
-//             if (playerId === clientPlayerId) {
-//                 // Current player's UI structure
-//                 playerDiv.innerHTML = `
-//                     <div class="betAmount"></div>
-//                     <div class="arrow-container">
-//                         <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
-//                         <div class="arrow"></div>
-//                     </div>
-//                     <div style="margin-bottom: 150px;"></div>
-//                     <div class="cards"></div>
-//                     <div class="profile">
-//                         <img class="playerIcon" src="images/profile_icons/1.png" alt="">
-//                         <div class="playerUsername">${playerInfo.username}</div>
-//                     </div>
-//                 `;
-//                 // Save balance locally for the current player
-//                 localStorage.setItem('balance', playerInfo.bets.playerBalance)
-//             }
-//             else{
-//                 playerDiv.innerHTML = `
-//                 <div class="betAmount"></div>
-//                 <div class="cards"></div>
-//                 <div class="profile">
-//                     <img class="playerIcon" src="images/profile_icons/1.png" alt="">
-//                     <div class="playerUsername">${playerInfo.username}</div>
-//                 </div>
-//             `;
-//             }
-//             playersContainer.appendChild(playerDiv);
-//         }
 
-//         // Only update the player's hand if it has changed
-//         if (!playerStates[playerId] || playerStates[playerId].currentHand !== playerInfo.currentHand) {
-//             addCards(playerId, playerInfo.currentHand, playerId === clientPlayerId);
+        let playerDiv = document.getElementById(playerId);
+        if (!playerDiv){
+            playerDiv = document.createElement('div');
+            playerDiv.className = 'player';
+            playerDiv.id = playerId;
 
-//             // update global obj
-//             playerStates[playerId] = { currentHand: playerInfo.currentHand };
-//         }
-//     }
+            if (playerId === clientPlayerId) {
+                // Current player's UI structure
+                playerDiv.innerHTML = `
+                    <div class="betAmount"></div>
+                    <div class="arrow-container">
+                        <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
+                        <div class="arrow"></div>
+                    </div>
+                    <div style="margin-bottom: 150px;"></div>
+                    <div class="cards"></div>
+                    <div class="profile">
+                        <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                        <div class="playerUsername">${playerInfo.username}</div>
+                    </div>
+                `;
+                // Save balance locally for the current player
+                localStorage.setItem('balance', playerInfo.bets.playerBalance)
+            }
+            else{
+                playerDiv.innerHTML = `
+                <div class="betAmount"></div>
+                <div class="cards"></div>
+                <div class="profile">
+                    <img class="playerIcon" src="images/profile_icons/1.png" alt="">
+                    <div class="playerUsername">${playerInfo.username}</div>
+                </div>
+            `;
+            }
+            playersContainer.appendChild(playerDiv);
+        }
 
-//     // change value of arrow denoting user's card Val
-//     playerKeys.forEach(playerId => {
-//         if (playerId == clientPlayerId){
-//             const arrowValue = document.getElementById(`${playerId}_arrow`)
-//             arrowValue.textContent = gameData[playerId].value
+        // Only update the player's hand if it has changed
+        if (!playerStates[playerId] || playerStates[playerId].currentHand !== playerInfo.currentHand) {
+            addCards(playerId, playerInfo.currentHand, playerId === clientPlayerId);
 
-//             if (gameData[playerId].value >= 22){
-//                 arrowValue.textContent = 'Bust'
-//             }
+            // update global obj
+            playerStates[playerId] = { currentHand: playerInfo.currentHand };
+        }
+    }
 
-//         }
-//     })
+    // change value of arrow denoting user's card Val
+    playerKeys.forEach(playerId => {
+        if (playerId == clientPlayerId){
+            const arrowValue = document.getElementById(`${playerId}_arrow`)
+            arrowValue.textContent = gameData[playerId].value
 
-// }
+            if (gameData[playerId].value >= 22){
+                arrowValue.textContent = 'Bust'
+            }
+
+        }
+    })
+
+}
 
 function addCards(playerId, cardData, facedUpOrDown) {
     const player = document.getElementById(playerId);
