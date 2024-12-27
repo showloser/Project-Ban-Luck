@@ -575,44 +575,12 @@ function GameEndCardAnimation(){
         // Apply the animation
         card.style.transition = 'transform 1s ease';
         card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+        // [IMPT]THIS IS FUCKING WRONG THE deltaX is wrong
+        
+
     })
 
-
-    // if (!deckContainer || cards.length === 0) return;
-
-    // cards.forEach((card, index) => {
-    //     // Get the position of the card and deck container
-    //     const cardRect = card.getBoundingClientRect();
-    //     const deckRect = deckContainer.getBoundingClientRect();
-
-    //     // Calculate translation values
-    //     const translateX = deckRect.left - cardRect.left;
-    //     const translateY = deckRect.top - cardRect.top;
-
-    //     // Create a clone of the card for animation
-    //     const animatedCard = card.cloneNode(true);
-    //     animatedCard.style.position = 'fixed';
-    //     animatedCard.style.top = `${cardRect.top}px`;
-    //     animatedCard.style.left = `${cardRect.left}px`;
-    //     animatedCard.style.transition = 'transform 0.6s ease, opacity 0.6s ease';
-    //     animatedCard.style.zIndex = '1000';
-    //     document.body.appendChild(animatedCard);
-
-    //     // Trigger the animation with a slight delay for each card
-    //     setTimeout(() => {
-    //         animatedCard.style.transform = `translate(${translateX}px, ${translateY}px)`;
-    //         animatedCard.style.opacity = '0';
-    //     }, index * 200);
-
-    //     // Cleanup after animation
-    //     animatedCard.addEventListener('transitionend', () => {
-    //         animatedCard.remove();
-    //         if (index === cards.length - 1) {
-    //             // Remove cards from player container once all animations are complete
-    //             playerContainer.innerHTML = '';
-    //         }
-    //     });
-    // });
 }
 
 
