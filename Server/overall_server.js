@@ -47,7 +47,7 @@ const { initializeApp, SDK_VERSION } = require('firebase/app');
 const { getDatabase, ref, get, child, set, update, remove, push, onValue } = require('firebase/database');
 const { create } = require('domain');
 const { type } = require('os');
-const { error, timeStamp } = require('console');
+const { error, timeStamp, clear } = require('console');
 const { randomBytes } = require('crypto');
 const { read } = require('fs');
 const { promises } = require('dns');
@@ -697,7 +697,29 @@ async function writeOutcome(sessionId, outcome){
 
 }
 
+function rewriteDatabaseGameEnd(sessionId){
+  const db = getDatabase()
+  sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}`)
+}
 
+async function clearPlayerHands(sessionId){
+  // get all current info
+  const oldData = await getAllInfo(sessionId)
+
+  console.log(oldData)
+}
+
+
+async function endGame(sessionId){
+  // reshuffle deck
+  const deck = initializeDeck()
+
+  // rewrite new deck to db
+  writeDeckToDatabase(sessionId, deck)
+
+
+
+}
 
 
 // DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
@@ -948,7 +970,6 @@ async function assignPlayerTurn(socket, sessionId){
 
     // Handle player[HIT] || player[STAND] REQUESTS
     socket.once('playerHit', async (sessionId, playerId) => {
-
       // get the correct order from database
       currentPlayerIdOrderIndex = await getCurrentOrder(sessionId)
 
@@ -970,12 +991,10 @@ async function assignPlayerTurn(socket, sessionId){
         socket.emit('error', 'The first IF')
       }
       // Move to the next player's turn
-      // handleNextPlayer();
       handleCurrentTurn()
     })
 
     socket.once('playerStand', async (sessionId, playerId) => {
-
       // get the correct order from database
       currentPlayerIdOrderIndex = await getCurrentOrder(sessionId)
 
@@ -1057,6 +1076,8 @@ socket.on('sessionId', async (sessionId, playerId) => {
           const currentGameStatus = await getGameStatus(sessionId)
           if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
 
+            // chanage gameStatus to in progress            
+            changeGameStatus(sessionId, 'inProgress')
 
             // [START OF GAME LOGIC]
             await configuringOrder(sessionId)
@@ -1076,7 +1097,6 @@ socket.on('sessionId', async (sessionId, playerId) => {
             assignPlayerTurn(socket, sessionId)
 
             // function to end the game.
-
 
           }
           else{
@@ -1173,10 +1193,9 @@ socket.on('chat', async (sessionId, playerId, username, chatData) => {
   // send this data to everyone (including sender) [!! Only sends the new message !!]
   // improvements to make:
   // 1) if client is connected: only send the new message
-  // 2) if client is new, send the latest 20 message
-  // 3) every 10mins, refresh the chat (delete everything except the latest 20 message) 
-  socket.emit('chat_broadcast', sanitizedUsername, sanitizedChatData)
-
+  // 2) if client is new, send the latest 50 message
+  // 3) every 10mins, refresh the chat (delete everything except the latest 50 message) 
+  io.to(sessionId).emit('chatBroadcast', sanitizedUsername, sanitizedChatData)
 })
 
 
@@ -1278,13 +1297,13 @@ app.post('/form_joinRoom', async (req, res) => {
 
 
 
-
+clearPlayerHands('-OB__PgF-7_JKnMeQmIw')
 
 
 
 
 // Start the server
-const PORT = process.env.PORT || 8888;
+const PORT = process.env.PORT || 8889;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
