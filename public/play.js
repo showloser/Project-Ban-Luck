@@ -271,30 +271,6 @@ function loadGameElements_NEW(gameData, role) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function loadGameElements(gameData) {
     const playersContainer = document.getElementById('playersContainer');
 
@@ -530,6 +506,7 @@ function cardFan(playerId) {
 }
 
 function playerHit() {
+    console.log('hit')
     socket.emit('playerHit', sessionId, clientPlayerId) //send request to 'hit'
 
     socket.on('error_card_length_5', () => {
@@ -538,6 +515,7 @@ function playerHit() {
 }
 
 function playerStand(){
+    console.log('stand')
     socket.emit('playerStand', sessionId, clientPlayerId)
 }
 
@@ -546,6 +524,96 @@ function restart(){
     location.reload()
 }
 
+
+
+
+
+// new
+
+function gameEnd(){
+    GameEndCardAnimation()
+}
+
+function GameEndCardAnimation(){
+    const bankerContainer = document.getElementById('bankerContainer')
+    const bankerCards = bankerContainer.querySelectorAll('.currentPlayerImgElement')
+
+
+    const playerContainer = document.getElementById('playersContainer');
+    const playerCards = playerContainer.querySelectorAll('.currentPlayerImgElement');
+
+    const deck = document.getElementById('cardPile');
+
+
+
+    bankerCards.forEach((card) => {
+        // get each card position
+        const cardRect = card.getBoundingClientRect();
+        const deckRect = deck.getBoundingClientRect();
+
+        // Calculate the distance to move the card to the deck
+        const deltaX = (deckRect.left + deckRect.width / 2) - (cardRect.left + cardRect.width / 2);
+        const deltaY = deckRect.top - cardRect.top + (deckRect.height / 2) - (cardRect.height / 2);
+
+
+        // Apply the animation
+        card.style.transition = 'transform 1s ease';
+        card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+
+    })
+    playerCards.forEach((card) => {
+        // get each card position
+        const cardRect = card.getBoundingClientRect();
+        const deckRect = deck.getBoundingClientRect();
+
+        // Calculate the distance to move the card to the deck
+        const deltaX = (deckRect.left + deckRect.width / 2) - (cardRect.left + cardRect.width / 2);
+        const deltaY = deckRect.top - cardRect.top + (deckRect.height / 2) - (cardRect.height / 2);
+
+
+        // Apply the animation
+        card.style.transition = 'transform 1s ease';
+        card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+    })
+
+
+    // if (!deckContainer || cards.length === 0) return;
+
+    // cards.forEach((card, index) => {
+    //     // Get the position of the card and deck container
+    //     const cardRect = card.getBoundingClientRect();
+    //     const deckRect = deckContainer.getBoundingClientRect();
+
+    //     // Calculate translation values
+    //     const translateX = deckRect.left - cardRect.left;
+    //     const translateY = deckRect.top - cardRect.top;
+
+    //     // Create a clone of the card for animation
+    //     const animatedCard = card.cloneNode(true);
+    //     animatedCard.style.position = 'fixed';
+    //     animatedCard.style.top = `${cardRect.top}px`;
+    //     animatedCard.style.left = `${cardRect.left}px`;
+    //     animatedCard.style.transition = 'transform 0.6s ease, opacity 0.6s ease';
+    //     animatedCard.style.zIndex = '1000';
+    //     document.body.appendChild(animatedCard);
+
+    //     // Trigger the animation with a slight delay for each card
+    //     setTimeout(() => {
+    //         animatedCard.style.transform = `translate(${translateX}px, ${translateY}px)`;
+    //         animatedCard.style.opacity = '0';
+    //     }, index * 200);
+
+    //     // Cleanup after animation
+    //     animatedCard.addEventListener('transitionend', () => {
+    //         animatedCard.remove();
+    //         if (index === cards.length - 1) {
+    //             // Remove cards from player container once all animations are complete
+    //             playerContainer.innerHTML = '';
+    //         }
+    //     });
+    // });
+}
 
 
 
@@ -611,5 +679,13 @@ socket.on('connect', () => {
         }
 
     })
+
+    socket.on('gameEnd' , () => {
+        window.alert('Round has Ended!')
+        //function to move cards back to deck
+        // GameEndCardAnimation()
+    })
 })
+
+
 

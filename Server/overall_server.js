@@ -984,10 +984,8 @@ async function assignPlayerTurn(socket, sessionId){
           if (currentPlayerIdOrderIndex === fullOrder.length - 1) {
             console.log('ROUND END')
             const outcome = await endGameOpenAll(sessionId)
-            console.log(outcome)
             writeOutcome(sessionId, outcome)
-
-
+            endGame(socket, sessionId, outcome)
 
 
           }
@@ -1014,8 +1012,17 @@ async function assignPlayerTurn(socket, sessionId){
 
 
 
-function bankerTurn(){
+function endGame(socket, sessionId, outcome){
+  // change gameState to 'completed'
+  changeGameStatus(sessionId, 'completed')
 
+  // clear all backend data for currentGame
+  //  TO DO
+  console.log(`Outcome: ${outcome}`)
+
+  // send socket to all users for endGame
+  io.to(sessionId).emit('gameEnd')
+  console.log('[GAME END]')
 }
 
 
@@ -1046,7 +1053,7 @@ socket.on('sessionId', async (sessionId, playerId) => {
         // wait until minimum of 2 players AND all players are ready
         const currentPlayers = await getPlayersId(sessionId)
 
-        if (currentPlayers.length){ // [IMPT change back to >= 2]
+        if (currentPlayers.length >= 2){ 
           const currentGameStatus = await getGameStatus(sessionId)
           if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
 
@@ -1054,11 +1061,17 @@ socket.on('sessionId', async (sessionId, playerId) => {
             // [START OF GAME LOGIC]
             await configuringOrder(sessionId)
             await bettingPhase(socket, sessionId);
-            
-            // chanage gameStatus to in progress            
-            changeGameStatus(sessionId, 'inProgress')
-            startGame(socket, sessionId, currentPlayers)
 
+            
+            const gameStatus = await getGameStatus(sessionId)
+
+            if (gameStatus != 'inProgress'){
+              // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
+              startGame(socket, sessionId, currentPlayers)
+
+              // chanage gameStatus to in progress            
+              changeGameStatus(sessionId, 'inProgress')
+            }
 
             assignPlayerTurn(socket, sessionId)
 
@@ -1081,6 +1094,8 @@ socket.on('sessionId', async (sessionId, playerId) => {
         console.log("[ Load Existing Session ]")
         let sessionData = await loadExistingSession(sessionId)
         socket.emit('loadExistingSession', sessionData)
+
+        assignPlayerTurn(socket, sessionId)
       }
     }
 
