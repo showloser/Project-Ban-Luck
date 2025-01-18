@@ -489,8 +489,7 @@ function GameEndCardAnimation(){
         // Apply the animation
         card.style.transition = 'transform 1s ease';
         card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-    
-    
+
     
     })
 
@@ -562,9 +561,8 @@ socket.on('connect', () => {
     })
 
     socket.on('gameEnd' , () => {
-        window.alert('Round has Ended!')
         //function to move cards back to deck
-        // GameEndCardAnimation()
+        GameEndCardAnimation()
     })
 })
 

@@ -378,11 +378,7 @@
       Order: {
         0 : 'undefined'
       },
-      currentOrder: {
-        winners: 'undefined',
-        losers: 'undefined',
-        draws: 'undefined'
-      },
+      currentOrder: 'undefined',
       outcome: 'undefined'
     })
     
@@ -615,59 +611,99 @@
   // 3) Open at the start (only for banban and banluck)
   // 4) WU LONG 5 Card
   
+
+
+async function endGameOpenAll_New(sessionId){
+  const data = await getAllInfo(sessionId)
+
+  // initialise first oni
+  const outcome = []
+  var tempt_totalBetAmount = 0
+
+    let bankerId = null
+    let bankerBalance = null
+    let bankerCardValue = null
+
   
-  async function endGameOpenAll(sessionId){
-    // get all data:  (append to a json)
-    // 1) all players in session
-    // 2) get hands
-    // 3) banker or player
-    const data = await getAllInfo(sessionId)
-    
-    const outcome = {
-      winners: [],
-      losers: [],
-      draws: []
-    };
-  
-  
-    let bankerValue = null;
-    for (let key in data) {
-        if (data[key].banker === 'True') {
-            bankerValue = data[key].value[0];
-            break;
-        }
+  // get banker's Card Value
+  for (let key in data) {
+    if (data[key].banker === 'True') {
+        bankerId = key
+        bankerBalance = data[key].bets.playerBalance
+        bankerCardValue = data[key].value[0];
+        break;
     }
-  
-    // Check each player's value against the banker's value
-    for (let key in data) {
-      const player = data[key];
-      const playerValue = player.value[0];
-  
-      // Skip the banker in the results
-      if (player.banker === 'True') continue;
-  
-      // Determine if the player wins, loses, or draws against the banker
-      if (playerValue > 21){
-        if (bankerValue > 21){
-          outcome.draws.push(key)
-        }
-        else{
-          outcome.losers.push(key)
-        }
-      }
-      else if ( bankerValue > 21 || playerValue <= 21 && playerValue > bankerValue){
-        outcome.winners.push(key)
-      }
-      else if (playerValue < bankerValue){
-        outcome.losers.push(key)
-      }
-      else { 
-        outcome.draws.push(key)
-      }
-    }
-  
-    return outcome;
   }
+  
+  // Check each player's value against the banker's value
+  for (let key in data) {
+    const playerData = data[key]
+    const playerValue = playerData.value[0]
+
+    // skip to next player if currentPlayer == banker
+    if (playerData.banker === 'True'){continue}
+    
+    // main comparision logic
+    if (playerValue > 21) {
+      if (bankerCardValue > 21) {
+        tempt_totalBetAmount += 0
+        outcome.push({
+          [key]: {  
+            betAmount: playerData.bets.currentBet,
+            playerBalance: playerData.bets.playerBalance
+          }
+        });
+      } else {
+        tempt_totalBetAmount += playerData.bets.currentBet
+        outcome.push({
+          [key]: { 
+            betAmount: playerData.bets.currentBet,
+            playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet
+          }
+        });
+      }
+    } else if (bankerCardValue > 21 || (playerValue <= 21 && playerValue > bankerCardValue)) {
+      tempt_totalBetAmount -= playerData.bets.currentBet
+      outcome.push({
+        [key]: { 
+          betAmount: playerData.bets.currentBet,
+          playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet
+        }
+      });
+    } else if (playerValue < bankerCardValue) {
+      tempt_totalBetAmount += playerData.bets.currentBet
+      outcome.push({
+        [key]: { 
+          betAmount: playerData.bets.currentBet,
+          playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet
+        }
+      });
+    } else { 
+      tempt_totalBetAmount += 0
+      outcome.push({
+        [key]: {  
+          betAmount: playerData.bets.currentBet,
+          playerBalance: playerData.bets.playerBalance
+        }
+      });
+    }
+  }
+  
+
+  outcome.push({
+    [bankerId] : {
+      playerBalance: bankerBalance + tempt_totalBetAmount
+    }
+  })
+
+  console.log(outcome)
+  return outcome
+}
+
+
+
+  
+
   
   
   
@@ -687,13 +723,13 @@
   }
   
   async function writeOutcome(sessionId, outcome){
-    const db = getDatabase()
-    sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/outcome`)
-    set(sessionRef, {
-      winners: outcome.winners,
-      losers: outcome.losers,
-      draws: outcome.draws
-    })
+    // const db = getDatabase()
+    // sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/outcome`)
+    // set(sessionRef, {
+    //   winners: outcome.winners,
+    //   losers: outcome.losers,
+    //   draws: outcome.draws
+    // })
   
   }
   
@@ -897,7 +933,7 @@
   // OTHER FUNCTIONS:
   async function bettingPhase(socket, sessionId){
     // define time allowed for betting: (e.g. 15 seconds)
-    timeAllocated = 1
+    timeAllocated = 3
   
     // check if bettingPhaseTimer needs reset:
     overwriteBettingPhaseEndtime = await getBettingPhaseInfo(sessionId)
@@ -983,7 +1019,7 @@
           // check if currentPlayer is last in order:
             if (currentPlayerIdOrderIndex === fullOrder.length - 1) {
               console.log('ROUND END')
-              const outcome = await endGameOpenAll(sessionId)
+              const outcome = await endGameOpenAll_New(sessionId)
               writeOutcome(sessionId, outcome)
               endGame(sessionId, outcome)
   
@@ -1018,10 +1054,9 @@
   
     // clear all backend data for currentGame
     //  TO DO
-    console.log(`Outcome: ${outcome}`)
   
     // send socket to all users for endGame
-    io.to(sessionId, 'endGame')
+    io.to(sessionId).emit('gameEnd')
     console.log('[GAME END]')
   }
   
