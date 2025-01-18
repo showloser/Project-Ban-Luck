@@ -32,7 +32,7 @@ function loadUI(bankerOrPlayer){
         <div class="cardPile third-column">
             <div class="cards">
                 <div id="cardPile"></div>
-                <img src="images/pixelCards/Back1.png">
+                <img src="images/pixelCards/Back1.png" id="cardPileImg">
             </div>
     `
     const playerContainer = document.createElement('div')
@@ -261,87 +261,6 @@ function loadGameElements_NEW(gameData, role) {
 
 }
 
-
-
-
-// function loadGameElements(gameData) {
-//     const playersContainer = document.getElementById('playersContainer');
-
-//     const playerKeys = Object.keys(gameData);
-//     const activePlayers = playerKeys.length;
-
-//     for (let i = 0; i < activePlayers; i++) {
-//         const playerId = playerKeys[i];
-//         const playerInfo = gameData[playerId];
-
-
-//         // [IMPT] to fix? (instead of skipping data if 'banker' == 'true' maybe can remove it from list) [NEED TO DO THIS FROM SERVER SIDE TO PREVENT CHEATING]
-//         if (playerInfo['banker'] == 'True'){
-//             continue
-//         }
-
-
-//         let playerDiv = document.getElementById(playerId);
-//         if (!playerDiv){
-//             playerDiv = document.createElement('div');
-//             playerDiv.className = 'player';
-//             playerDiv.id = playerId;
-
-//             if (playerId === clientPlayerId) {
-//                 // Current player's UI structure
-//                 playerDiv.innerHTML = `
-//                     <div class="betAmount"></div>
-//                     <div class="arrow-container">
-//                         <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
-//                         <div class="arrow"></div>
-//                     </div>
-//                     <div style="margin-bottom: 150px;"></div>
-//                     <div class="cards"></div>
-//                     <div class="profile">
-//                         <img class="playerIcon" src="images/profile_icons/1.png" alt="">
-//                         <div class="playerUsername">${playerInfo.username}</div>
-//                     </div>
-//                 `;
-//                 // Save balance locally for the current player
-//                 localStorage.setItem('balance', playerInfo.bets.playerBalance)
-//             }
-//             else{
-//                 playerDiv.innerHTML = `
-//                 <div class="betAmount"></div>
-//                 <div class="cards"></div>
-//                 <div class="profile">
-//                     <img class="playerIcon" src="images/profile_icons/1.png" alt="">
-//                     <div class="playerUsername">${playerInfo.username}</div>
-//                 </div>
-//             `;
-//             }
-//             playersContainer.appendChild(playerDiv);
-//         }
-
-//         // Only update the player's hand if it has changed
-//         if (!playerStates[playerId] || playerStates[playerId].currentHand !== playerInfo.currentHand) {
-//             addCards(playerId, playerInfo.currentHand, playerId === clientPlayerId);
-
-//             // update global obj
-//             playerStates[playerId] = { currentHand: playerInfo.currentHand };
-//         }
-//     }
-
-//     // change value of arrow denoting user's card Val
-//     playerKeys.forEach(playerId => {
-//         if (playerId == clientPlayerId){
-//             const arrowValue = document.getElementById(`${playerId}_arrow`)
-//             arrowValue.textContent = gameData[playerId].value
-
-//             if (gameData[playerId].value >= 22){
-//                 arrowValue.textContent = 'Bust'
-//             }
-
-//         }
-//     })
-
-// }
-
 function addCards(playerId, cardData, facedUpOrDown) {
     const player = document.getElementById(playerId);
     if (!player) {
@@ -535,43 +454,44 @@ function GameEndCardAnimation(){
     const playerContainer = document.getElementById('playersContainer');
     const playerCards = playerContainer.querySelectorAll('.currentPlayerImgElement');
 
-    const deck = document.getElementById('cardPile');
 
-
+    const deck = document.getElementById('cardPileImg');
+    const deckRect = deck.getBoundingClientRect();
 
     bankerCards.forEach((card) => {
+        card.style.transition = "none"; // Disables any transition effect
+        card.style.transform = "";
+
         // get each card position
         const cardRect = card.getBoundingClientRect();
-        const deckRect = deck.getBoundingClientRect();
 
         // Calculate the distance to move the card to the deck
-        const deltaX = (deckRect.left + deckRect.width / 2) - (cardRect.left + cardRect.width / 2);
+        const deltaX = (deckRect.left) - (cardRect.left);
         const deltaY = deckRect.top - cardRect.top + (deckRect.height / 2) - (cardRect.height / 2);
 
 
         // Apply the animation
         card.style.transition = 'transform 1s ease';
         card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-
-
     })
+
+
     playerCards.forEach((card) => {
+        card.style.transition = "none"; // Disables any transition effect
+        card.style.transform = "";
         // get each card position
         const cardRect = card.getBoundingClientRect();
-        const deckRect = deck.getBoundingClientRect();
 
         // Calculate the distance to move the card to the deck
-        const deltaX = (deckRect.left + deckRect.width / 2) - (cardRect.left + cardRect.width / 2);
+        const deltaX = (deckRect.left) - (cardRect.left);
         const deltaY = deckRect.top - cardRect.top + (deckRect.height / 2) - (cardRect.height / 2);
-
 
         // Apply the animation
         card.style.transition = 'transform 1s ease';
         card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-
-        // [IMPT]THIS IS FUCKING WRONG THE deltaX is wrong
-
-
+    
+    
+    
     })
 
 }
