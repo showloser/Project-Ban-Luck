@@ -519,6 +519,17 @@ function activateButtons(){
     standButton.style.pointerEvents = 'auto'
 }
 
+//[CAB] TO BE REDONE
+function updateBalance(clientId, totalData){
+    const balanceElement = document.getElementById("playerBalance")
+    
+    totalData.forEach((data) => {
+        if (data.playerId === clientId){
+            balanceElement.textContent() = data.newBalance
+        }
+    })
+}
+
 
 // socket.io connections.
 const sessionId = localStorage.getItem('sessionId')
@@ -560,9 +571,13 @@ socket.on('connect', () => {
 
     })
 
-    socket.on('gameEnd' , () => {
+    socket.on('gameEnd' , (summaryData) => {
         //function to move cards back to deck
         GameEndCardAnimation()
+        
+        //[CAB] TO BE REDONE 
+        updateBalance(clientId, summaryData)
+        
     })
 })
 
