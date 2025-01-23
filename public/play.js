@@ -520,14 +520,18 @@ function activateButtons(){
 }
 
 //[CAB] TO BE REDONE
-function updateBalance(clientId, totalData){
+function updateBalance(outcome){
     const balanceElement = document.getElementById("playerBalance")
     
-    totalData.forEach((data) => {
-        if (data.playerId === clientId){
-            balanceElement.textContent() = data.newBalance
+    outcome.forEach((data) => {
+        const key = Object.keys(data)[0]; // Get the key of the object
+        if (key == clientPlayerId){
+            balanceElement.innerText = data[key].playerBalance
         }
     })
+
+
+
 }
 
 
@@ -571,12 +575,12 @@ socket.on('connect', () => {
 
     })
 
-    socket.on('gameEnd' , (summaryData) => {
+    socket.on('gameEnd' , (outcome) => {
         //function to move cards back to deck
         GameEndCardAnimation()
         
         //[CAB] TO BE REDONE 
-        updateBalance(clientId, summaryData)
+        updateBalance(outcome)
         
     })
 })

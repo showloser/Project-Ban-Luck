@@ -613,7 +613,7 @@
   
 
 
-async function endGameOpenAll_New(sessionId){
+async function endGameOpenAll(sessionId){
   const data = await getAllInfo(sessionId)
 
   // initialise first oni
@@ -641,52 +641,104 @@ async function endGameOpenAll_New(sessionId){
     const playerValue = playerData.value[0]
 
     // skip to next player if currentPlayer == banker
-    if (playerData.banker === 'True'){continue}
+    if (playerData.banker == 'True'){continue}
     
-    // main comparision logic
-    if (playerValue > 21) {
-      if (bankerCardValue > 21) {
-        tempt_totalBetAmount += 0
+  // main comparison logic
+  if (playerValue === "BanLuck" || playerValue === "BanBan") {
+    if (bankerCardValue === "BanLuck" || bankerCardValue === "BanBan") {
+        if (bankerCardValue === "BanBan" && playerValue === "BanLuck") {
+            // Banker wins with BanBan against player's BanLuck
+            let multiplier = 3;
+            tempt_totalBetAmount += playerData.bets.currentBet * multiplier;
+            outcome.push({
+                [key]: {
+                    betAmount: playerData.bets.currentBet,
+                    playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet * multiplier
+                }
+            });
+        } else if (bankerCardValue === "BanLuck" && playerValue === "BanBan") {
+            // Player wins with BanBan against banker's BanLuck
+            let multiplier = 3;
+            tempt_totalBetAmount -= playerData.bets.currentBet * multiplier;
+            outcome.push({
+                [key]: {
+                    betAmount: playerData.bets.currentBet,
+                    playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet * multiplier
+                }
+            });
+        } else {
+            // Both player and banker have the same special hands, it's a tie
+            outcome.push({
+                [key]: {
+                    betAmount: playerData.bets.currentBet,
+                    playerBalance: playerData.bets.playerBalance
+                }
+            });
+        }
+    } else {
+        // Player wins with a special hand
+        let multiplier = playerValue === "BanLuck" ? 2 : 3;
+        tempt_totalBetAmount -= playerData.bets.currentBet * multiplier;
         outcome.push({
-          [key]: {  
-            betAmount: playerData.bets.currentBet,
-            playerBalance: playerData.bets.playerBalance
-          }
+            [key]: {
+                betAmount: playerData.bets.currentBet,
+                playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet * multiplier
+            }
         });
-      } else {
-        tempt_totalBetAmount += playerData.bets.currentBet
+    }
+  } else if (bankerCardValue === "BanLuck" || bankerCardValue === "BanBan") {
+    // Banker wins with a special hand
+    let multiplier = bankerCardValue === "BanLuck" ? 2 : 3;
+    tempt_totalBetAmount += playerData.bets.currentBet * multiplier;
+    outcome.push({
+        [key]: {
+            betAmount: playerData.bets.currentBet,
+            playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet * multiplier
+        }
+    });
+  } else if (playerValue > 21) {
+    if (bankerCardValue > 21) {
+        tempt_totalBetAmount += 0;
         outcome.push({
-          [key]: { 
+            [key]: {
+                betAmount: playerData.bets.currentBet,
+                playerBalance: playerData.bets.playerBalance
+            }
+        });
+    } else {
+        tempt_totalBetAmount += playerData.bets.currentBet;
+        outcome.push({
+            [key]: {
+                betAmount: playerData.bets.currentBet,
+                playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet
+            }
+        });
+    }
+  } else if (bankerCardValue > 21 || (playerValue <= 21 && playerValue > bankerCardValue)) {
+    tempt_totalBetAmount -= playerData.bets.currentBet;
+    outcome.push({
+        [key]: {
+            betAmount: playerData.bets.currentBet,
+            playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet
+        }
+    });
+  } else if (playerValue < bankerCardValue) {
+    tempt_totalBetAmount += playerData.bets.currentBet;
+    outcome.push({
+        [key]: {
             betAmount: playerData.bets.currentBet,
             playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet
-          }
-        });
-      }
-    } else if (bankerCardValue > 21 || (playerValue <= 21 && playerValue > bankerCardValue)) {
-      tempt_totalBetAmount -= playerData.bets.currentBet
-      outcome.push({
-        [key]: { 
-          betAmount: playerData.bets.currentBet,
-          playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet
         }
-      });
-    } else if (playerValue < bankerCardValue) {
-      tempt_totalBetAmount += playerData.bets.currentBet
-      outcome.push({
-        [key]: { 
-          betAmount: playerData.bets.currentBet,
-          playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet
+    });
+  } else {
+    tempt_totalBetAmount += 0;
+    outcome.push({
+        [key]: {
+            betAmount: playerData.bets.currentBet,
+            playerBalance: playerData.bets.playerBalance
         }
-      });
-    } else { 
-      tempt_totalBetAmount += 0
-      outcome.push({
-        [key]: {  
-          betAmount: playerData.bets.currentBet,
-          playerBalance: playerData.bets.playerBalance
-        }
-      });
-    }
+    });
+  }
   }
   
 
@@ -696,7 +748,6 @@ async function endGameOpenAll_New(sessionId){
     }
   })
 
-  console.log(outcome)
   return outcome
 }
 
@@ -1019,10 +1070,15 @@ async function endGameOpenAll_New(sessionId){
           // check if currentPlayer is last in order:
             if (currentPlayerIdOrderIndex === fullOrder.length - 1) {
               console.log('ROUND END')
-              const outcome = await endGameOpenAll_New(sessionId)
+              const outcome = await endGameOpenAll(sessionId)
+
               writeOutcome(sessionId, outcome)
-              endGame(sessionId, outcome)
-  
+              
+              changeGameStatus(sessionId, 'completed')
+
+              io.to(sessionId).emit('gameEnd', outcome)
+
+              console.log('[GAME END]')  
   
             }
             else{
@@ -1047,19 +1103,7 @@ async function endGameOpenAll_New(sessionId){
   }
   
   
-  
-  function endGame(sessionId, outcome){
-    // change gameState to 'completed'
-    changeGameStatus(sessionId, 'completed')
-  
-    // clear all backend data for currentGame
-    //  TO DO
-  
-    // send socket to all users for endGame
-    io.to(sessionId).emit('gameEnd')
-    console.log('[GAME END]')
-  }
-  
+ 
   
   
   
