@@ -365,10 +365,7 @@
     });
   
     set(ref(db, `/project-bunluck/sessions/${sessionId}/gameState`), {
-      sessionId: sessionId,
-      createdAt: new Date().toISOString(), // Timestamp indicating when the session was created
       Restart: 'True',
-      sessionCode: sessionCode,
       partyLeader: playerId,
       gameStatus: 'undefined',
       Bets: {
@@ -379,7 +376,6 @@
         0 : 'undefined'
       },
       currentOrder: 'undefined',
-      outcome: 'undefined'
     })
     
     set(playerRef, {
@@ -611,155 +607,144 @@
   // 3) Open at the start (only for banban and banluck)
   // 4) WU LONG 5 Card
   
+  async function endGameOpenAll(sessionId){
+    const data = await getAllInfo(sessionId)
 
+    // initialise first oni
+    const outcome = []
+    var tempt_totalBetAmount = 0
 
-async function endGameOpenAll(sessionId){
-  const data = await getAllInfo(sessionId)
+      let bankerId = null
+      let bankerBalance = null
+      let bankerCardValue = null
 
-  // initialise first oni
-  const outcome = []
-  var tempt_totalBetAmount = 0
-
-    let bankerId = null
-    let bankerBalance = null
-    let bankerCardValue = null
-
-  
-  // get banker's Card Value
-  for (let key in data) {
-    if (data[key].banker === 'True') {
-        bankerId = key
-        bankerBalance = data[key].bets.playerBalance
-        bankerCardValue = data[key].value[0];
-        break;
-    }
-  }
-  
-  // Check each player's value against the banker's value
-  for (let key in data) {
-    const playerData = data[key]
-    const playerValue = playerData.value[0]
-
-    // skip to next player if currentPlayer == banker
-    if (playerData.banker == 'True'){continue}
     
-  // main comparison logic
-  if (playerValue === "BanLuck" || playerValue === "BanBan") {
-    if (bankerCardValue === "BanLuck" || bankerCardValue === "BanBan") {
-        if (bankerCardValue === "BanBan" && playerValue === "BanLuck") {
-            // Banker wins with BanBan against player's BanLuck
-            let multiplier = 3;
-            tempt_totalBetAmount += playerData.bets.currentBet * multiplier;
-            outcome.push({
-                [key]: {
-                    betAmount: playerData.bets.currentBet,
-                    playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet * multiplier
-                }
-            });
-        } else if (bankerCardValue === "BanLuck" && playerValue === "BanBan") {
-            // Player wins with BanBan against banker's BanLuck
-            let multiplier = 3;
-            tempt_totalBetAmount -= playerData.bets.currentBet * multiplier;
-            outcome.push({
-                [key]: {
-                    betAmount: playerData.bets.currentBet,
-                    playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet * multiplier
-                }
-            });
-        } else {
-            // Both player and banker have the same special hands, it's a tie
-            outcome.push({
-                [key]: {
-                    betAmount: playerData.bets.currentBet,
-                    playerBalance: playerData.bets.playerBalance
-                }
-            });
-        }
+    // get banker's Card Value
+    for (let key in data) {
+      if (data[key].banker === 'True') {
+          bankerId = key
+          bankerBalance = data[key].bets.playerBalance
+          bankerCardValue = data[key].value[0];
+          break;
+      }
+    }
+    
+    // Check each player's value against the banker's value
+    for (let key in data) {
+      const playerData = data[key]
+      const playerValue = playerData.value[0]
+
+      // skip to next player if currentPlayer == banker
+      if (playerData.banker == 'True'){continue}
+      
+    // main comparison logic
+    if (playerValue === "BanLuck" || playerValue === "BanBan") {
+      if (bankerCardValue === "BanLuck" || bankerCardValue === "BanBan") {
+          if (bankerCardValue === "BanBan" && playerValue === "BanLuck") {
+              // Banker wins with BanBan against player's BanLuck
+              let multiplier = 3;
+              tempt_totalBetAmount += playerData.bets.currentBet * multiplier;
+              outcome.push({
+                  [key]: {
+                      betAmount: playerData.bets.currentBet,
+                      playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet * multiplier
+                  }
+              });
+          } else if (bankerCardValue === "BanLuck" && playerValue === "BanBan") {
+              // Player wins with BanBan against banker's BanLuck
+              let multiplier = 3;
+              tempt_totalBetAmount -= playerData.bets.currentBet * multiplier;
+              outcome.push({
+                  [key]: {
+                      betAmount: playerData.bets.currentBet,
+                      playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet * multiplier
+                  }
+              });
+          } else {
+              // Both player and banker have the same special hands, it's a tie
+              outcome.push({
+                  [key]: {
+                      betAmount: playerData.bets.currentBet,
+                      playerBalance: playerData.bets.playerBalance
+                  }
+              });
+          }
+      } else {
+          // Player wins with a special hand
+          let multiplier = playerValue === "BanLuck" ? 2 : 3;
+          tempt_totalBetAmount -= playerData.bets.currentBet * multiplier;
+          outcome.push({
+              [key]: {
+                  betAmount: playerData.bets.currentBet,
+                  playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet * multiplier
+              }
+          });
+      }
+    } else if (bankerCardValue === "BanLuck" || bankerCardValue === "BanBan") {
+      // Banker wins with a special hand
+      let multiplier = bankerCardValue === "BanLuck" ? 2 : 3;
+      tempt_totalBetAmount += playerData.bets.currentBet * multiplier;
+      outcome.push({
+          [key]: {
+              betAmount: playerData.bets.currentBet,
+              playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet * multiplier
+          }
+      });
+    } else if (playerValue > 21) {
+      if (bankerCardValue > 21) {
+          tempt_totalBetAmount += 0;
+          outcome.push({
+              [key]: {
+                  betAmount: playerData.bets.currentBet,
+                  playerBalance: playerData.bets.playerBalance
+              }
+          });
+      } else {
+          tempt_totalBetAmount += playerData.bets.currentBet;
+          outcome.push({
+              [key]: {
+                  betAmount: playerData.bets.currentBet,
+                  playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet
+              }
+          });
+      }
+    } else if (bankerCardValue > 21 || (playerValue <= 21 && playerValue > bankerCardValue)) {
+      tempt_totalBetAmount -= playerData.bets.currentBet;
+      outcome.push({
+          [key]: {
+              betAmount: playerData.bets.currentBet,
+              playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet
+          }
+      });
+    } else if (playerValue < bankerCardValue) {
+      tempt_totalBetAmount += playerData.bets.currentBet;
+      outcome.push({
+          [key]: {
+              betAmount: playerData.bets.currentBet,
+              playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet
+          }
+      });
     } else {
-        // Player wins with a special hand
-        let multiplier = playerValue === "BanLuck" ? 2 : 3;
-        tempt_totalBetAmount -= playerData.bets.currentBet * multiplier;
-        outcome.push({
-            [key]: {
-                betAmount: playerData.bets.currentBet,
-                playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet * multiplier
-            }
-        });
+      tempt_totalBetAmount += 0;
+      outcome.push({
+          [key]: {
+              betAmount: playerData.bets.currentBet,
+              playerBalance: playerData.bets.playerBalance
+          }
+      });
     }
-  } else if (bankerCardValue === "BanLuck" || bankerCardValue === "BanBan") {
-    // Banker wins with a special hand
-    let multiplier = bankerCardValue === "BanLuck" ? 2 : 3;
-    tempt_totalBetAmount += playerData.bets.currentBet * multiplier;
-    outcome.push({
-        [key]: {
-            betAmount: playerData.bets.currentBet,
-            playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet * multiplier
-        }
-    });
-  } else if (playerValue > 21) {
-    if (bankerCardValue > 21) {
-        tempt_totalBetAmount += 0;
-        outcome.push({
-            [key]: {
-                betAmount: playerData.bets.currentBet,
-                playerBalance: playerData.bets.playerBalance
-            }
-        });
-    } else {
-        tempt_totalBetAmount += playerData.bets.currentBet;
-        outcome.push({
-            [key]: {
-                betAmount: playerData.bets.currentBet,
-                playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet
-            }
-        });
     }
-  } else if (bankerCardValue > 21 || (playerValue <= 21 && playerValue > bankerCardValue)) {
-    tempt_totalBetAmount -= playerData.bets.currentBet;
+    
     outcome.push({
-        [key]: {
-            betAmount: playerData.bets.currentBet,
-            playerBalance: playerData.bets.playerBalance + playerData.bets.currentBet
-        }
-    });
-  } else if (playerValue < bankerCardValue) {
-    tempt_totalBetAmount += playerData.bets.currentBet;
-    outcome.push({
-        [key]: {
-            betAmount: playerData.bets.currentBet,
-            playerBalance: playerData.bets.playerBalance - playerData.bets.currentBet
-        }
-    });
-  } else {
-    tempt_totalBetAmount += 0;
-    outcome.push({
-        [key]: {
-            betAmount: playerData.bets.currentBet,
-            playerBalance: playerData.bets.playerBalance
-        }
-    });
+      [bankerId] : {
+        playerBalance: bankerBalance + tempt_totalBetAmount,
+        betAmount: "playerIsBanker"
+        
+      }
+    })
+    return outcome
   }
-  }
-  
 
-  outcome.push({
-    [bankerId] : {
-      playerBalance: bankerBalance + tempt_totalBetAmount
-    }
-  })
-
-  return outcome
-}
-
-
-
-  
-
-  
-  
-  
-  
-  
   
   async function getAllInfo(sessionId){
     const db = getDatabase()
@@ -773,19 +758,46 @@ async function endGameOpenAll(sessionId){
     }
   }
   
-  async function writeOutcome(sessionId, outcome){
-    // const db = getDatabase()
-    // sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/outcome`)
-    // set(sessionRef, {
-    //   winners: outcome.winners,
-    //   losers: outcome.losers,
-    //   draws: outcome.draws
-    // })
-  
+  function writeOutcome(sessionId, outcome){
+    const db = getDatabase()
+
+    outcome.forEach((item) => {
+      const key = Object.keys(item)[0];
+      const value = item[key]; 
+
+      const dbRef = ref(db,`/project-bunluck/sessions/${sessionId}/players/${key}/bets/playerBalance`)
+      set(dbRef, value.playerBalance)
+    })
+  }
+
+  async function gameEndResetDB(sessionId){
+    const db = getDatabase()
+    const sessionRef = ref(db,`/project-bunluck/sessions/${sessionId}`)
+    try{
+      const snapshot = await get(sessionRef)
+      const players = snapshot.val().players  
+
+      const updates = {}
+
+      updates["deck"] = "gameEnd"
+
+      if (players) {
+        for (const playerId in players){
+          updates[`players/${playerId}/bets/currentBet`] = "gameEnd";
+          updates[`players/${playerId}/currentHand`] = "gameEnd";
+          updates[`players/${playerId}/value`] = "gameEnd";
+        }
+      }
+      await update(sessionRef, updates);
+
+
+    } catch (e){
+      console.log('[gameEndResetDB] Error: ', e)
+    }
+
   }
   
-  
-  
+
   
   // DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
   // DOING DOING  DOING  DOING  DOING  DOING  DOING  DOING  DOING 
@@ -1073,6 +1085,7 @@ async function endGameOpenAll(sessionId){
               const outcome = await endGameOpenAll(sessionId)
 
               writeOutcome(sessionId, outcome)
+              gameEndResetDB(sessionId)
               
               changeGameStatus(sessionId, 'completed')
 
