@@ -10,3 +10,217 @@
 5. add in game end logic [In Progress]
   -> FIX SOCKET ISSUE. MULTIPLE INSTANCES CURRENTLY SENDING REQUEST
   -> [In Progress] basically, i want you to clear the currentHand and update it into the database.
+
+
+
+
+
+
+  Loop logic for code. 
+  To efficiently "loop" your game so that it can restart and not end, you need to encapsulate your game logic in a loop that continuously restarts the game after it ends. This involves:
+
+Wrapping the game logic in a loop (e.g., a while loop or recursive function).
+
+Resetting the game state after each round.
+
+Reinitializing the game logic for the next round.
+
+Here’s how you can modify your existing code to achieve this:
+
+Updated Code for Continuous Game Loop
+javascript
+Copy
+// Function to reset the game state
+async function resetGameState(sessionId) {
+  // Reset gameStatus to "ready"
+  await changeGameStatus(sessionId, "ready");
+
+  // Reset currentOrder to 0
+  await setCurrentOrder(sessionId, 0);
+
+  // Clear and reinitialize the deck
+  await initializeDeck(sessionId);
+
+  // Reset players' hands and other relevant fields
+  const players = await getPlayersId(sessionId);
+  for (const playerId of players) {
+    await setHand(sessionId, playerId, ""); // Clear player's hand
+    await setPlayerValue(sessionId, playerId, 0); // Reset player's value
+    await setPlayerBets(sessionId, playerId, { currentBet: 0 }); // Reset player's bets
+  }
+}
+
+// Function to run the game in a loop
+async function runGameLoop(socket, sessionId) {
+  while (true) {
+    // Reset the game state
+    await resetGameState(sessionId);
+
+    // Notify clients that a new round is starting
+    io.to(sessionId).emit("newRoundStarted");
+
+    // Start the game logic
+    const currentPlayers = await getPlayersId(sessionId);
+    await configuringOrder(sessionId);
+    await bettingPhase(socket, sessionId);
+
+    // Start the game
+    await startGame(socket, sessionId, currentPlayers);
+    await changeGameStatus(sessionId, "inProgress");
+
+    // Assign player turns
+    await assignPlayerTurn(socket, sessionId);
+
+    // Wait for the game to end
+    const gameStatus = await getGameStatus(sessionId);
+    while (gameStatus === "inProgress") {
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Polling interval
+    }
+
+    // Game has ended, prepare for the next round
+    console.log("[GAME END] Preparing for the next round...");
+  }
+}
+
+// Function to handle player turns
+async function assignPlayerTurn(socket, sessionId) {
+  const fullOrder = await getFullOrder(sessionId);
+
+  async function handleCurrentTurn() {
+    const currentOrder = fullOrder[await getCurrentOrder(sessionId)];
+    io.to(sessionId).emit("assignPlayerTurn", currentOrder, fullOrder);
+
+    socket.once("playerHit", async (sessionId, playerId) => {
+      const currentPlayerIdOrderIndex = await getCurrentOrder(sessionId);
+
+      if (playerId === fullOrder[currentPlayerIdOrderIndex]) {
+        let playerHand = (await getHand(sessionId, playerId)).split(",");
+
+        if (playerHand.length >= 5) {
+          socket.emit("error_card_length_5");
+        } else {
+          await playerHit(sessionId, playerId);
+          let sessionData = await loadExistingSession(sessionId);
+          io.to(sessionId).emit("loadExistingSession", sessionData);
+        }
+      } else {
+        socket.emit("error", "The first IF");
+      }
+      handleCurrentTurn();
+    });
+
+    socket.once("playerStand", async (sessionId, playerId) => {
+      const currentPlayerIdOrderIndex = await getCurrentOrder(sessionId);
+
+      if (playerId === fullOrder[currentPlayerIdOrderIndex]) {
+        if (currentPlayerIdOrderIndex === fullOrder.length - 1) {
+          console.log("ROUND END");
+          const outcome = await endGameOpenAll(sessionId);
+          writeOutcome(sessionId, outcome);
+          gameEndResetDB(sessionId);
+          changeGameStatus(sessionId, "completed");
+          io.to(sessionId).emit("gameEnd", outcome);
+          console.log("[GAME END]");
+        } else {
+          setCurrentOrder(sessionId, currentPlayerIdOrderIndex + 1);
+          handleCurrentTurn();
+        }
+      } else {
+        socket.emit("error", "The Second If");
+        console.log(currentPlayerIdOrderIndex);
+      }
+    });
+  }
+
+  handleCurrentTurn();
+}
+
+// Start the game loop when a session is connected
+io.on("connection", (socket) => {
+  socket.on("sessionId", async (sessionId, playerId) => {
+    const current_sessionId = sessionId;
+    const current_playerId = playerId;
+
+    // Check if the session already exists
+    let sessionCheck = await checkExistingSession(sessionId);
+    if (!sessionCheck) {
+      console.log("[ DO SOMETHING ]");
+      // Should not run for now!!!
+    } else {
+      let sessionRestart = await checkSessionRestart(sessionId);
+
+      // Create socket rooms for all clients in the same session
+      socket.join(sessionId);
+      if (sessionRestart === "True") {
+        // Wait until a minimum of 2 players AND all players are ready
+        const currentPlayers = await getPlayersId(sessionId);
+
+        if (currentPlayers.length >= 2) {
+          // Start the game loop
+          runGameLoop(socket, sessionId);
+        }
+      }
+    }
+  });
+});
+Key Changes:
+runGameLoop Function:
+
+Encapsulates the game logic in a while (true) loop to continuously restart the game.
+
+Resets the game state and reinitializes the game logic for each new round.
+
+Polling for Game End:
+
+Uses a while loop to wait for the game to end (gameStatus changes to "completed").
+
+Efficient Game Restart:
+
+The game state is reset, and the game logic is reinitialized without requiring manual intervention.
+
+Client Notifications:
+
+Emits a newRoundStarted event to notify clients that a new round has begun.
+
+How It Works:
+Game Loop:
+
+The runGameLoop function runs indefinitely, restarting the game after each round.
+
+Game State Reset:
+
+The resetGameState function resets all necessary fields (e.g., gameStatus, currentOrder, deck, players' hands, etc.).
+
+Game Logic Reinitialization:
+
+The game logic (e.g., betting phase, player turns) is reinitialized for each new round.
+
+Client Synchronization:
+
+Clients are notified of the new round via the newRoundStarted event and can update their UI accordingly.
+
+Example Workflow:
+Game Starts:
+
+The game loop begins, and the first round starts.
+
+Game Ends:
+
+The game ends, and the outcome is emitted to all clients.
+
+Game Restarts:
+
+The game state is reset, and a new round begins automatically.
+
+Continuous Play:
+
+The game continues to loop, allowing players to play multiple rounds without interruption.
+
+Notes:
+Ensure that the while (true) loop does not block the main thread. The use of await ensures that the loop is non-blocking.
+
+You can add additional logic to handle edge cases (e.g., players leaving the session, session termination).
+
+If you want to allow players to manually restart the game, you can expose a restartGame event as shown in the previous example.
+
+Let me know if you need further clarification!
