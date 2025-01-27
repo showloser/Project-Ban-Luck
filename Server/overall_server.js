@@ -1372,8 +1372,56 @@
   
   
   
+// persudo code for event-driven async code
+io.on('connection', (socket) => {
+  socket.on('sessionId', async (sessionId, playerId) => {
+      const current_sessionId = sessionId
+      consr current_playerId = playerId
+      const roomCode = get_sessionCode(sessionId)
+      socket.join(roomCode)
+      
+      while true:
+        const checkReadyStatusAll = getReadyStatus(sessionId)
+        if (checkReadyStatusAll){
+          startGame(sessionId)
+        }  
+  )}
+}
+
+async function startGame(sessionId){
+  // open listener for bets
+  function getBets(sessionId){
+    socket.to(sessionId, () => {
+      socket.on("bet_amt", (bets) => {
+        bets.forEach((bet) => {
+          writeBetsToDatabase(bet)
+          })
+        })
+      })
+  }
+  getBets(sessionId)
   
-  
+  async function assignPlayerTurn(sessionId){
+    const getPlayers = await getPlayersFromDB(sessionId)
+    const currentOrder = awaitGetCurrentOrder(sessionId)
+    
+    socket.to(sessionId).emit("default_broadcast", "gameStart")
+    socket.on("default_broadcast_listerner", (clientPlayerId, data) => {
+      if (clientPlayerId == currentOrder){
+          socket.on(playerHit)
+          socket.on(playerStand, () = > {
+            currentOrder += 1
+            })
+        }
+        else {
+          socket.emit("error", "not your turn")
+          }
+    })
+    
+    
+  }
+
+}
   
   // Start the server
   const PORT = process.env.PORT || 8888;
