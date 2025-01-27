@@ -569,13 +569,20 @@
     orderObj = {}
     const db = getDatabase()
     try {
-        // get all current players
+      // get all current players
       currentPlayers = await getPlayersId(sessionId) // returns an array of playerIds
       
+
+      // banker is currenytly first due to firebase's push
+      const bankerId = currentPlayers.shift(); // Remove the first player (banker)
+
       currentPlayers.forEach((playerId, index) => {
         orderObj[index] = playerId
       })
   
+      // Add the banker at the end
+      orderObj[currentPlayers.length] = bankerId;
+
       orderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Order`)
       set(orderRef, orderObj)
     } catch (error){
@@ -1028,97 +1035,92 @@
   async function configuringOrder(sessionId){
     // set the current order of players and set the first player to be first turn.
     await setOrderOfPlayers(sessionId)
-    const orders =  await getFullOrder(sessionId)
     setCurrentOrder(sessionId, 0)
   }
   
+  async function assignPlayerTurn(socket, sessionId) {
+    const fullOrder = await getFullOrder(sessionId);
   
-  // function to handle player's turn using <recursion>
-  async function assignPlayerTurn(socket, sessionId){
-    const fullOrder = await getFullOrder(sessionId)
+    async function handleCurrentTurn() {
+      while (true) {
+        // get currentPlayer's turn
+        const currentOrder = fullOrder[await getCurrentOrder(sessionId)];
   
-    // function to handle current player's turn
-    async function handleCurrentTurn(){
-      // get currentPlayer's turn
-      const currentOrder = fullOrder[await getCurrentOrder(sessionId)]
-      
-      // socket broadcast current client's turn
-      io.to(sessionId).emit('assignPlayerTurn', currentOrder, fullOrder)
+        // socket broadcast current client's turn
+        io.to(sessionId).emit('assignPlayerTurn', currentOrder, fullOrder);
   
-      // Handle player[HIT] || player[STAND] REQUESTS
-      socket.once('playerHit', async (sessionId, playerId) => {
-  
-        // get the correct order from database
-        currentPlayerIdOrderIndex = await getCurrentOrder(sessionId)
-  
-        if (playerId === fullOrder[currentPlayerIdOrderIndex]){
-          // get current player's hand
-          let playerHand = (await getHand(sessionId, playerId)).split(',')
-    
-          // check card amount (card amount cannot > 5)
-          if (playerHand.length >= 5){
-            socket.emit('error_card_length_5')
-          }
-          else{
-            await playerHit(sessionId, playerId)
-            let sessionData = await loadExistingSession(sessionId)
-            io.to(sessionId).emit('loadExistingSession', sessionData)    
-          }
-        }
-        else{
-          socket.emit('error', 'The first IF')
-        }
-        // Move to the next player's turn
-        // handleNextPlayer();
-        handleCurrentTurn()
-      })
-  
-      socket.once('playerStand', async (sessionId, playerId) => {
+        // Wait for playerHit or playerStand event
+        const [event, playerId] = await new Promise((resolve) => {
+          socket.once('playerHit', (sessionId, playerId) => resolve(['playerHit', playerId]));
+          socket.once('playerStand', (sessionId, playerId) => resolve(['playerStand', playerId]));
+        });
   
         // get the correct order from database
-        currentPlayerIdOrderIndex = await getCurrentOrder(sessionId)
+        const currentPlayerIdOrderIndex = await getCurrentOrder(sessionId);
   
-        if (playerId === fullOrder[currentPlayerIdOrderIndex]){
-          // check if currentPlayer is last in order:
+        if (playerId === fullOrder[currentPlayerIdOrderIndex]) {
+          if (event === 'playerHit') {
+            // get current player's hand
+            let playerHand = (await getHand(sessionId, playerId)).split(',');
+  
+            // check card amount (card amount cannot > 5)
+            if (playerHand.length >= 5) {
+              socket.emit('error_card_length_5');
+            } else {
+              await playerHit(sessionId, playerId);
+              let sessionData = await loadExistingSession(sessionId);
+              io.to(sessionId).emit('loadExistingSession', sessionData);
+            }
+          } else if (event === 'playerStand') {
+            // check if currentPlayer is last in order:
             if (currentPlayerIdOrderIndex === fullOrder.length - 1) {
-              console.log('ROUND END')
-              const outcome = await endGameOpenAll(sessionId)
-
-              writeOutcome(sessionId, outcome)
-              gameEndResetDB(sessionId)
-              
-              changeGameStatus(sessionId, 'completed')
-
-              io.to(sessionId).emit('gameEnd', outcome)
-
-              console.log('[GAME END]')  
+              console.log('ROUND END');
+              const outcome = await endGameOpenAll(sessionId);
   
-            }
-            else{
+              writeOutcome(sessionId, outcome);
+              gameEndResetDB(sessionId);
+  
+              changeGameStatus(sessionId, 'completed');
+  
+              io.to(sessionId).emit('gameEnd', outcome);
+  
+              console.log('[GAME END]');
+              break;
+            } else {
               // Change order to next person
-              setCurrentOrder(sessionId, (currentPlayerIdOrderIndex + 1))
-              // handleNextPlayer();
-              handleCurrentTurn()
+              setCurrentOrder(sessionId, currentPlayerIdOrderIndex + 1);
             }
+          }
+        } else {
+          socket.emit('error', 'This is not your turn');
         }
-        else{
-          socket.emit('error', 'The Second If')
-          console.log(currentPlayerOrderIndex)
-        }
-      })
+      }
     }
   
-    // async function handleNextPlayer(){
-    //   handleCurrentTurn()
-    // }
-    
-    handleCurrentTurn()
+    handleCurrentTurn();
   }
-  
-  
  
   
+  async function startGameNew(socket, sessionId, players){
+    // // [START OF GAME LOGIC]
+    await bettingPhase(socket, sessionId);
+
+    deck = initializeDeck()
+    //write data to firebase
+    writeDeckToDatabase(sessionId, deck)
   
+    for (let playerIndex = 0; playerIndex < players.length; playerIndex++ ){
+      await drawInitialHand(sessionId, players[playerIndex])
+    }
+  
+    let sessionData = await loadExistingSession(sessionId)
+    io.to(sessionId).emit('loadExistingSession', sessionData)
+  
+    await changeSessionRestartStatus(sessionId)
+
+    assignPlayerTurn(socket, sessionId)
+  }
+
   
   
   // CONNECTION LOGIC:
@@ -1148,24 +1150,19 @@
           if (currentPlayers.length >= 2){ 
             const currentGameStatus = await getGameStatus(sessionId)
             if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
-  
-  
-              // [START OF GAME LOGIC]
-              await configuringOrder(sessionId)
-              await bettingPhase(socket, sessionId);
-  
-              
+
               const gameStatus = await getGameStatus(sessionId)
   
               if (gameStatus != 'inProgress'){
+
+                // [START OF GAME LOGIC]
+                await configuringOrder(sessionId)
                 // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
-                startGame(socket, sessionId, currentPlayers)
-  
+                startGameNew(socket, sessionId, currentPlayers)
                 // chanage gameStatus to in progress            
                 changeGameStatus(sessionId, 'inProgress')
               }
   
-              assignPlayerTurn(socket, sessionId)
   
               // function to end the game.
   
@@ -1366,62 +1363,6 @@
   
   
   
-  
-  
-  
-  
-  
-  
-// persudo code for event-driven async code
-io.on('connection', (socket) => {
-  socket.on('sessionId', async (sessionId, playerId) => {
-      const current_sessionId = sessionId
-      consr current_playerId = playerId
-      const roomCode = get_sessionCode(sessionId)
-      socket.join(roomCode)
-      
-      while true:
-        const checkReadyStatusAll = getReadyStatus(sessionId)
-        if (checkReadyStatusAll){
-          startGame(sessionId)
-        }  
-  )}
-}
-
-async function startGame(sessionId){
-  // open listener for bets
-  function getBets(sessionId){
-    socket.to(sessionId, () => {
-      socket.on("bet_amt", (bets) => {
-        bets.forEach((bet) => {
-          writeBetsToDatabase(bet)
-          })
-        })
-      })
-  }
-  getBets(sessionId)
-  
-  async function assignPlayerTurn(sessionId){
-    const getPlayers = await getPlayersFromDB(sessionId)
-    const currentOrder = awaitGetCurrentOrder(sessionId)
-    
-    socket.to(sessionId).emit("default_broadcast", "gameStart")
-    socket.on("default_broadcast_listerner", (clientPlayerId, data) => {
-      if (clientPlayerId == currentOrder){
-          socket.on(playerHit)
-          socket.on(playerStand, () = > {
-            currentOrder += 1
-            })
-        }
-        else {
-          socket.emit("error", "not your turn")
-          }
-    })
-    
-    
-  }
-
-}
   
   // Start the server
   const PORT = process.env.PORT || 8888;
