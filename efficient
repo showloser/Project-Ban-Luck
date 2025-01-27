@@ -1,0 +1,7 @@
+client connects to server bu sending socket.io request
+
+server adds each client into a socket.room based on sessionId and updates firebase db
+
+during step 2, run a code where checks if everyone is ready and only run startGame function if this is true.
+
+during startGame, only respond to socket.io where reciept is his currentTurn, else ignore the request.
