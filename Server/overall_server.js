@@ -569,20 +569,13 @@
     orderObj = {}
     const db = getDatabase()
     try {
-      // get all current players
+        // get all current players
       currentPlayers = await getPlayersId(sessionId) // returns an array of playerIds
       
-
-      // banker is currenytly first due to firebase's push
-      const bankerId = currentPlayers.shift(); // Remove the first player (banker)
-
       currentPlayers.forEach((playerId, index) => {
         orderObj[index] = playerId
       })
   
-      // Add the banker at the end
-      orderObj[currentPlayers.length] = bankerId;
-
       orderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Order`)
       set(orderRef, orderObj)
     } catch (error){
@@ -1061,6 +1054,7 @@
         if (playerId === fullOrder[currentPlayerIdOrderIndex]) {
           if (event === 'playerHit') {
             // get current player's hand
+            console.log('this should run once');
             let playerHand = (await getHand(sessionId, playerId)).split(',');
   
             // check card amount (card amount cannot > 5)
