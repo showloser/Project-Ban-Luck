@@ -6,3 +6,9 @@ during step 2, run a code where checks if everyone is ready and only run startGa
 use a "hasGameStarted" flag to make sure gameStart function only runs once
 
 during startGame, only respond to socket.io where reciept is his currentTurn, else ignore the request.
+
+server then broadcast to all players whose turn it is and only allows request from appropriate client, else request is ignored
+
+during game end, server broadcast results
+
+loop
