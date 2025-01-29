@@ -1100,14 +1100,6 @@
 
 
 
-
-
-
-
-
-
-
-
     
   
   // CONNECTION LOGIC:
@@ -1131,6 +1123,7 @@
         // create socket rooms for all clients in same session
         socket.join(sessionId)
         if (sessionRestart === 'True'){
+          
           // wait until minimum of 2 players AND all players are ready
           const currentPlayers = await getPlayersId(sessionId)
           const currentGameStatus = await getGameStatus(sessionId)
@@ -1143,14 +1136,17 @@
 
               // chanage gameStatus to in progress   // [IMPT]  I cannot put it right after {if (currentGameStatus == 'undefined' || currentGameStatus == 'completed')} as the else statement will execute due to async and sessionData will not be loaded.  
               changeGameStatus(sessionId, 'inProgress')
+              assignPlayerTurn(socket, sessionId) 
+              
+              
 
-              assignPlayerTurn(socket, sessionId)  
+
           }
           else{
             // console.log("[ Load Existing Session ]")
             let sessionData = await loadExistingSession(sessionId)
             socket.emit('loadExistingSession', sessionData)
-            assignPlayerTurn(socket, sessionId)  
+            assignPlayerTurn(socket, sessionId)
           }
 
         }

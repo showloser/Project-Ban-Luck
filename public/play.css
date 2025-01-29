@@ -283,6 +283,7 @@ body {
 
 
 .CardPilePlaceHolder{
+    top: 0px;
     position: absolute;
     height: 150px;
     width: 102px;
@@ -291,3 +292,7 @@ body {
     background-repeat: no-repeat;
 }
 
+#cardPileImg{
+    top: 0px;
+    position: absolute
+}

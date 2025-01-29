@@ -406,7 +406,6 @@ function cardFan(playerId) {
 }
 
 function playerHit() {
-    console.log('hit')
     socket.emit('playerHit', sessionId, clientPlayerId) //send request to 'hit'
 
     socket.on('error_card_length_5', () => {
@@ -415,7 +414,6 @@ function playerHit() {
 }
 
 function playerStand(){
-    console.log('stand')
     socket.emit('playerStand', sessionId, clientPlayerId)
 }
 
@@ -497,7 +495,7 @@ function cardShuffleAnimation() {
             placeholders.reverse().forEach((placeholder) => {
                 setTimeout(() => {
                     placeholder.style.transition = "margin-left 0.1s ease";
-                    placeholder.style.marginLeft = "145px";
+                    placeholder.style.marginLeft = "100px";
 
                     setTimeout(() => {
                         placeholder.style.zIndex = i;
@@ -520,30 +518,8 @@ function cardShuffleAnimation() {
             }, time + 500); // Wait for the shuffle animations to complete
         });
     }
-
-    function animate_deg(deg) {
-        const placeholders = document.querySelectorAll(".CardPilePlaceHolder");
     
-        if (placeholders.length === 0) return;
-    
-        const totalPlaceholders = placeholders.length;
-        let step = deg / totalPlaceholders;  // The step size based on total placeholders
-        let angle = 0;  // Initial angle
-    
-        placeholders.forEach((placeholder) => {
-            placeholder.style.transition = "transform 0.3s ease";  // Apply smooth transition
-            placeholder.style.transform = `rotate(${angle}deg)`;   // Rotate the placeholder
-    
-            // Increment the angle for the next placeholder
-            angle += step;
-        });
-    }
-    
-
-    // Run shuffle and then animate after shuffle is done
-    shuffleCardPilePlaceholders().then(() => {
-        animate_deg(30);
-    });
+    shuffleCardPilePlaceholders()
 }
 
 
@@ -596,7 +572,6 @@ loadUI(role)
 socket.on('connect', () => {
     socket.emit('sessionId', sessionId, clientPlayerId) // send sessionInfo to server
     socket.on('error', (errorMsg) => {
-        console.log(errorMsg)
         window.alert(errorMsg)
     })
 
@@ -606,7 +581,6 @@ socket.on('connect', () => {
     })
 
     socket.on('assignPlayerTurn', (currentOrder) => {
-        console.log("currentOrder: ", currentOrder)
         
         if (clientPlayerId != currentOrder){
             deactivateButtons()
