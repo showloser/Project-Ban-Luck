@@ -33,6 +33,18 @@ function loadUI(bankerOrPlayer){
             <div class="cards">
                 <div id="cardPile"></div>
                 <img src="images/pixelCards/Back1.png" id="cardPileImg">
+                <div class='CardPilePlaceHolderContainer'>
+                    <div class='CardPilePlaceHolder'></div>
+                    <div class='CardPilePlaceHolder'></div>
+                    <div class='CardPilePlaceHolder'></div>
+                    <div class='CardPilePlaceHolder'></div>
+                    <div class='CardPilePlaceHolder'></div>
+                    <div class='CardPilePlaceHolder'></div>
+                    <div class='CardPilePlaceHolder'></div>
+                    <div class='CardPilePlaceHolder'></div>
+                    <div class='CardPilePlaceHolder'></div>
+                </div>
+
             </div>
     `
     const playerContainer = document.createElement('div')
@@ -44,18 +56,6 @@ function loadUI(bankerOrPlayer){
         bankerContainer.className = 'bankers'
         bankerContainer.id = 'bankerContainer'
 
-
-        // bankerContainer.className = 'bankerContainer'
-        // bankerContainer.innerHTML = `
-        // <div class='banker'>
-        //     <div class="bankerProfile">
-        //         <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
-        //         <div class="bankerUsername">theBanker</div>
-        //     </div>
-        //     <div class="cards"><img src="images/pixelCards/king_of_diamonds.png" alt=""></div>
-        // </div>
-        // `
-        
         table.append(bankerContainer)
         table.append(middleArea)
         table.append(playerContainer)
@@ -65,19 +65,6 @@ function loadUI(bankerOrPlayer){
         bankerContainer.className = 'bankers'
         bankerContainer.id = 'bankerContainer'
 
-        
-
-        // bankerContainer.innerHTML = `
-        // <div class='banker'>
-        //     <div class="cards">
-        //         <img src="images/pixelCards/king_of_diamonds.png" alt="">
-        //     </div>
-        //     <div class="profile">
-        //         <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
-        //         <div class="bankerUsername">theBanker</div>
-        //     </div>
-        // </div>
-        // `
         table.append(playerContainer)
         table.append(middleArea)
         table.append(bankerContainer)
@@ -367,7 +354,7 @@ function dealCard(playerId, card, facedUpOrDown, cardContainer) {
         // Trigger flip animation after a delay
         setTimeout(() => {
             temptCardContainer.classList.add('flip');
-        }, 1500); // Delay to sync with the moveCard animation
+        }, 500); // Delay to sync with the moveCard animation
     
         // Move the card to the player's card container after animations
         setTimeout(() => {
@@ -389,6 +376,7 @@ function cardFan(playerId) {
 
     // Set initial position for cards (so the fucking transition for 'left' will work)
     cards.forEach((card) => {
+        card.style.transition = 'left 0.3s'; // Enable transition effect
         card.style.position = 'absolute'; 
         card.style.left = '0'; 
     });
@@ -444,58 +432,119 @@ function restart(){
 
 function gameEnd(){
     GameEndCardAnimation()
+
+    cardShuffleAnimation()
 }
 
-function GameEndCardAnimation(){
-    const bankerContainer = document.getElementById('bankerContainer')
-    const bankerCards = bankerContainer.querySelectorAll('.currentPlayerImgElement')
+function GameEndCardAnimation() {
+    // remove arrow container
+    document.querySelectorAll(".arrow-container").forEach(el => el.remove());
 
+    const bankerContainer = document.getElementById('bankerContainer');
+    const bankerCards = bankerContainer.querySelectorAll('.currentPlayerImgElement');
 
     const playerContainer = document.getElementById('playersContainer');
     const playerCards = playerContainer.querySelectorAll('.currentPlayerImgElement');
 
-
     const deck = document.getElementById('cardPileImg');
     const deckRect = deck.getBoundingClientRect();
 
-    bankerCards.forEach((card) => {
-        card.style.transition = "none"; // Disables any transition effect
+    function animateAndRemove(card) {
+        card.style.transition = "none"; // Disable any existing transition
         card.style.transform = "";
 
-        // get each card position
+        // Get each card position
         const cardRect = card.getBoundingClientRect();
 
         // Calculate the distance to move the card to the deck
-        const deltaX = (deckRect.left) - (cardRect.left);
-        const deltaY = deckRect.top - cardRect.top + (deckRect.height / 2) - (cardRect.height / 2);
-
-
-        // Apply the animation
-        card.style.transition = 'transform 1s ease';
-        card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
-    })
-
-
-    playerCards.forEach((card) => {
-        card.style.transition = "none"; // Disables any transition effect
-        card.style.transform = "";
-        // get each card position
-        const cardRect = card.getBoundingClientRect();
-
-        // Calculate the distance to move the card to the deck
-        const deltaX = (deckRect.left) - (cardRect.left);
+        const deltaX = deckRect.left - cardRect.left;
         const deltaY = deckRect.top - cardRect.top + (deckRect.height / 2) - (cardRect.height / 2);
 
         // Apply the animation
         card.style.transition = 'transform 1s ease';
         card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
 
-    
-    })
+        // Wait for the animation to end, then remove the card
+        card.addEventListener('transitionend', () => {
+            card.remove();
+        }, { once: true }); // Ensures event listener runs only once per card
+    }
 
+    bankerCards.forEach(animateAndRemove);
+    playerCards.forEach(animateAndRemove);
 }
 
 
+function cardShuffleAnimation() {
+
+    function shuffleCardPilePlaceholders() {
+        return new Promise((resolve) => {
+            const cardPile = document.querySelector(".CardPilePlaceHolderContainer");
+            const placeholders = Array.from(cardPile.querySelectorAll(".CardPilePlaceHolder"));
+
+            // Fisher-Yates shuffle algorithm to randomize elements
+            for (let i = placeholders.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                cardPile.appendChild(placeholders[j]); // Move randomly chosen placeholder to the end
+            }
+
+            // Create shuffle effect (to show animation to user)
+            let i = 0;
+            let time = 0;
+            let shuffle_time = 2;
+            let counter = 0;
+
+            placeholders.reverse().forEach((placeholder) => {
+                setTimeout(() => {
+                    placeholder.style.transition = "margin-left 0.1s ease";
+                    placeholder.style.marginLeft = "145px";
+
+                    setTimeout(() => {
+                        placeholder.style.zIndex = i;
+                        placeholder.style.marginLeft = "0px";
+                    }, 300);
+
+                    i++;
+                }, time);
+
+                time += 500;
+                counter++;
+
+                // Limit shuffle to a specific number of times
+                if (counter > shuffle_time) return;
+            });
+
+            // Resolve the promise after the shuffle is done
+            setTimeout(() => {
+                resolve();
+            }, time + 500); // Wait for the shuffle animations to complete
+        });
+    }
+
+    function animate_deg(deg) {
+        const placeholders = document.querySelectorAll(".CardPilePlaceHolder");
+    
+        if (placeholders.length === 0) return;
+    
+        const totalPlaceholders = placeholders.length;
+        let step = deg / totalPlaceholders;  // The step size based on total placeholders
+        let angle = 0;  // Initial angle
+    
+        placeholders.forEach((placeholder) => {
+            placeholder.style.transition = "transform 0.3s ease";  // Apply smooth transition
+            placeholder.style.transform = `rotate(${angle}deg)`;   // Rotate the placeholder
+    
+            // Increment the angle for the next placeholder
+            angle += step;
+        });
+    }
+    
+
+    // Run shuffle and then animate after shuffle is done
+    shuffleCardPilePlaceholders().then(() => {
+        animate_deg(30);
+    });
+}
 
 
 
@@ -574,8 +623,8 @@ socket.on('connect', () => {
         
         //[CAB] TO BE REDONE 
         updateBalance(outcome)
-
         console.log(outcome)
+
         
     })
 })

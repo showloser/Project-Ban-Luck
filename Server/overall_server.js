@@ -1079,7 +1079,6 @@
   
               writeOutcome(sessionId, outcome);
               gameEndResetDB(sessionId);
-  
               changeGameStatus(sessionId, 'completed');
   
               io.to(sessionId).emit('gameEnd', outcome);

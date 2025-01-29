@@ -279,3 +279,15 @@ body {
 }
 
 /* Footer [End] */
+
+
+
+.CardPilePlaceHolder{
+    position: absolute;
+    height: 150px;
+    width: 102px;
+    background-image: url('images/pixelCards/Back1.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
