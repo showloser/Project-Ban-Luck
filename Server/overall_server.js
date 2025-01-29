@@ -105,9 +105,11 @@
     return deck;
   }
   
-  async function startGame(socket, sessionId, players) {
+  async function startGame(socket, sessionId, players){
+    // // [START OF GAME LOGIC]
+    await bettingPhase(socket, sessionId);
+
     deck = initializeDeck()
-  
     //write data to firebase
     writeDeckToDatabase(sessionId, deck)
   
@@ -561,29 +563,7 @@
   
   
   }
-  
-  
-  async function setOrderOfPlayers(sessionId){
-    // function will overwrite previous orders
-  
-    orderObj = {}
-    const db = getDatabase()
-    try {
-        // get all current players
-      currentPlayers = await getPlayersId(sessionId) // returns an array of playerIds
-      
-      currentPlayers.forEach((playerId, index) => {
-        orderObj[index] = playerId
-      })
-  
-      orderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Order`)
-      set(orderRef, orderObj)
-    } catch (error){
-      console.log('[Error] {setOrderOfPlayers}')
-      throw error
-    }
-  }
-  
+    
   function setCurrentOrder(sessionId, order){
     const db = getDatabase()
     currentOrderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/currentOrder`)
@@ -1026,6 +1006,27 @@
   }
   
   async function configuringOrder(sessionId){
+    async function setOrderOfPlayers(sessionId){
+      // function will overwrite previous orders
+      orderObj = {}
+      const db = getDatabase()
+      try {
+          // get all current players
+        currentPlayers = await getPlayersId(sessionId) // returns an array of playerIds
+        
+        currentPlayers.forEach((playerId, index) => {
+          orderObj[index] = playerId
+        })
+    
+        orderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Order`)
+        set(orderRef, orderObj)
+      } catch (error){
+        console.log('[Error] {setOrderOfPlayers}')
+        throw error
+      }
+    }
+
+
     // set the current order of players and set the first player to be first turn.
     await setOrderOfPlayers(sessionId)
     setCurrentOrder(sessionId, 0)
@@ -1041,6 +1042,10 @@
   
         // socket broadcast current client's turn
         io.to(sessionId).emit('assignPlayerTurn', currentOrder, fullOrder);
+
+        // Remove any existing listeners to avoid memory leaks
+        socket.removeAllListeners('playerHit');
+        socket.removeAllListeners('playerStand');
   
         // Wait for playerHit or playerStand event
         const [event, playerId] = await new Promise((resolve) => {
@@ -1094,28 +1099,7 @@
     handleCurrentTurn();
   }
  
-  
-  async function startGameNew(socket, sessionId, players){
-    // // [START OF GAME LOGIC]
-    await bettingPhase(socket, sessionId);
-
-    deck = initializeDeck()
-    //write data to firebase
-    writeDeckToDatabase(sessionId, deck)
-  
-    for (let playerIndex = 0; playerIndex < players.length; playerIndex++ ){
-      await drawInitialHand(sessionId, players[playerIndex])
-    }
-  
-    let sessionData = await loadExistingSession(sessionId)
-    io.to(sessionId).emit('loadExistingSession', sessionData)
-  
-    await changeSessionRestartStatus(sessionId)
-
-    assignPlayerTurn(socket, sessionId)
-  }
-
-  
+    
   
   // CONNECTION LOGIC:
   // Handle 'connect' event
@@ -1147,18 +1131,22 @@
 
               const gameStatus = await getGameStatus(sessionId)
   
-              if (gameStatus != 'inProgress'){
+              // while (true){
+                if (gameStatus != 'inProgress'){
+                  // chanage gameStatus to in progress            
+                  changeGameStatus(sessionId, 'inProgress')
+  
+                  // [START OF GAME LOGIC]
+                  await configuringOrder(sessionId)
+                  // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
+                  startGame(socket, sessionId, currentPlayers)
+  
+                }
+  
+                assignPlayerTurn(socket, sessionId)
+              // }
 
-                // [START OF GAME LOGIC]
-                await configuringOrder(sessionId)
-                // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
-                startGameNew(socket, sessionId, currentPlayers)
-                // chanage gameStatus to in progress            
-                changeGameStatus(sessionId, 'inProgress')
-              }
   
-  
-              // function to end the game.
   
   
             }
@@ -1180,70 +1168,7 @@
   
           assignPlayerTurn(socket, sessionId)
         }
-      }
-  
-    // // Handle [Hit]  requests
-    // socket.on('playerHit', async (sessionId, playerId) => {
-  
-    //   // get current player's hand
-    //   let playerHand = (await getHand(sessionId, playerId)).split(',')
-  
-    //   // check card amount (card amount cannot > 5)
-    //   if (playerHand.length >= 5){
-    //     socket.emit('error_card_length_5')
-    //   }
-    //   else{
-    //     await playerHit(sessionId, playerId)
-    //     let sessionData = await loadExistingSession(sessionId)
-    //     io.to(sessionId).emit('loadExistingSession', sessionData)    }
-    // } )
-  
-  
-  
-  
-    // // // Handle [Stand] requests
-  
-    // //  FAKE BANKER (TO BE CHANGED TO REAL BANKER -> WILL RUN ON DEFAULT IF PLAYER UNRESPONSIVE THOUGH)
-    // socket.on('playerStand', async (sessionId, playerId) => {
-    //   while (true){
-    //     let current_value = await getValue(sessionId, bankerId)
-    //     if (current_value.length == 1){
-    //       // check for BanLuck/BanBan
-    //       if (typeof(current_value) == 'string' || current_value > 21){
-    //         break
-    //       }
-    //       else if (current_value <= 16){
-    //         await playerHit(sessionId, bankerId)
-    //       }
-    //       else{ // values between 17 and 21
-    //         break 
-    //       }
-    //     }
-    
-    //     else{
-    //       if ((current_value[0] >= 17 && current_value[0] <= 21) || (current_value[1] >= 17 && current_value[1] <= 21)){
-    //         // if (current_value[0] > current_value[1]){
-    //         //   return current_value[0]
-    //         // } else{
-    //         //   return current_value[1]
-    //         // }
-    //         break
-    //       }
-    //       else if ((current_value[0] > 21) && (current_value[1] > 21)){
-    //         break
-    //       }
-    //       else{
-    //         await playerHit(sessionId, bankerId)
-    //       }
-    //     }
-    //   }
-  
-    //   let sessionData = await loadExistingSession(sessionId)
-    //   socket.emit('loadExistingSession', sessionData)
-  
-  
-    // })
-  
+      }  
   })
   
   socket.on('chat', async (sessionId, playerId, username, chatData) => {

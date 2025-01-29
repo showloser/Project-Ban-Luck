@@ -553,8 +553,9 @@ socket.on('connect', () => {
 
 
     socket.on('loadExistingSession', (player_data) => {
+        console.log(player_data)     
 
-        if (player_data[clientPlayerId]['banker'] == 'True'){            
+        if (player_data[clientPlayerId]['banker'] == 'True'){       
             loadGameElements_NEW(player_data, role)
         }
         else{
