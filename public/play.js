@@ -553,19 +553,11 @@ socket.on('connect', () => {
 
 
     socket.on('loadExistingSession', (player_data) => {
-        console.log(player_data)     
-
-        if (player_data[clientPlayerId]['banker'] == 'True'){       
-            loadGameElements_NEW(player_data, role)
-        }
-        else{
-            loadGameElements_NEW(player_data, role)
-
-
-        }
+        loadGameElements_NEW(player_data, role)
     })
 
-    socket.on('assignPlayerTurn', (currentOrder, fullOrder) => {
+    socket.on('assignPlayerTurn', (currentOrder) => {
+        console.log("currentOrder: ", currentOrder)
         
         if (clientPlayerId != currentOrder){
             deactivateButtons()
@@ -582,6 +574,8 @@ socket.on('connect', () => {
         
         //[CAB] TO BE REDONE 
         updateBalance(outcome)
+
+        console.log(outcome)
         
     })
 })

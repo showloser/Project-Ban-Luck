@@ -1026,40 +1026,33 @@
       }
     }
 
-
     // set the current order of players and set the first player to be first turn.
     await setOrderOfPlayers(sessionId)
-    setCurrentOrder(sessionId, 0)
+    await setCurrentOrder(sessionId, 0)
   }
   
   async function assignPlayerTurn(socket, sessionId) {
-    const fullOrder = await getFullOrder(sessionId);
-  
     async function handleCurrentTurn() {
+      const fullOrder = await getFullOrder(sessionId);
       while (true) {
         // get currentPlayer's turn
-        const currentOrder = fullOrder[await getCurrentOrder(sessionId)];
-  
-        // socket broadcast current client's turn
-        io.to(sessionId).emit('assignPlayerTurn', currentOrder, fullOrder);
+        let currentOrderIndex = await getCurrentOrder(sessionId)
+        let currentOrder = fullOrder[currentOrderIndex];
 
-        // Remove any existing listeners to avoid memory leaks
-        socket.removeAllListeners('playerHit');
-        socket.removeAllListeners('playerStand');
+        // socket broadcast current client's turn
+        io.to(sessionId).emit('assignPlayerTurn', currentOrder);
   
         // Wait for playerHit or playerStand event
         const [event, playerId] = await new Promise((resolve) => {
           socket.once('playerHit', (sessionId, playerId) => resolve(['playerHit', playerId]));
           socket.once('playerStand', (sessionId, playerId) => resolve(['playerStand', playerId]));
         });
-  
-        // get the correct order from database
-        const currentPlayerIdOrderIndex = await getCurrentOrder(sessionId);
-  
-        if (playerId === fullOrder[currentPlayerIdOrderIndex]) {
-          if (event === 'playerHit') {
+          
+        if (event === 'playerHit') {
+          // query currentOrderIndex for latest updates as multiple instances of this function will run concurrently
+          currentOrderIndex = await getCurrentOrder(sessionId)
+          if (playerId === fullOrder[currentOrderIndex]) {
             // get current player's hand
-            console.log('this should run once');
             let playerHand = (await getHand(sessionId, playerId)).split(',');
   
             // check card amount (card amount cannot > 5)
@@ -1070,10 +1063,18 @@
               let sessionData = await loadExistingSession(sessionId);
               io.to(sessionId).emit('loadExistingSession', sessionData);
             }
-          } else if (event === 'playerStand') {
+          } else {
+            socket.emit('error', 'This is not your turn');
+          }
+
+        } else if (event === 'playerStand') {
+          // query currentOrderIndex for latest updates as multiple instances of this function will run concurrently
+          currentOrderIndex = await getCurrentOrder(sessionId)
+
+          if (playerId === fullOrder[currentOrderIndex]){
             // check if currentPlayer is last in order:
-            if (currentPlayerIdOrderIndex === fullOrder.length - 1) {
-              console.log('ROUND END');
+            if (currentOrderIndex === fullOrder.length - 1) {
+  
               const outcome = await endGameOpenAll(sessionId);
   
               writeOutcome(sessionId, outcome);
@@ -1082,23 +1083,32 @@
               changeGameStatus(sessionId, 'completed');
   
               io.to(sessionId).emit('gameEnd', outcome);
-  
-              console.log('[GAME END]');
               break;
             } else {
               // Change order to next person
-              setCurrentOrder(sessionId, currentPlayerIdOrderIndex + 1);
+              setCurrentOrder(sessionId, currentOrderIndex + 1);
             }
+          } else {
+            socket.emit('error', 'This is not your turn');
           }
-        } else {
-          socket.emit('error', 'This is not your turn');
         }
       }
     }
-  
     handleCurrentTurn();
   }
  
+
+
+
+
+
+
+
+
+
+
+
+
     
   
   // CONNECTION LOGIC:
@@ -1124,48 +1134,31 @@
         if (sessionRestart === 'True'){
           // wait until minimum of 2 players AND all players are ready
           const currentPlayers = await getPlayersId(sessionId)
-  
-          if (currentPlayers.length >= 2){ 
-            const currentGameStatus = await getGameStatus(sessionId)
-            if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
+          const currentGameStatus = await getGameStatus(sessionId)
 
-              const gameStatus = await getGameStatus(sessionId)
-  
-              // while (true){
-                if (gameStatus != 'inProgress'){
-                  // chanage gameStatus to in progress            
-                  changeGameStatus(sessionId, 'inProgress')
-  
-                  // [START OF GAME LOGIC]
-                  await configuringOrder(sessionId)
-                  // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
-                  startGame(socket, sessionId, currentPlayers)
-  
-                }
-  
-                assignPlayerTurn(socket, sessionId)
-              // }
+          if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
+              // [START OF GAME LOGIC]
+              await configuringOrder(sessionId)
+              // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
+              await startGame(socket, sessionId, currentPlayers, playerId)
 
-  
-  
-  
-            }
-            else{
-              // console.log("[ Load Existing Session ]")
-              let sessionData = await loadExistingSession(sessionId)
-              socket.emit('loadExistingSession', sessionData)
-            }
+              // chanage gameStatus to in progress   // [IMPT]  I cannot put it right after {if (currentGameStatus == 'undefined' || currentGameStatus == 'completed')} as the else statement will execute due to async and sessionData will not be loaded.  
+              changeGameStatus(sessionId, 'inProgress')
+
+              assignPlayerTurn(socket, sessionId)  
           }
           else{
-            socket.emit('NotEnoughPlayers')
+            // console.log("[ Load Existing Session ]")
+            let sessionData = await loadExistingSession(sessionId)
+            socket.emit('loadExistingSession', sessionData)
+            assignPlayerTurn(socket, sessionId)  
           }
-  
+
         }
         else{
-          console.log("[ Load Existing Session ]")
+          console.log("[ Load Existing Session || refreshedBrowser]")
           let sessionData = await loadExistingSession(sessionId)
           socket.emit('loadExistingSession', sessionData)
-  
           assignPlayerTurn(socket, sessionId)
         }
       }  
