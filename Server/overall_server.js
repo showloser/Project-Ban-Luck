@@ -106,21 +106,22 @@
   }
   
   async function startGame(socket, sessionId, players){
+    await changeGameInitializationStatus(sessionId, 'InProgress')
     // // [START OF GAME LOGIC]
     await bettingPhase(socket, sessionId);
 
     deck = initializeDeck()
     //write data to firebase
     writeDeckToDatabase(sessionId, deck)
-  
+    console.log('draw hands')
     for (let playerIndex = 0; playerIndex < players.length; playerIndex++ ){
       await drawInitialHand(sessionId, players[playerIndex])
     }
   
     let sessionData = await loadExistingSession(sessionId)
     io.to(sessionId).emit('loadExistingSession', sessionData)
-  
-    await changeSessionRestartStatus(sessionId)
+    await changeGameInitializationStatus(sessionId, 'Completed')
+
   }
   
   async function drawInitialHand(sessionId, playerId) {
@@ -243,9 +244,9 @@
     }
   }
   
-  async function checkSessionRestart(sessionId){
+  async function GetgameInitializationStatus(sessionId){
     const db = getDatabase()
-    const sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/Restart`)
+    const sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameInitializationCheck`)
     try{
       const snapshot = await get(sessionRef)
       return snapshot.val()
@@ -255,16 +256,18 @@
     }
   }
   
-  async function changeSessionRestartStatus(sessionId){
+
+  async function changeGameInitializationStatus(sessionId, value){
     const db = getDatabase()
-    const restartRef = ref(db, `/project-bunluck/sessions/${sessionId}/Restart`)
+    const restartRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameInitializationCheck`)
     try {
-      // Update the value of restartRef to 'False'
-      await set(restartRef, 'False');
+      // Update the value of restartRef to either [INPROGRESS or COMPLETED]
+      await set(restartRef, value);
     } catch (error) {
       console.error('Error updating restart value:', error);
     }
   }
+
   
   async function loadExistingSession(sessionId){
     const db = getDatabase()
@@ -362,14 +365,13 @@
     set(sessionRef, {
       sessionId: sessionId,
       createdAt: new Date().toISOString(), // Timestamp indicating when the session was created
-      Restart: 'True',
       sessionCode: sessionCode
     });
   
     set(ref(db, `/project-bunluck/sessions/${sessionId}/gameState`), {
-      Restart: 'True',
+      gameInitializationStatus: 'INPROGRESS', // either [INPROGRESS or COMPLETED]
       partyLeader: playerId,
-      gameStatus: 'undefined',
+      gameStatus: 'new',
       Bets: {
         bettingTimerEnd: 'undefined',
         resetTimerBoolean: 'True'
@@ -1118,18 +1120,15 @@
         // startGame(socket, current_sessionId, current_playerId);
       }
       else{
-        let sessionRestart = await checkSessionRestart(sessionId)
-  
         // create socket rooms for all clients in same session
         socket.join(sessionId)
-        if (sessionRestart === 'True'){
           
-          // wait until minimum of 2 players AND all players are ready
           const currentPlayers = await getPlayersId(sessionId)
-          const currentGameStatus = await getGameStatus(sessionId)
-
-          if (currentGameStatus == 'undefined' || currentGameStatus == 'completed') {
-              // [START OF GAME LOGIC]
+          const currentGameStatus = await getGameStatus(sessionId) // to remove (FOR GAME LOOP)
+          if (currentGameStatus == 'new' || currentGameStatus == 'completed') {
+            const bankerId = await getPartyLeader(sessionId)
+            if (playerId == bankerId){
+              // [START OF GAME LOGIC] 
               await configuringOrder(sessionId)
               // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
               await startGame(socket, sessionId, currentPlayers, playerId)
@@ -1137,10 +1136,19 @@
               // chanage gameStatus to in progress   // [IMPT]  I cannot put it right after {if (currentGameStatus == 'undefined' || currentGameStatus == 'completed')} as the else statement will execute due to async and sessionData will not be loaded.  
               changeGameStatus(sessionId, 'inProgress')
               assignPlayerTurn(socket, sessionId) 
-              
-              
+            }
+            else{
+              let gameInitializationStatus = await GetgameInitializationStatus(sessionId)
+              if (gameInitializationStatus == "INPROGRESS"){
+                // loadExistingSession(sessionId) has been emited to all by the partyLeader
+                print("put assignPlayer turn here")
 
 
+              }
+
+            }
+
+              
           }
           else{
             // console.log("[ Load Existing Session ]")
@@ -1149,7 +1157,7 @@
             assignPlayerTurn(socket, sessionId)
           }
 
-        }
+        
         else{
           console.log("[ Load Existing Session || refreshedBrowser]")
           let sessionData = await loadExistingSession(sessionId)
