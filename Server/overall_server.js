@@ -106,21 +106,18 @@
   }
   
   async function startGame(socket, sessionId, players){
-    await changeGameInitializationStatus(sessionId, 'InProgress')
+    await changeGameInitializationStatus(sessionId, 'INPROGRESS')
     // // [START OF GAME LOGIC]
-    await bettingPhase(socket, sessionId);
-
     deck = initializeDeck()
     //write data to firebase
     writeDeckToDatabase(sessionId, deck)
-    console.log('draw hands')
     for (let playerIndex = 0; playerIndex < players.length; playerIndex++ ){
       await drawInitialHand(sessionId, players[playerIndex])
     }
-  
+
+    await changeGameInitializationStatus(sessionId, 'COMPLETED')
     let sessionData = await loadExistingSession(sessionId)
     io.to(sessionId).emit('loadExistingSession', sessionData)
-    await changeGameInitializationStatus(sessionId, 'Completed')
 
   }
   
@@ -246,7 +243,7 @@
   
   async function GetgameInitializationStatus(sessionId){
     const db = getDatabase()
-    const sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameInitializationCheck`)
+    const sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameInitializationStatus`)
     try{
       const snapshot = await get(sessionRef)
       return snapshot.val()
@@ -259,7 +256,7 @@
 
   async function changeGameInitializationStatus(sessionId, value){
     const db = getDatabase()
-    const restartRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameInitializationCheck`)
+    const restartRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameInitializationStatus`)
     try {
       // Update the value of restartRef to either [INPROGRESS or COMPLETED]
       await set(restartRef, value);
@@ -1101,7 +1098,19 @@
 
 
 
-
+  function waitForGameInitialization(sessionId) {
+    return new Promise((resolve) => {
+      const statusRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameInitializationStatus`);
+      
+      const unsubscribe = onValue(statusRef, (snapshot) => {
+        const status = snapshot.val();
+        if (status === "COMPLETED") {
+          unsubscribe(); // Stop listening
+          resolve();
+        }
+      });
+    });
+  }
     
   
   // CONNECTION LOGIC:
@@ -1123,30 +1132,44 @@
         // create socket rooms for all clients in same session
         socket.join(sessionId)
           
-          const currentPlayers = await getPlayersId(sessionId)
-          const currentGameStatus = await getGameStatus(sessionId) // to remove (FOR GAME LOOP)
-          if (currentGameStatus == 'new' || currentGameStatus == 'completed') {
-            const bankerId = await getPartyLeader(sessionId)
-            if (playerId == bankerId){
-              // [START OF GAME LOGIC] 
-              await configuringOrder(sessionId)
-              // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
-              await startGame(socket, sessionId, currentPlayers, playerId)
+        const currentPlayers = await getPlayersId(sessionId)
+        const currentGameStatus = await getGameStatus(sessionId) // to remove (FOR GAME LOOP)
 
-              // chanage gameStatus to in progress   // [IMPT]  I cannot put it right after {if (currentGameStatus == 'undefined' || currentGameStatus == 'completed')} as the else statement will execute due to async and sessionData will not be loaded.  
-              changeGameStatus(sessionId, 'inProgress')
+        //  CURRENTLY currentGameStatus = completed in the if statement produces the following error: 
+        // Error: set failed: value argument contains NaN in property 'project-bunluck.sessions.-OHqI-1qInhkYSL2oXmA.players.-OHqI-1qInhkYSL2oXmB.value.0'
+
+        //  as when user refresh the browser, it is triggering a new gmae, but no function is doing it.
+
+
+        // if (currentGameStatus == 'new' || currentGameStatus == 'completed') { 
+        if (currentGameStatus == 'new') { 
+          await bettingPhase(socket, sessionId);
+
+          const bankerId = await getPartyLeader(sessionId)
+          if (playerId == bankerId){
+            // [START OF GAME LOGIC] 
+            await configuringOrder(sessionId)
+            // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
+            await startGame(socket, sessionId, currentPlayers, playerId)
+
+            // chanage gameStatus to in progress   // [IMPT]  I cannot put it right after {if (currentGameStatus == 'undefined' || currentGameStatus == 'completed')} as the else statement will execute due to async and sessionData will not be loaded.  
+            changeGameStatus(sessionId, 'inProgress')
+            assignPlayerTurn(socket, sessionId) 
+          }
+          else{
+            let gameInitializationStatus = await GetgameInitializationStatus(sessionId)
+            console.log("gameInitializationStatus: ", gameInitializationStatus)
+            if (gameInitializationStatus != "COMPLETED"){
+              await waitForGameInitialization(sessionId);
               assignPlayerTurn(socket, sessionId) 
+              console.log('success 1: non-partyLeader client able to load thru flag (race condition)')
             }
             else{
-              let gameInitializationStatus = await GetgameInitializationStatus(sessionId)
-              if (gameInitializationStatus == "INPROGRESS"){
-                // loadExistingSession(sessionId) has been emited to all by the partyLeader
-                print("put assignPlayer turn here")
-
-
-              }
-
+              assignPlayerTurn(socket, sessionId) 
+              console.log('success 2:  non-partyLeader client able to load as per normal (lost race condition)')
             }
+
+          }
 
               
           }
@@ -1158,12 +1181,12 @@
           }
 
         
-        else{
-          console.log("[ Load Existing Session || refreshedBrowser]")
-          let sessionData = await loadExistingSession(sessionId)
-          socket.emit('loadExistingSession', sessionData)
-          assignPlayerTurn(socket, sessionId)
-        }
+        // else{
+        //   console.log("[ Load Existing Session || refreshedBrowser]")
+        //   let sessionData = await loadExistingSession(sessionId)
+        //   socket.emit('loadExistingSession', sessionData)
+        //   assignPlayerTurn(socket, sessionId)
+        // }
       }  
   })
   
