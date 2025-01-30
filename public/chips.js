@@ -175,9 +175,14 @@ function runTimer(endTimeEpoch) {
 
 
 socket.on('bettingPhase' , (bettingTimerEnd) => {
+  console.log(bettingTimerEnd)
+  console.log('bettingPhase')
+
 
   // Show Betting Interface + Animation
   const bettingInterface = document.getElementById('bettingOverlay');
+  bettingInterface.classList.add('show');
+
   setTimeout(() => {
     bettingInterface.classList.add('show');
   }, 300); // Delay for 300ms for smooth transisition.

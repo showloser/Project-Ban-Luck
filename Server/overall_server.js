@@ -759,6 +759,7 @@
       const updates = {}
 
       updates["deck"] = "gameEnd"
+      updates["gameState/Bets/resetTimerBoolean"] = "True"
 
       if (players) {
         for (const playerId in players){
@@ -1116,79 +1117,72 @@
   // CONNECTION LOGIC:
   // Handle 'connect' event
   io.on('connection', (socket) => {
-  socket.on('sessionId', async (sessionId, playerId) => {
-      const current_sessionId = sessionId
-      const current_playerId = playerId
+  // socket.on('sessionId', async (sessionId, playerId) => {
+  //     const current_sessionId = sessionId
+  //     const current_playerId = playerId
   
-      // check if session already exist: 
-      let sessionCheck = await checkExistingSession(sessionId)
-      if (!sessionCheck){
-        console.log("[ DO SOMETHING ]")
-        // should not run for now!!!
-  
-        // startGame(socket, current_sessionId, current_playerId);
-      }
-      else{
-        // create socket rooms for all clients in same session
-        socket.join(sessionId)
+  //     // check if session already exist: 
+  //     let sessionCheck = await checkExistingSession(sessionId)
+  //     if (!sessionCheck){
+  //       console.log("[ DO SOMETHING ]")
+  //       // should not run for now!!!
+  //     }
+  //     else{
+  //       // create socket rooms for all clients in same session
+  //       socket.join(sessionId)
           
-        const currentPlayers = await getPlayersId(sessionId)
-        const currentGameStatus = await getGameStatus(sessionId) // to remove (FOR GAME LOOP)
+  //       const currentPlayers = await getPlayersId(sessionId)
+  //       const currentGameStatus = await getGameStatus(sessionId) // to remove (FOR GAME LOOP)
 
-        //  CURRENTLY currentGameStatus = completed in the if statement produces the following error: 
-        // Error: set failed: value argument contains NaN in property 'project-bunluck.sessions.-OHqI-1qInhkYSL2oXmA.players.-OHqI-1qInhkYSL2oXmB.value.0'
+  //       //  CURRENTLY currentGameStatus = completed in the if statement produces the following error: 
+  //       // Error: set failed: value argument contains NaN in property 'project-bunluck.sessions.-OHqI-1qInhkYSL2oXmA.players.-OHqI-1qInhkYSL2oXmB.value.0'
 
-        //  as when user refresh the browser, it is triggering a new gmae, but no function is doing it.
+  //       //  as when user refresh the browser, it is triggering a new gmae, but no function is doing it.
 
 
-        // if (currentGameStatus == 'new' || currentGameStatus == 'completed') { 
-        if (currentGameStatus == 'new') { 
-          await bettingPhase(socket, sessionId);
+  //       // if (currentGameStatus == 'new' || currentGameStatus == 'completed') { 
+  //       if (currentGameStatus == 'new') { 
+  //         await bettingPhase(socket, sessionId);
 
-          const bankerId = await getPartyLeader(sessionId)
-          if (playerId == bankerId){
-            // [START OF GAME LOGIC] 
-            await configuringOrder(sessionId)
-            // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
-            await startGame(socket, sessionId, currentPlayers, playerId)
+  //         const bankerId = await getPartyLeader(sessionId)
+  //         if (playerId == bankerId){
+  //           // [START OF GAME LOGIC] 
+  //           await configuringOrder(sessionId)
+  //           // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
+  //           await startGame(socket, sessionId, currentPlayers, playerId)
+  
+  //           changeGameStatus(sessionId, 'inProgress')
+  //           assignPlayerTurn(socket, sessionId) 
+  //         }
+  //         else{
+  //           let gameInitializationStatus = await GetgameInitializationStatus(sessionId)
+  //           console.log("gameInitializationStatus: ", gameInitializationStatus)
+  //           if (gameInitializationStatus != "COMPLETED"){
+  //             await waitForGameInitialization(sessionId);
+  //             assignPlayerTurn(socket, sessionId) 
+  //             console.log('[Client-Connection 1] : non-partyLeader client able to load thru flag (race condition)')
+  //           }
+  //           else{
+  //             assignPlayerTurn(socket, sessionId) 
+  //             console.log('[Client-Connection 2] : non-partyLeader client able to load as per normal (lost race condition)')
+  //           }
+  //         }
 
-            // chanage gameStatus to in progress   // [IMPT]  I cannot put it right after {if (currentGameStatus == 'undefined' || currentGameStatus == 'completed')} as the else statement will execute due to async and sessionData will not be loaded.  
-            changeGameStatus(sessionId, 'inProgress')
-            assignPlayerTurn(socket, sessionId) 
-          }
-          else{
-            let gameInitializationStatus = await GetgameInitializationStatus(sessionId)
-            console.log("gameInitializationStatus: ", gameInitializationStatus)
-            if (gameInitializationStatus != "COMPLETED"){
-              await waitForGameInitialization(sessionId);
-              assignPlayerTurn(socket, sessionId) 
-              console.log('success 1: non-partyLeader client able to load thru flag (race condition)')
-            }
-            else{
-              assignPlayerTurn(socket, sessionId) 
-              console.log('success 2:  non-partyLeader client able to load as per normal (lost race condition)')
-            }
-
-          }
-
-              
-          }
-          else{
-            // console.log("[ Load Existing Session ]")
-            let sessionData = await loadExistingSession(sessionId)
-            socket.emit('loadExistingSession', sessionData)
-            assignPlayerTurn(socket, sessionId)
-          }
-
-        
-        // else{
-        //   console.log("[ Load Existing Session || refreshedBrowser]")
-        //   let sessionData = await loadExistingSession(sessionId)
-        //   socket.emit('loadExistingSession', sessionData)
-        //   assignPlayerTurn(socket, sessionId)
-        // }
-      }  
-  })
+  //       }
+  //       else{
+  //         // console.log("[ Load Existing Session ]")
+  //         let sessionData = await loadExistingSession(sessionId)
+  //         socket.emit('loadExistingSession', sessionData)
+  //         assignPlayerTurn(socket, sessionId)
+  //       }
+  //       // else{
+  //       //   console.log("[ Load Existing Session || refreshedBrowser]")
+  //       //   let sessionData = await loadExistingSession(sessionId)
+  //       //   socket.emit('loadExistingSession', sessionData)
+  //       //   assignPlayerTurn(socket, sessionId)
+  //       // }
+  //     }  
+  // })
   
   socket.on('chat', async (sessionId, playerId, username, chatData) => {
     // Escape HTML entities
@@ -1209,12 +1203,7 @@
   
   socket.on('restartGame', async (sessionId, playerId) => {
       restartGame(sessionId) //erase all relevant data from db
-    })
-  
-    // Handle client disconnect
-  socket.on('disconnect', () => {
-  
-  });
+  })
   
   socket.on('waitingRoom', async (sessionId) => {
     // should put socket.join upper in the hierarchy [IMPT]
@@ -1301,7 +1290,120 @@
   
   
   
+
+
+  async function runGameCycle(socket, sessionId, currentPlayers, playerId){
+
+    await bettingPhase(socket, sessionId);
+    
+    const bankerId = await getPartyLeader(sessionId)
+    if (playerId == bankerId){
+      // [START OF GAME LOGIC] 
+      await configuringOrder(sessionId)
+      // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
+      await startGame(socket, sessionId, currentPlayers, playerId)
+
+      changeGameStatus(sessionId, 'inProgress')
+      assignPlayerTurn(socket, sessionId) 
+    }
+    else{
+      let gameInitializationStatus = await GetgameInitializationStatus(sessionId)
+      console.log("gameInitializationStatus: ", gameInitializationStatus)
+      if (gameInitializationStatus != "COMPLETED"){
+        await waitForGameInitialization(sessionId);
+        assignPlayerTurn(socket, sessionId) 
+        console.log('[Client-Connection 1] : non-partyLeader client able to load thru flag (race condition)')
+      }
+      else{
+        assignPlayerTurn(socket, sessionId) 
+        console.log('[Client-Connection 2] : non-partyLeader client able to load as per normal (No race condition)')
+      }
+    }
+  }
+
+
+
   
+
+//  game restart!!
+  io.on('connection', (socket) => {
+    socket.on('sessionId', async (sessionId, playerId) => {
+
+      // check if session already exist: 
+      let sessionCheck = await checkExistingSession(sessionId)
+      if (!sessionCheck){
+        console.log("[ DO SOMETHING ]")
+        // should not run for now!!!
+      }
+      else{
+        // create socket rooms for all clients in same session
+        socket.join(sessionId)
+          
+        const currentPlayers = await getPlayersId(sessionId)
+        const currentGameStatus = await getGameStatus(sessionId) 
+
+
+
+        // if (currentGameStatus == 'new' || currentGameStatus == 'completed') { 
+        if (currentGameStatus == 'new') { 
+          runGameCycle(socket, sessionId, currentPlayers, playerId)
+
+        }
+        else{
+          // console.log("[ Load Existing Session ]")
+          let sessionData = await loadExistingSession(sessionId)
+          socket.emit('loadExistingSession', sessionData)
+          assignPlayerTurn(socket, sessionId)
+        }
+        // else{
+        //   console.log("[ Load Existing Session || refreshedBrowser]")
+        //   let sessionData = await loadExistingSession(sessionId)
+        //   socket.emit('loadExistingSession', sessionData)
+        //   assignPlayerTurn(socket, sessionId)
+        // }
+      }  
+    })
+
+
+    socket.on('restartGame', async(sessionId, playerId) => {
+
+      // check if player is banker
+      const partyLeader = await getPartyLeader(sessionId)
+      if (playerId == partyLeader){
+        console.log('this ran')
+        runGameCycle(socket, sessionId, currentPlayers, playerId)
+      }
+
+    })
+
+  })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // Start the server
   const PORT = process.env.PORT || 8888;
   server.listen(PORT, () => {

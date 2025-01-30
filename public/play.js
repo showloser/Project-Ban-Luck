@@ -436,7 +436,7 @@ function gameEnd(){
 
 function GameEndCardAnimation() {
     // remove arrow container
-    document.querySelectorAll(".arrow-container").forEach(el => el.remove());
+    // document.querySelectorAll(".arrow-container").forEach(el => el.remove());
 
     const bankerContainer = document.getElementById('bankerContainer');
     const bankerCards = bankerContainer.querySelectorAll('.currentPlayerImgElement');
@@ -596,6 +596,8 @@ socket.on('connect', () => {
         //[CAB] TO BE REDONE 
         updateBalance(outcome)
         console.log(outcome)
+
+        socket.emit('restartGame', sessionId, clientPlayerId)
 
         
     })
