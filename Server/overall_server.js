@@ -763,9 +763,9 @@
 
       if (players) {
         for (const playerId in players){
-          updates[`players/${playerId}/bets/currentBet`] = "gameEnd";
-          updates[`players/${playerId}/currentHand`] = "gameEnd";
-          updates[`players/${playerId}/value`] = "gameEnd";
+          updates[`players/${playerId}/bets/currentBet`] = 0; // [IMPT] suppose to be "gameEnd", but if user does not place bet, will result in error as gameEnd is NaN
+          updates[`players/${playerId}/currentHand`] = 0; // [IMPT] suppose to be "gameEnd", but if user does not place bet, will result in error as gameEnd is NaN
+          updates[`players/${playerId}/value`] = 0; // [IMPT] suppose to be "gameEnd", but if user does not place bet, will result in error as gameEnd is NaN
         }
       }
       await update(sessionRef, updates);
@@ -999,6 +999,7 @@
       }, bettingPhaseDuration)
   
       socket.on('playerBets', (dataObj) => {
+        console.log(dataObj)
         writePlayerBets(dataObj['sessionId'], dataObj['playerId'], dataObj['betAmount'])
       })
   
@@ -1082,6 +1083,7 @@
               changeGameStatus(sessionId, 'completed');
   
               io.to(sessionId).emit('gameEnd', outcome);
+              console.log(outcome)
               break;
             } else {
               // Change order to next person
@@ -1090,8 +1092,11 @@
           } else {
             socket.emit('error', 'This is not your turn');
           }
+        } else{
+          console.error('something went wrong')
         }
       }
+
     }
     handleCurrentTurn();
   }
@@ -1201,7 +1206,7 @@
   })
   
   
-  socket.on('restartGame', async (sessionId, playerId) => {
+  socket.once('restartGame', async (sessionId, playerId) => {
       restartGame(sessionId) //erase all relevant data from db
   })
   
@@ -1292,40 +1297,110 @@
   
 
 
-  async function runGameCycle(socket, sessionId, currentPlayers, playerId){
+  // async function runGameCycle(socket, sessionId, currentPlayers, playerId){
 
-    await bettingPhase(socket, sessionId);
+  //   await bettingPhase(socket, sessionId);
     
-    const bankerId = await getPartyLeader(sessionId)
-    if (playerId == bankerId){
-      // [START OF GAME LOGIC] 
-      await configuringOrder(sessionId)
-      // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
-      await startGame(socket, sessionId, currentPlayers, playerId)
+  //   const bankerId = await getPartyLeader(sessionId)
+  //   if (playerId == bankerId){
+  //     // [START OF GAME LOGIC] 
+  //     await configuringOrder(sessionId)
+  //     // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
+  //     await startGame(socket, sessionId, currentPlayers, playerId)
+  //     changeGameStatus(sessionId, 'inProgress')
+  //     assignPlayerTurn(socket, sessionId)
+  //   }
+  //   else{
+  //     console.log('Client shd run thiss')
+      
+  //     let gameInitializationStatus = await GetgameInitializationStatus(sessionId)
 
-      changeGameStatus(sessionId, 'inProgress')
-      assignPlayerTurn(socket, sessionId) 
-    }
-    else{
-      let gameInitializationStatus = await GetgameInitializationStatus(sessionId)
-      console.log("gameInitializationStatus: ", gameInitializationStatus)
-      if (gameInitializationStatus != "COMPLETED"){
-        await waitForGameInitialization(sessionId);
-        assignPlayerTurn(socket, sessionId) 
-        console.log('[Client-Connection 1] : non-partyLeader client able to load thru flag (race condition)')
+  //     if (gameInitializationStatus != "COMPLETED"){
+  //       await waitForGameInitialization(sessionId);
+  //       assignPlayerTurn(socket, sessionId) 
+
+  //       console.log('client-connected 1')
+  //       // console.log('[Client-Connection 1] : non-partyLeader client able to load thru flag (race condition)')
+  //     }
+  //     else{
+  //       assignPlayerTurn(socket, sessionId) 
+  //       console.log('client-connected 2')
+
+  //       // console.log('[Client-Connection 2] : non-partyLeader client able to load as per normal (No race condition)')
+  //     }
+  //   }
+  // }
+
+
+  async function runGameCyclePartyLeader(socket, sessionId, currentPlayers, playerId){
+    await bettingPhase(socket, sessionId);
+    // [START OF GAME LOGIC] 
+    await configuringOrder(sessionId)
+    // startGame (initialize deck) -> [using gameStatus as checkflag so startGame ONLY runs once]
+    await startGame(socket, sessionId, currentPlayers, playerId)
+    changeGameStatus(sessionId, 'inProgress')
+    assignPlayerTurn(socket, sessionId)
+
+
+
+    function countListenersForAllEvents() {
+      const eventCounts = new Map(); // Store event counts
+  
+      io.sockets.sockets.forEach(socket => {
+        socket.eventNames().forEach(event => {
+            eventCounts.set(event, (eventCounts.get(event) || 0) + socket.listeners(event).length);
+        });
+      });
+
+      console.log()
+      console.log("Total listeners for all events:");
+      console.log('---------------------------------')
+      eventCounts.forEach((count, event) => {
+          console.log(`${event}: ${count} listener${count > 1 ? "s" : ""}`);
+      });
+      console.log('---------------------------------')
       }
-      else{
-        assignPlayerTurn(socket, sessionId) 
-        console.log('[Client-Connection 2] : non-partyLeader client able to load as per normal (No race condition)')
-      }
-    }
-  }
-
-
-
+      countListenersForAllEvents();
   
 
-//  game restart!!
+      // socket.removeAllListeners('restartGame')
+      // socket.removeAllListeners('sessionId')
+      socket.removeAllListeners('error')
+      socket.removeAllListeners('chat')
+      socket.removeAllListeners('waitingRoom')
+      socket.removeAllListeners('readyStatus')
+      socket.removeAllListeners('redirect_to_game')
+      // socket.removeAllListeners('playerBets')
+      socket.removeAllListeners('playerHit')
+      socket.removeAllListeners('playerStand')
+  }
+
+  async function runGameCycleClient(socket, sessionId){
+    let gameInitializationStatus = await GetgameInitializationStatus(sessionId)
+
+    if (gameInitializationStatus != "COMPLETED"){
+      await waitForGameInitialization(sessionId);
+      assignPlayerTurn(socket, sessionId) 
+
+      // console.log('[Client-Connection 1] : non-partyLeader client able to load thru flag (race condition)')
+    }
+    else{
+      assignPlayerTurn(socket, sessionId) 
+      // console.log('[Client-Connection 2] : non-partyLeader client able to load as per normal (No race condition)')
+    }
+
+      // socket.removeAllListeners('restartGame')
+      // socket.removeAllListeners('sessionId')
+      socket.removeAllListeners('error')
+      socket.removeAllListeners('chat')
+      socket.removeAllListeners('waitingRoom')
+      socket.removeAllListeners('readyStatus')
+      socket.removeAllListeners('redirect_to_game')
+      // socket.removeAllListeners('playerBets')
+      socket.removeAllListeners('playerHit')
+      socket.removeAllListeners('playerStand')
+
+  }
   io.on('connection', (socket) => {
     socket.on('sessionId', async (sessionId, playerId) => {
 
@@ -1342,11 +1417,33 @@
         const currentPlayers = await getPlayersId(sessionId)
         const currentGameStatus = await getGameStatus(sessionId) 
 
-
-
         // if (currentGameStatus == 'new' || currentGameStatus == 'completed') { 
         if (currentGameStatus == 'new') { 
-          runGameCycle(socket, sessionId, currentPlayers, playerId)
+          const partyLeader = await getPartyLeader(sessionId)
+          if (playerId == partyLeader){
+            runGameCyclePartyLeader(socket, sessionId, currentPlayers, playerId)
+
+            // socket.removeAllListeners('error')
+            // socket.removeAllListeners('chat')
+            // socket.removeAllListeners('waitingRoom')
+            // socket.removeAllListeners('readyStatus')
+            // socket.removeAllListeners('redirect_to_game')
+            // socket.removeAllListeners('playerBets')
+            // socket.removeAllListeners('playerHit')
+            // socket.removeAllListeners('playerStand')
+          }
+          else{
+            runGameCycleClient(socket, sessionId)
+
+            // socket.removeAllListeners('error')
+            // socket.removeAllListeners('chat')
+            // socket.removeAllListeners('waitingRoom')
+            // socket.removeAllListeners('readyStatus')
+            // socket.removeAllListeners('redirect_to_game')
+            // socket.removeAllListeners('playerBets')
+            // socket.removeAllListeners('playerHit')
+            // socket.removeAllListeners('playerStand')
+          }
 
         }
         else{
@@ -1355,25 +1452,20 @@
           socket.emit('loadExistingSession', sessionData)
           assignPlayerTurn(socket, sessionId)
         }
-        // else{
-        //   console.log("[ Load Existing Session || refreshedBrowser]")
-        //   let sessionData = await loadExistingSession(sessionId)
-        //   socket.emit('loadExistingSession', sessionData)
-        //   assignPlayerTurn(socket, sessionId)
-        // }
       }  
     })
 
 
     socket.on('restartGame', async(sessionId, playerId) => {
-
-      // check if player is banker
+      console.log('RESTART GAME')
+      // check if player is partyLeader
       const partyLeader = await getPartyLeader(sessionId)
       if (playerId == partyLeader){
-        console.log('this ran')
-        runGameCycle(socket, sessionId, currentPlayers, playerId)
+        runGameCyclePartyLeader(socket, sessionId, currentPlayers, playerId)
       }
-
+      else{
+        runGameCycleClient(socket, sessionId)
+      }
     })
 
   })
@@ -1411,4 +1503,19 @@
   });
   
   
-  
+// [IMPT Function to check active listeners
+// function countListenersForAllEvents() {
+//   const eventCounts = new Map(); // Store event counts
+
+//   io.sockets.sockets.forEach(socket => {
+//       socket.eventNames().forEach(event => {
+//           eventCounts.set(event, (eventCounts.get(event) || 0) + socket.listeners(event).length);
+//       });
+//   });
+
+//   console.log("Total listeners for all events:");
+//   eventCounts.forEach((count, event) => {
+//       console.log(`${event}: ${count} listener${count > 1 ? "s" : ""}`);
+//   });
+// }
+//   countListenersForAllEvents();

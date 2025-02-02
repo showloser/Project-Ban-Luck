@@ -407,6 +407,7 @@ function cardFan(playerId) {
 
 function playerHit() {
     socket.emit('playerHit', sessionId, clientPlayerId) //send request to 'hit'
+    console.log('hit')
 
     socket.on('error_card_length_5', () => {
         window.alert("Max Cards allowed is 5")
