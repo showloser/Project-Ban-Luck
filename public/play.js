@@ -553,7 +553,6 @@ function updateBalance(outcome){
         const key = Object.keys(data)[0]; // Get the key of the object
         if (key == clientPlayerId){
             balanceElement.innerText = data[key].playerBalance
-            console.log(data[key].playerBalance)
         }
     })
 }
