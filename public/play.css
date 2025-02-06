@@ -232,7 +232,6 @@ body {
     justify-content: space-between;
     align-items: center;
     background-color: #8B4513;
-
     margin-top: -5px;
     border-top: 5px solid black;
 }
@@ -261,7 +260,25 @@ body {
     top: .2em;
 }
 
-.balance, .subButton{
+
+.balanceInfo{
+    display: flex;
+}
+.balance, .betAmount{
+    color: white;
+    font-family: "VT323", monospace;
+    font-weight: 400;
+    font-size: 30px;
+    text-align: center;
+    background-color: #61300D;
+    padding: 10px 0px;
+    margin: 0 10px;
+    border-radius: 5px;
+    width: 200px;
+}
+
+
+.subButton{
     color: white;
     font-family: "VT323", monospace;
     font-weight: 400;
@@ -295,4 +312,33 @@ body {
 #cardPileImg{
     top: 0px;
     position: absolute
+}
+
+
+/* banner */
+.banner {
+    position: fixed;
+    top: 10%;
+    left: 0;
+    width: 100%;
+    padding: 20px 0;
+    font-family: cursive;
+    font-size: 24px;
+    text-align: center;
+    background: linear-gradient(to right, rgba(144, 238, 144, 0), lightgreen, rgba(144, 238, 144, 0));
+    color: black;
+    font-weight: bold;
+    display: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.5s ease-in, opacity 1.5s ease-out;
+
+}
+
+.win {
+    color: darkgreen;
+}
+
+.lose {
+    color: darkred;
 }

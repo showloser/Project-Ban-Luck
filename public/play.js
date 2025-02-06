@@ -557,6 +557,40 @@ function updateBalance(outcome){
 }
 
 
+
+function showBanner(outcome) {
+    const banner = document.querySelector('.banner');
+
+    outcome.forEach((data) => {
+        const key = Object.keys(data)[0]; // Get the key of the object
+        if (key == clientPlayerId){
+            if (data[key].playerBalance  > 1000){
+                banner.className = 'banner win';
+                banner.textContent = `VICTORY! You Have Won ${data[key].betAmount}`;
+            }
+            else{
+                banner.className = 'banner lose';
+                banner.textContent = `Nice Try! You Have Lost ${data[key].betAmount}`;
+            }
+            
+            banner.style.display = "block";
+            setTimeout(() => {
+                banner.style.opacity = "1";
+            }, 10); // Short delay to trigger transition
+            
+            setTimeout(() => {
+                banner.style.opacity = "0";
+                setTimeout(() => {
+                    banner.style.display = "none";
+                }, 1500); 
+            }, 2000);
+
+        }
+    })
+}
+
+
+
 // socket.io connections.
 const sessionId = localStorage.getItem('sessionId')
 const clientPlayerId = localStorage.getItem('playerId')
@@ -591,37 +625,13 @@ socket.on('connect', () => {
     socket.on('gameEnd' , (outcome) => {
 
 
-        function showBanner(outcome) {
-            const banner = document.querySelector('.banner');
-        
-            outcome.forEach((data) => {
-                const key = Object.keys(data)[0]; // Get the key of the object
-                if (key == clientPlayerId){
-        
-                    if (data[key].playerBalance  > 1000){
-                        banner.className = 'banner win';
-                        banner.querySelector('h2').textContent = `VICTORY! You Have Won $${data[key].betAmount}`;
-                    }
-                    else{
-                        banner.className = 'banner lose';
-                        banner.querySelector('h2').textContent = `Nice Try! You Have Lost $${data[key].betAmount}`;
-        
-                    }
-        
-                }
-            })
-        }
-
-
         showBanner(outcome)
-
 
         //function to move cards back to deck
         GameEndCardAnimation()
         
         //[CAB] TO BE REDONE 
         updateBalance(outcome)
-        console.log(outcome)
 
         socket.emit('restartGame', sessionId, clientPlayerId)
 
