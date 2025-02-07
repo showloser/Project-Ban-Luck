@@ -79,49 +79,14 @@
         </div>
     </div>
 
-
-    <div class="table" id="table">
-
-        <!-- [IMPT] to be removed. (All to be dynamically added using play.js) -->
-        <!-- <div class="banker">
-            <div class="bankerProfile">
-                <img class="bankerIcon" src="images/profile_icons/1.png" alt="">
-                <div class="bankerUsername">theBanker</div>
-            </div>
-            <div class="cards"><img src="images/pixelCards/king_of_diamonds.png" alt=""></div>
-        </div>
-
-        <div class="middleArea">
-            <div class="cardPile third-column">
-                <div class="cards">
-                    <div id="cardPile"></div>
-                    <img src="images/pixelCards/Back1.png">
-                </div>
-            </div>
-        </div>
-
-        <div id="playersContainer" class="players">
-            <div class="player"> [Sample of dynamically added dDOM]
-                <div class="betAmount"></div>
-                <div class="cards">
-                    <img src="images/pixelCards/king_of_diamonds.png" class="stacked" alt="">
-                    <div class="emptyDiv"></div>
-                </div>
-                <div class="profile">
-                    <img class="playerIcon" src="images/profile_icons/1.png" alt="">
-                    <div class="playerUsername">showloser</div>
-                </div>
-            </div>
-        </div> -->
-    </div>
-
+    <div class="table" id="table"></div>
 
     <div id="gameBanner" class="banner"></div>
 
     <div class="gameFooter">
         <div class="balanceInfo">
             <div class="balance">Balance: $<span id="playerBalance">1000</span></div>
-            <div class="betAmount">Your Bet: $<span id="playerBet">0</span></div>
+            <div class="yourBet">Your Bet: $<span id="playerBet">0</span></div>
         </div>
 
         <div class="buttons">
@@ -132,6 +97,11 @@
         </div>
         <div class="subButton" onclick="restart()">Restart/Leave</div>
     </div>
+    
+
+    <audio id="cardOpenPackage2" src="music/cardOpenPackage2.ogg" preload="auto"></audio>
+
+
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
     <script src="play.js"></script>
     <script src="chips.js"></script>

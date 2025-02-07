@@ -264,7 +264,7 @@ body {
 .balanceInfo{
     display: flex;
 }
-.balance, .betAmount{
+.balance, .yourBet{
     color: white;
     font-family: "VT323", monospace;
     font-weight: 400;
@@ -342,3 +342,38 @@ body {
 .lose {
     color: darkred;
 }
+
+/* BankerChallenge */
+
+.bankerChallenge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 10px 20px;
+    background-color: #ef5349;
+    color: black;
+    font-family: cursive;
+    font-size: 20px;
+    font-weight: 600;
+    border: 2px solid black;
+    cursor: pointer;
+    text-align: center;
+    border-radius: 5px;
+    box-shadow: 3px 3px 0 black;
+    transition: opacity 300ms ease-out, transform 300ms ease-out;
+    z-index: 999999;
+}
+
+.bankerChallenge:hover {
+    background-color: #ee4035;
+    box-shadow: 5px 5px 0 black;
+}
+
+/* Fade-out effect */
+.bankerChallenge.fade-out {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+    visibility: hidden;
+    transition: opacity 300ms ease-out, transform 300ms ease-out, visibility 0s 300ms;
+} 

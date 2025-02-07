@@ -65,6 +65,11 @@ function loadUI(bankerOrPlayer){
         bankerContainer.className = 'bankers'
         bankerContainer.id = 'bankerContainer'
 
+        const bankerChallenge = document.createElement('div')
+        bankerChallenge.className = 'bankerChallenge'
+        bankerChallenge.innerHTML = '开'
+        playerContainer.appendChild(bankerChallenge)
+
         table.append(playerContainer)
         table.append(middleArea)
         table.append(bankerContainer)
@@ -406,8 +411,10 @@ function cardFan(playerId) {
 }
 
 function playerHit() {
+    var audio = document.getElementById("cardOpenPackage2");
+    audio.play()
+
     socket.emit('playerHit', sessionId, clientPlayerId) //send request to 'hit'
-    console.log('hit')
 
     socket.on('error_card_length_5', () => {
         window.alert("Max Cards allowed is 5")
@@ -588,6 +595,15 @@ function showBanner(outcome) {
         }
     })
 }
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    const button = document.querySelector(".bankerChallenge");
+
+    button.addEventListener("click", () => {
+        button.classList.add("fade-out");
+    });
+});
 
 
 
