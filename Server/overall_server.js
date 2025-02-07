@@ -582,9 +582,64 @@
   // There will be 3 different types of ways to 'EndGame'
   // 1) Normal open all (endGameOpenAll)
   // 2) Open single (banker Only)
-  // 3) Open single (player)
   // 3) Open at the start (only for banban and banluck)
   // 4) WU LONG 5 Card
+  
+  async function openSingle(sessionId, targetPlayerId){
+    
+    // [CAW]
+    // during banker turn, load bankerUI & load "playerWaiting" UI
+    // banker has option to open single or all (either clicking on playerIcon or Stand)
+    // load functions depending on action
+    // implement new db for outcomes? 
+    // make a event-driven loop to track either allPlayersHaveOpen or banker wu long
+
+    
+    
+    const data = await getAllInfo(sessionId)
+    
+    let bankerId = null
+    let bankerBalance = null
+    let bankerCardValue = null
+    let playerBalance = null
+    let playerCardValue = null
+    
+    for (let key in data) {
+      if (data[key].banker === 'True') {
+          bankerId = key
+          bankerBalance = data[key].bets.playerBalance
+          bankerCardValue = data[key].value[0];
+          break;
+      }
+      
+      if(key == targetPlayerId){
+        playerBalance = data[key].bets.playerBalance
+        playerCardValue = data[key].value[0]
+      }
+      
+      // comparison logic
+      
+      
+    
+      // update db
+
+
+      
+      // reload session
+      const sessionInfo = await getSessionInfo(sessionId)
+      io.to(sessionId, sessionInfo)
+
+    } 
+    
+    
+    
+    
+    
+    
+    
+    
+    }
+  
   
   async function endGameOpenAll(sessionId){
     const data = await getAllInfo(sessionId)
