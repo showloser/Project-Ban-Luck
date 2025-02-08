@@ -553,6 +553,7 @@ function activateButtons(){
 
 //[CAB] TO BE REDONE
 function updateBalance(outcome){
+    console.log(outcome)
     const balanceElement = document.getElementById("playerBalance")
     
     outcome.forEach((data) => {
@@ -565,45 +566,71 @@ function updateBalance(outcome){
 
 
 
-function showBanner(outcome) {
-    const banner = document.querySelector('.banner');
+// function showBanner(outcome) {
+//     const banner = document.querySelector('.banner');
 
-    outcome.forEach((data) => {
-        const key = Object.keys(data)[0]; // Get the key of the object
-        if (key == clientPlayerId){
-            if (data[key].playerBalance  > 1000){
-                banner.className = 'banner win';
-                banner.textContent = `VICTORY! You Have Won ${data[key].betAmount}`;
-            }
-            else{
-                banner.className = 'banner lose';
-                banner.textContent = `Nice Try! You Have Lost ${data[key].betAmount}`;
-            }
+//     outcome.forEach((data) => {
+//         const key = Object.keys(data)[0]; // Get the key of the object
+//         if (key == clientPlayerId){
+//             if (data[key].playerBalance  > 1000){
+//                 banner.className = 'banner win';
+//                 banner.textContent = `VICTORY! You Have Won ${data[key].betAmount}`;
+//             }
+//             else{
+//                 banner.className = 'banner lose';
+//                 banner.textContent = `Nice Try! You Have Lost ${data[key].betAmount}`;
+//             }
             
-            banner.style.display = "block";
-            setTimeout(() => {
-                banner.style.opacity = "1";
-            }, 10); // Short delay to trigger transition
+//             banner.style.display = "block";
+//             setTimeout(() => {
+//                 banner.style.opacity = "1";
+//             }, 10); // Short delay to trigger transition
             
-            setTimeout(() => {
-                banner.style.opacity = "0";
-                setTimeout(() => {
-                    banner.style.display = "none";
-                }, 1500); 
-            }, 2000);
+//             setTimeout(() => {
+//                 banner.style.opacity = "0";
+//                 setTimeout(() => {
+//                     banner.style.display = "none";
+//                 }, 1500); 
+//             }, 2000);
 
-        }
-    })
+//         }
+//     })
+// }
+
+
+    
+
+function showTurnBanner() {
+    const turnBanner = document.getElementById('turnBanner');
+    let bannerTimeout;
+
+    // Clear any existing timeout
+    if (bannerTimeout) clearTimeout(bannerTimeout);
+
+    // Reset animations
+    turnBanner.style.display = 'block';
+    turnBanner.style.animation = 'bannerEntrance 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+
+    // Auto-hide after 3 seconds
+    bannerTimeout = setTimeout(() => {
+        turnBanner.style.animation = 'bannerExit 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+        setTimeout(() => {
+        turnBanner.style.display = 'none';
+        }, 500);
+    }, 3000);
 }
 
 
-document.addEventListener("DOMContentLoaded", () => {
-    const button = document.querySelector(".bankerChallenge");
 
-    button.addEventListener("click", () => {
-        button.classList.add("fade-out");
-    });
-});
+
+
+// document.addEventListener("DOMContentLoaded", () => {
+//     const button = document.querySelector(".bankerChallenge");
+
+//     button.addEventListener("click", () => {
+//         button.classList.add("fade-out");
+//     });
+// });
 
 
 
@@ -613,6 +640,7 @@ const clientPlayerId = localStorage.getItem('playerId')
 const username = localStorage.getItem('username')
 const role = localStorage.getItem('role')
 const socket = io(); // Connect to the server
+let lastTurnOrder = null // for turnBanner (so that multiple assignPlayerTurn does not trigger animation)
 
 loadUI(role)
 
@@ -628,20 +656,33 @@ socket.on('connect', () => {
     })
 
     socket.on('assignPlayerTurn', (currentOrder) => {
-        
-        if (clientPlayerId != currentOrder){
-            deactivateButtons()
+
+        console.log(lastTurnOrder)
+        if (clientPlayerId == currentOrder){
+            activateButtons()
+            if (lastTurnOrder != currentOrder){
+                showTurnBanner();
+
+                document.body.addEventListener('click', () => { // disable animation (click anywhere)
+                    turnBanner.style.animation = 'bannerExit 0.5s forwards';
+                    setTimeout(() => {
+                        turnBanner.style.display = 'none';
+                    }, 500);
+                });
+            }
         }
         else{
-            activateButtons()
+            deactivateButtons()
         }
+        lastTurnOrder = currentOrder; // Update last turn
+
 
     })
 
     socket.on('gameEnd' , (outcome) => {
 
 
-        showBanner(outcome)
+        // showBanner(outcome)
 
         //function to move cards back to deck
         GameEndCardAnimation()

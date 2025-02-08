@@ -589,40 +589,32 @@
   // 4) WU LONG 5 Card
   
   async function openSingle(sessionId, targetPlayerId){
-    
     // [CAW]
     // during banker turn, load bankerUI & load "playerWaiting" UI
     // banker has option to open single or all (either clicking on playerIcon or Stand)
     // load functions depending on action
     // implement new db for outcomes? 
     // make a event-driven loop to track either allPlayersHaveOpen or banker wu long
-
-    
-    
     const data = await getAllInfo(sessionId)
     
-    let bankerId = null
-    let bankerBalance = null
-    let bankerCardValue = null
-    let playerBalance = null
-    let playerCardValue = null
+    let banker = {}
+    let players = {}
     let breakCondition = 0
     // break only when bankerInfo and playerInfo is set. (looping once instead of twice O(n))
     
     for (let key in data) {
       if (data[key].banker === 'True') {
-          bankerId = key
-          bankerBalance = data[key].bets.playerBalance
-          bankerCardValue = data[key].value[0];
-          breakCondition += 1
-          if (breakCondition == 2){
-            break
-          }
+        banker['bankerId'] = key
+        banker['bankerBalance'] = data[key].bets.playerBalance
+        banker['cardValue'] = data[key].value[0];
+        breakCondition += 1
+        if (breakCondition == 2){
+          break
+        }
       }
       
       if(key == targetPlayerId){
-        playerBalance = data[key].bets.playerBalance
-        playerCardValue = data[key].value[0]
+        players[`${key}`] = data[key]
         breakCondition += 1
         if (breakCondition == 2){
           break
@@ -630,13 +622,13 @@
       }
       
       // comparison logic
-      
-      
+      const outcome = await comparisonLogic(banker, players)
+    
     
       // update db
+      writeOutcome(sessionId, outcome);
 
 
-      
       // reload session
       const sessionInfo = await getSessionInfo(sessionId)
       io.to(sessionId, sessionInfo)
@@ -672,15 +664,12 @@
       // skip to next player if currentPlayer == banker
       if (data[`${key}`].banker == "True"){continue}
       players[`${key}`] = data[key]
-
     }
 
     const outcome = await comparisonLogic(banker, players)
+    writeOutcome(sessionId, outcome);
+
     return outcome
-
-  
-
-
   }
 
   function comparisonLogic(banker, players){
@@ -689,10 +678,6 @@
 
 
     for (let player in players){
-      // console.log('bets: ' + players[`${player}`].bets.currentBet)
-      // console.log('balance: ' + players[`${player}`].bets.playerBalance)
-      // console.log('test: ' + (parseInt(players[`${player}`].bets.playerBalance) + parseInt(players[`${player}`].bets.currentBet)))
-
       // main comparison logic
 
 
@@ -1160,7 +1145,6 @@
             if (currentOrderIndex === fullOrder.length - 1) {
   
               const outcome = await endGameOpenAll(sessionId);  
-              writeOutcome(sessionId, outcome);
               gameEndResetDB(sessionId);
               changeGameStatus(sessionId, 'completed');
   
