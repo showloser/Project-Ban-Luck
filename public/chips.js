@@ -158,6 +158,8 @@ function runTimer(endTimeEpoch) {
         'playerId': clientPlayerId,
         'betAmount': totalBet
       });
+
+      document.getElementById('playerBet').textContent = totalBet
     }
   }
 
@@ -175,9 +177,6 @@ function runTimer(endTimeEpoch) {
 
 
 socket.on('bettingPhase' , (bettingTimerEnd) => {
-  console.log(bettingTimerEnd)
-  console.log('bettingPhase')
-
 
   // Show Betting Interface + Animation
   const bettingInterface = document.getElementById('bettingOverlay');
