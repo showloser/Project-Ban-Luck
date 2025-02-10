@@ -588,7 +588,7 @@
   // 3) Open at the start (only for banban and banluck)
   // 4) WU LONG 5 Card
   
-  async function openSingle(sessionId, targetPlayerId){
+  async function endGameOpenSingle(sessionId, targetPlayerId){
     // [CAW]
     // during banker turn, load bankerUI & load "playerWaiting" UI
     // banker has option to open single or all (either clicking on playerIcon or Stand)
@@ -599,26 +599,15 @@
     
     let banker = {}
     let players = {}
-    let breakCondition = 0
-    // break only when bankerInfo and playerInfo is set. (looping once instead of twice O(n))
     
     for (let key in data) {
       if (data[key].banker === 'True') {
         banker['bankerId'] = key
         banker['bankerBalance'] = data[key].bets.playerBalance
         banker['cardValue'] = data[key].value[0];
-        breakCondition += 1
-        if (breakCondition == 2){
-          break
-        }
       }
-      
       if(key == targetPlayerId){
         players[`${key}`] = data[key]
-        breakCondition += 1
-        if (breakCondition == 2){
-          break
-        }
       }
       
       // comparison logic
@@ -629,9 +618,12 @@
       writeOutcome(sessionId, outcome);
 
 
+      io.to(sessionId).emit('endGameSingle', outcome)
+
+
       // reload session
-      const sessionInfo = await getSessionInfo(sessionId)
-      io.to(sessionId, sessionInfo)
+      // const sessionInfo = await getSessionInfo(sessionId)
+      // io.to(sessionId, sessionInfo)
 
     } 
     
@@ -642,8 +634,7 @@
     
     
     
-    }
-  
+  }
   
   async function endGameOpenAll(sessionId){
     const data = await getAllInfo(sessionId)
@@ -1078,7 +1069,11 @@
       try {
           // get all current players
         currentPlayers = await getPlayersId(sessionId) // returns an array of playerIds
+        currentPlayers.push(currentPlayers.shift()); // set the banker to be the last (move first element to last position)
+
+
         
+
         currentPlayers.forEach((playerId, index) => {
           orderObj[index] = playerId
         })
@@ -1114,8 +1109,9 @@
         // Wait for playerHit or playerStand event
         const [event, playerId] = await new Promise((resolve) => {
           socket.on('playerHit', (sessionId, playerId) => resolve(['playerHit', playerId]));
-          socket.on('playerStand', (sessionId, playerId) => resolve(['playerStand', playerId]));
+          socket.on('playerStand', (sessionId, playerId, othersInfo) => resolve(['playerStand', playerId]));
         });
+
           
         if (event === 'playerHit') {
           // query currentOrderIndex for latest updates as multiple instances of this function will run concurrently
@@ -1143,11 +1139,19 @@
           if (playerId === fullOrder[currentOrderIndex]){
             // check if currentPlayer is last in order:
             if (currentOrderIndex === fullOrder.length - 1) {
-  
+
+              
+              // socket.removeAllListeners('endGameOpenSingle');
+              // socket.removeAllListeners('endGameOpenAll');
+
+              // await new Promise((resolve) => {
+              //   socket.on('endGameOpenSingle', (sessionId, targetPlayerId) => resolve(['playerHit', playerId]));
+              //   socket.on('endGameOpenAll', (sessionId) => resolve(['playerStand', playerId]));
+              // });
+
               const outcome = await endGameOpenAll(sessionId);  
               gameEndResetDB(sessionId);
               changeGameStatus(sessionId, 'completed');
-  
               io.to(sessionId).emit('gameEnd', outcome);
               break;
             } else {

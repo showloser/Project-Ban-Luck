@@ -423,6 +423,19 @@ function playerHit() {
 
 function playerStand(){
     socket.emit('playerStand', sessionId, clientPlayerId)
+
+
+    if (role == 'player'){
+        socket.emit('playerStand', sessionId, clientPlayerId)
+    }
+    else if (role == 'banker'){
+        socket.emit('playerStand', sessionId, clientPlayerId, 'openPLayuer1')
+
+
+    }
+    else{
+        window.alert('something went wrong with the playerStand() button')
+    }
 }
 
 function restart(){
@@ -620,17 +633,6 @@ function showTurnBanner() {
     }, 3000);
 }
 
-
-
-
-
-// document.addEventListener("DOMContentLoaded", () => {
-//     const button = document.querySelector(".bankerChallenge");
-
-//     button.addEventListener("click", () => {
-//         button.classList.add("fade-out");
-//     });
-// });
 
 
 
