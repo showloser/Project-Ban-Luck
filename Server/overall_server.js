@@ -1115,6 +1115,7 @@
         // 4) create new db heirachh for outcome
         // 4.1) include each player -> status : done
         // 4.2) include bet amount
+        // 4.3) basically only the heirachy of outcome to be sent (similar to loadExistingSession)
 
 
 
