@@ -422,15 +422,12 @@ function playerHit() {
 }
 
 function playerStand(){
-    socket.emit('playerStand', sessionId, clientPlayerId)
-
-
     if (role == 'player'){
         socket.emit('playerStand', sessionId, clientPlayerId)
     }
     else if (role == 'banker'){
-        socket.emit('playerStand', sessionId, clientPlayerId, 'openPLayuer1')
-
+        // socket.emit('endGameOpenSingle', sessionId, clientPlayerId, 'openPLayuer1')
+        socket.emit('playerStand', sessionId, clientPlayerId)
 
     }
     else{
@@ -654,6 +651,7 @@ socket.on('connect', () => {
 
 
     socket.on('loadExistingSession', (player_data) => {
+        console.log(player_data)
         loadGameElements_NEW(player_data, role)
     })
 

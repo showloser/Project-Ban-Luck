@@ -383,14 +383,13 @@
       username: username,
       currentHand : 'undefined',
       value : 'undefined',
-      endTurn: 'undefined',
       banker: 'True',
       readyStatus: 'False',
       bets: {
         playerBalance: 1000,
         currentBet: 0
       },
-      competedWithBanker: false
+      competedWithBanker: null // by right banker dont need 
     });
   
     return { sessionId: sessionId, playerId: playerId, sessionCode: sessionCode, role: 'banker'};
@@ -404,7 +403,6 @@
       username: username,
       currentHand : 'undefined',
       value : 'undefined',
-      endTurn: 'undefined',
       banker: 'False',
       readyStatus: 'False',
       bets: {
@@ -572,7 +570,7 @@
     try{
       set(currentOrderRef, order)
     } catch(error) {
-      console.log('[Error] {setCurrentOrder}')
+      console.error('[Error] {setCurrentOrder}')
       throw error
     }
   }
@@ -588,6 +586,47 @@
   // 3) Open at the start (only for banban and banluck)
   // 4) WU LONG 5 Card
   
+  function changeCompetedWithBankerStatus(sessionId, playerId, status){
+    console.log(playerId)
+    console.log(status)
+    const db = getDatabase()
+    dbRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/competedWithBanker`)
+    try{
+      set(dbRef, status) // either true/false 
+    } catch(error) {
+      console.error('[Error] {changeCompetedWithBankerStatus}')
+      throw error
+    }
+  }
+
+  async function getCompetedWithBankerStatus(sessionId, playerId){
+    const db = getDatabase()
+    try{
+      const snapshot = await get(ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/competedWithBanker`))
+      return snapshot.val()
+    } catch(error) {
+      console.error('[Error] {getCompetedWithBankerStatus}')
+    }
+  }
+
+  async function getAllCompetedWithBankerStatus(sessionId){
+    const db = getDatabase()
+    
+    const result = {}
+    try{
+      const snapshot = await get(ref(db, `/project-bunluck/sessions/${sessionId}/players`))
+      let playersData = snapshot.val();
+      for (let playerId in playersData) {
+          if (playersData[playerId].hasOwnProperty("competedWithBanker")) {
+              result[playerId] = { competedWithBanker: playersData[playerId].competedWithBanker };
+          }
+      }
+      return result;
+    } catch(error) {
+      console.error('[Error] {getAllCompetedWithBankerStatus}')
+    }
+  }
+
   async function endGameOpenSingle(sessionId, targetPlayerId){
     // [CAW]
     // during banker turn, load bankerUI & load "playerWaiting" UI
@@ -657,6 +696,11 @@
       players[`${key}`] = data[key]
     }
 
+    // toggle competedWithBankerStatus
+    for (let player in players) {
+      await changeCompetedWithBankerStatus(sessionId, player, 'true')
+    }
+
     const outcome = await comparisonLogic(banker, players)
     writeOutcome(sessionId, outcome);
 
@@ -670,8 +714,6 @@
 
     for (let player in players){
       // main comparison logic
-
-
       if (players[`${player}`].value[0] === "BanLuck" || players[`${player}`].value[0] === "BanBan") {  
         if (banker.cardValue === "BanLuck" || banker.cardValue === "BanBan") {
             if (banker.cardValue === "BanBan" && players[`${player}`].value[0] === "BanLuck") {
@@ -777,7 +819,6 @@
       }
     })
 
-    console.log(outcome)
     return outcome
   }
   async function getAllInfo(sessionId){
@@ -1094,7 +1135,7 @@
   async function assignPlayerTurn(socket, sessionId) {
     async function handleCurrentTurn() {
       const fullOrder = await getFullOrder(sessionId);
-      while (true) {
+      infiniteLoop: while (true) {
         // get currentPlayer's turn
         let currentOrderIndex = await getCurrentOrder(sessionId)
         let currentOrder = fullOrder[currentOrderIndex];
@@ -1126,12 +1167,11 @@
         // });
         
         // NEW
-        const [event, sessionId, playerId, targetPlayerId] = await new Promise((resolve) => {
+        const [event, currentSessionId, playerId, targetPlayerId] = await new Promise((resolve) => {
           socket.on('playerHit', (sessionId, playerId) => resolve(['playerHit', sessionId, playerId], null));
           socket.on('playerStand', (sessionId, playerId) => resolve(['playerStand', sessionId, playerId, null]));
           socket.on('endGameOpenSingle', (sessionId, playerId, targetPlayerId) => resolve(['endGameOpenSingle', sessionId, playerId, targetPlayerId]))
         });
-
           
         if (event === 'playerHit') {
           // query currentOrderIndex for latest updates as multiple instances of this function will run concurrently
@@ -1159,16 +1199,6 @@
           if (playerId === fullOrder[currentOrderIndex]){
             // check if currentPlayer is last in order:
             if (currentOrderIndex === fullOrder.length - 1) {
-
-              
-              // socket.removeAllListeners('endGameOpenSingle');
-              // socket.removeAllListeners('endGameOpenAll');
-
-              // await new Promise((resolve) => {
-              //   socket.on('endGameOpenSingle', (sessionId, targetPlayerId) => resolve(['playerHit', playerId]));
-              //   socket.on('endGameOpenAll', (sessionId) => resolve(['playerStand', playerId]));
-              // });
-
               const outcome = await endGameOpenAll(sessionId);  
               gameEndResetDB(sessionId);
               changeGameStatus(sessionId, 'completed');
@@ -1181,7 +1211,32 @@
           } else {
             socket.emit('error', 'This is not your turn');
           }
-        } else{
+        } else if (event == 'endGameOpenSingle'){
+          // [CAB]
+          // loadExistingSession should have sent [getCompetedWithBankerStatus]. Client should hide/display elements as shown there but here i will do simple check
+          const result = await endGameOpenSingle(sessionId, targetPlayerId)
+          // change competedWithBankerStatus
+          changeCompetedWithBankerStatus(sessionId, targetPlayerId)
+
+
+          // [CAB]
+          // Make another socket.on function at client to handle this info
+          // socket.emit('endGameBankerSingle')
+
+          const competedWithBankerStatus = await getAllCompetedWithBankerStatus
+          for (let playerId in competedWithBankerStatus) {
+            if (competedWithBankerStatus[playerId].competedWithBanker === true) {
+                console.log(`Player ${playerId} has competed with the banker. Exiting loop.`);
+                break infiniteLoop; // Exit the loop immediately
+            }
+        }
+
+
+
+
+
+        }
+        else{
           console.error('something went wrong')
         }
       }
@@ -1190,9 +1245,6 @@
     handleCurrentTurn();
   }
  
-
-
-
   function waitForGameInitialization(sessionId) {
     return new Promise((resolve) => {
       const statusRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/gameInitializationStatus`);
@@ -1278,6 +1330,59 @@
   //     }  
   // })
   
+
+
+  socket.on('sessionId', async (sessionId, playerId) => {
+    // check if session already exist: 
+    let sessionCheck = await checkExistingSession(sessionId)
+    if (!sessionCheck){
+      console.log("[ DO SOMETHING ]")
+      // should not run for now!!!
+    }
+    else{
+      // create socket rooms for all clients in same session
+      socket.join(sessionId)
+        
+      const currentPlayers = await getPlayersId(sessionId)
+      const currentGameStatus = await getGameStatus(sessionId) 
+
+      // if (currentGameStatus == 'new' || currentGameStatus == 'completed') { 
+      if (currentGameStatus == 'new') { 
+        const partyLeader = await getPartyLeader(sessionId)
+        if (playerId == partyLeader){
+          runGameCyclePartyLeader(socket, sessionId, currentPlayers, playerId)
+        }
+        else{
+          runGameCycleClient(socket, sessionId)
+        }
+
+      }
+      else{
+        // console.log("[ Load Existing Session ]")
+        let sessionData = await loadExistingSession(sessionId)
+        socket.emit('loadExistingSession', sessionData)
+        assignPlayerTurn(socket, sessionId)
+      }
+    }  
+  })
+
+  socket.on('restartGame', async(sessionId, playerId) => {
+    // check if player is partyLeader
+    const partyLeader = await getPartyLeader(sessionId)
+    const currentPlayers = await getPlayersId(sessionId)
+    if (playerId == partyLeader){
+      runGameCyclePartyLeader(socket, sessionId, currentPlayers, playerId)
+    }
+    else{
+      runGameCycleClient(socket, sessionId)
+    }
+  })
+
+
+
+
+
+
   socket.on('chat', async (sessionId, playerId, username, chatData) => {
     // Escape HTML entities
     const sanitizedUsername = escapeHtml(username); 
@@ -1408,55 +1513,8 @@
     }
 
   }
-  io.on('connection', (socket) => {
-    socket.on('sessionId', async (sessionId, playerId) => {
 
-      // check if session already exist: 
-      let sessionCheck = await checkExistingSession(sessionId)
-      if (!sessionCheck){
-        console.log("[ DO SOMETHING ]")
-        // should not run for now!!!
-      }
-      else{
-        // create socket rooms for all clients in same session
-        socket.join(sessionId)
-          
-        const currentPlayers = await getPlayersId(sessionId)
-        const currentGameStatus = await getGameStatus(sessionId) 
-
-        // if (currentGameStatus == 'new' || currentGameStatus == 'completed') { 
-        if (currentGameStatus == 'new') { 
-          const partyLeader = await getPartyLeader(sessionId)
-          if (playerId == partyLeader){
-            runGameCyclePartyLeader(socket, sessionId, currentPlayers, playerId)
-          }
-          else{
-            runGameCycleClient(socket, sessionId)
-          }
-
-        }
-        else{
-          // console.log("[ Load Existing Session ]")
-          let sessionData = await loadExistingSession(sessionId)
-          socket.emit('loadExistingSession', sessionData)
-          assignPlayerTurn(socket, sessionId)
-        }
-      }  
-    })
-
-    socket.on('restartGame', async(sessionId, playerId) => {
-      // check if player is partyLeader
-      const partyLeader = await getPartyLeader(sessionId)
-      const currentPlayers = await getPlayersId(sessionId)
-      if (playerId == partyLeader){
-        runGameCyclePartyLeader(socket, sessionId, currentPlayers, playerId)
-      }
-      else{
-        runGameCycleClient(socket, sessionId)
-      }
-    })
-
-  })
+  
 
 
 
