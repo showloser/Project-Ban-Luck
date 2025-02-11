@@ -1112,7 +1112,9 @@
         // 2) only partyLeader can emit EGOS 
         // 3) Game loops but after comprisonLogic for EGOS 
         // 3.1) check if there are any players left. if yes 'continue' , else break out
-
+        // 4) create new db heirachh for outcome
+        // 4.1) include each player -> status : done
+        // 4.2) include bet amount
 
 
 
