@@ -1105,11 +1105,28 @@
         // Remove existing listeners BEFORE adding new ones
         socket.removeAllListeners('playerHit');
         socket.removeAllListeners('playerStand');
+        socket.removeAllListeners('endGameOpenSingle');
+
+        // [CAB]
+        // 1) server open listener for EGOS
+        // 2) only partyLeader can emit EGOS 
+        // 3) Game loops but after comprisonLogic for EGOS 
+        // 3.1) check if there are any players left. if yes 'continue' , else break out
+
+
+
 
         // Wait for playerHit or playerStand event
-        const [event, playerId] = await new Promise((resolve) => {
-          socket.on('playerHit', (sessionId, playerId) => resolve(['playerHit', playerId]));
-          socket.on('playerStand', (sessionId, playerId, othersInfo) => resolve(['playerStand', playerId]));
+        //const [event, playerId] = await new Promise((resolve) => {
+        // socket.on('playerHit', (sessionId, playerId) => resolve(['playerHit', playerId]));
+        // socket.on('playerStand', (sessionId, playerId, othersInfo) => resolve(['playerStand', playerId]));
+        // });
+        
+        // NEW
+        const [event, sessionId, playerId, targetPlayerId] = await new Promise((resolve) => {
+          socket.on('playerHit', (sessionId, playerId) => resolve(['playerHit', sessionId, playerId], null));
+          socket.on('playerStand', (sessionId, playerId) => resolve(['playerStand', sessionId, playerId, null]));
+          socket.on('endGameOpenSingle', (sessionId, playerId, targetPlayerId) => resolve(['endGameOpenSingle', sessionId, playerId, targetPlayerId]))
         });
 
           
