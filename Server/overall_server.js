@@ -649,6 +649,11 @@
         players[`${key}`] = data[key]
       }
       
+
+      console.log(banker)
+      console.log(players)
+
+      console.log('================')
       // comparison logic
       const outcome = await comparisonLogic(banker, players)
     
@@ -1157,14 +1162,6 @@
         // 4.1) include each player -> status : done
         // 4.2) include bet amount
         // 4.3) basically only the heirachy of outcome to be sent (similar to loadExistingSession)
-
-
-
-        // Wait for playerHit or playerStand event
-        //const [event, playerId] = await new Promise((resolve) => {
-        // socket.on('playerHit', (sessionId, playerId) => resolve(['playerHit', playerId]));
-        // socket.on('playerStand', (sessionId, playerId, othersInfo) => resolve(['playerStand', playerId]));
-        // });
         
         // NEW
         const [event, currentSessionId, playerId, targetPlayerId] = await new Promise((resolve) => {

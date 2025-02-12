@@ -65,11 +65,6 @@ function loadUI(bankerOrPlayer){
         bankerContainer.className = 'bankers'
         bankerContainer.id = 'bankerContainer'
 
-        const bankerChallenge = document.createElement('div')
-        bankerChallenge.className = 'bankerChallenge'
-        bankerChallenge.innerHTML = '开'
-        playerContainer.appendChild(bankerChallenge)
-
         table.append(playerContainer)
         table.append(middleArea)
         table.append(bankerContainer)
@@ -216,6 +211,7 @@ function loadGameElements_NEW(gameData, role) {
                     playerDiv.id = playerId;
 
                     playerDiv.innerHTML = `
+                    <div id="${playerId}" class="bankerChallenge">开</div>
                     <div class="betAmount"></div>
                     <div class="cards"></div>
                     <div class="profile">
@@ -227,7 +223,6 @@ function loadGameElements_NEW(gameData, role) {
                 }
                 playersContainer.appendChild(playerDiv);
             }
-
     
             // Only update the player's hand if it has changed
             if (!playerStates[playerId] || playerStates[playerId].currentHand !== playerInfo.currentHand) {
@@ -632,6 +627,14 @@ function showTurnBanner() {
 
 
 
+function endGameOpenSingle(sessionId, targetPlayerId){
+    socket.emit('endGameOpenSingle', sessionId, targetPlayerId)
+
+    socket.on('error', (err) => {
+        window.alert(err)
+    })
+
+}
 
 // socket.io connections.
 const sessionId = localStorage.getItem('sessionId')
@@ -643,6 +646,15 @@ let lastTurnOrder = null // for turnBanner (so that multiple assignPlayerTurn do
 
 loadUI(role)
 
+document.getElementById("playersContainer").addEventListener("click", function(event) {
+    // Check if the clicked element is a div (or has a specific class)
+    if (event.target.className === "bankerChallenge") {
+        endGameOpenSingle(sessionId, event.target.id)
+    }
+});
+
+
+
 socket.on('connect', () => {
     socket.emit('sessionId', sessionId, clientPlayerId) // send sessionInfo to server
     socket.on('error', (errorMsg) => {
@@ -651,7 +663,6 @@ socket.on('connect', () => {
 
 
     socket.on('loadExistingSession', (player_data) => {
-        console.log(player_data)
         loadGameElements_NEW(player_data, role)
     })
 
