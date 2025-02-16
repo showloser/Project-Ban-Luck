@@ -420,6 +420,13 @@ function playerHit() {
 
 function playerStand(){
     socket.emit('playerStand', sessionId, clientPlayerId)
+
+    if (role === "banker"){
+        const allBankerChallengeBtn = document.getElementsByClassName('bankerChallenge')
+        for (let btn of allBankerChallengeBtn){
+            btn.classList.remove('show');
+        }
+    }
 }
 
 function restart(){
@@ -570,7 +577,6 @@ function hideAllChallengeButton(playerData){
 }
 
 function renderBankerChallengeButtons(playerData){
-
     for (let player in playerData){
         if (player == clientPlayerId){continue}
         if (playerData[player].competedWithBanker == false){

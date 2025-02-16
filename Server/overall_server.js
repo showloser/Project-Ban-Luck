@@ -637,7 +637,7 @@
     const outcome = await comparisonLogic(banker, players)
     console.log(outcome)
     // update db
-    // writeOutcome(sessionId, outcome);
+    writeOutcome(sessionId, outcome);
 
 
     // io.to(sessionId).emit('endGameSingle', outcome)
@@ -667,20 +667,21 @@
           banker['bankerId'] = key
           banker['bankerBalance'] = data[key].bets.playerBalance
           banker['cardValue'] = data[key].value[0];
-          break;
       }
+      else if (data[key].competedWithBanker == false){
+        players[`${key}`] = data[key]
+      }
+      else{continue}
     }
-    
-    for (let key in data) {
-      // skip to next player if currentPlayer == banker
-      if (data[`${key}`].banker == "True"){continue}
-      players[`${key}`] = data[key]
-    }
+
+
+    console.log(players)
 
     // toggle competedWithBankerStatus
     for (let player in players) {
       changeCompetedWithBankerStatus(sessionId, player, true)
     }
+
 
     const outcome = await comparisonLogic(banker, players)
     writeOutcome(sessionId, outcome);
