@@ -211,7 +211,9 @@ function loadGameElements_NEW(gameData, role) {
                     playerDiv.id = playerId;
 
                     playerDiv.innerHTML = `
-                    <div id="${playerId}" class="bankerChallenge">开</div>
+                    <button id="bankerChallenge_${playerId}" class="bankerChallenge">
+                        <span>开</span>
+                    </button>
                     <div class="betAmount"></div>
                     <div class="cards"></div>
                     <div class="profile">
@@ -323,7 +325,7 @@ function dealCard(playerId, card, facedUpOrDown, cardContainer) {
         temptCardContainer.style.left = `${cardPileRect.left}px !important`;
         temptCardContainer.style.top = `${cardPileRect.top}px !important`;
     
-        temptCardContainer.style.zIndex = '9999'; // Ensure it's on top of other content
+        temptCardContainer.style.zIndex = '2'; // Ensure it's on top of other content
     
         // Add placeholder image for the back
         const backImage = document.createElement('img');
@@ -438,8 +440,6 @@ function restart(){
 
 
 
-
-// new
 
 function gameEnd(){
     GameEndCardAnimation()
@@ -556,9 +556,10 @@ function activateButtons(){
     standButton.style.pointerEvents = 'auto'
 }
 
+
+
 //[CAB] TO BE REDONE
 function updateBalance(outcome){
-    console.log(outcome)
     const balanceElement = document.getElementById("playerBalance")
     
     outcome.forEach((data) => {
@@ -568,42 +569,32 @@ function updateBalance(outcome){
         }
     })
 }
+ 
+function hideAllChallengeButton(playerData){
+    for (let player in playerData){
+        if (player == clientPlayerId){continue}
+        const temptBankerChallengeBtn = document.getElementById(`bankerChallenge_${player}`)
+        temptBankerChallengeBtn.style.visibility = 'hidden';
+        temptBankerChallengeBtn.style.opacity = 0;
+    }
+}
 
+function renderBankerChallengeButtons(playerData){
+    for (let player in playerData){
+        if (player == clientPlayerId){continue}
+        if (playerData[player].competedWithBanker == false){
+            const temptBankerChallengeBtn = document.getElementById(`bankerChallenge_${player}`)
+            temptBankerChallengeBtn.style.visibility = 'visible';
+            temptBankerChallengeBtn.style.opacity = 1;
+        }
+        else if (playerData[player].competedWithBanker == true){
+            const temptBankerChallengeBtn = document.getElementById(`bankerChallenge_${player}`)
+            temptBankerChallengeBtn.style.visibility = 'hidden';
+            temptBankerChallengeBtn.style.opacity = 0;
+        }
+    }
+}
 
-
-// function showBanner(outcome) {
-//     const banner = document.querySelector('.banner');
-
-//     outcome.forEach((data) => {
-//         const key = Object.keys(data)[0]; // Get the key of the object
-//         if (key == clientPlayerId){
-//             if (data[key].playerBalance  > 1000){
-//                 banner.className = 'banner win';
-//                 banner.textContent = `VICTORY! You Have Won ${data[key].betAmount}`;
-//             }
-//             else{
-//                 banner.className = 'banner lose';
-//                 banner.textContent = `Nice Try! You Have Lost ${data[key].betAmount}`;
-//             }
-            
-//             banner.style.display = "block";
-//             setTimeout(() => {
-//                 banner.style.opacity = "1";
-//             }, 10); // Short delay to trigger transition
-            
-//             setTimeout(() => {
-//                 banner.style.opacity = "0";
-//                 setTimeout(() => {
-//                     banner.style.display = "none";
-//                 }, 1500); 
-//             }, 2000);
-
-//         }
-//     })
-// }
-
-
-    
 
 function showTurnBanner() {
     const turnBanner = document.getElementById('turnBanner');
@@ -647,7 +638,6 @@ let lastTurnOrder = null // for turnBanner (so that multiple assignPlayerTurn do
 loadUI(role)
 
 document.getElementById("playersContainer").addEventListener("click", function(event) {
-    // Check if the clicked element is a div (or has a specific class)
     if (event.target.className === "bankerChallenge") {
         endGameOpenSingle(sessionId, event.target.id)
     }
@@ -664,15 +654,17 @@ socket.on('connect', () => {
 
     socket.on('loadExistingSession', (player_data) => {
         loadGameElements_NEW(player_data, role)
+        if (role === 'banker'){hideAllChallengeButton(player_data)}
+
     })
-
-    socket.on('assignPlayerTurn', (currentOrder) => {
-
-        console.log(lastTurnOrder)
+    
+    socket.on('assignPlayerTurn', (currentOrder, renderBCdata) => {
         if (clientPlayerId == currentOrder){
             activateButtons()
             if (lastTurnOrder != currentOrder){
                 showTurnBanner();
+
+                if (role === 'banker'){renderBankerChallengeButtons(renderBCdata)}
 
                 document.body.addEventListener('click', () => { // disable animation (click anywhere)
                     turnBanner.style.animation = 'bannerExit 0.5s forwards';

@@ -236,7 +236,7 @@
       const snapshot = await get(sessionRef)
       return snapshot.exists()
     } catch(error){
-      console.log('[Error] {checkExistingSession}')
+      console.error('[Error] {checkExistingSession}')
         throw error
     }
   }
@@ -248,7 +248,7 @@
       const snapshot = await get(sessionRef)
       return snapshot.val()
     } catch(error){
-      console.log('[Error] {checkSessionRestart}')
+      console.error('[Error] {checkSessionRestart}')
         throw error
     }
   }
@@ -269,14 +269,13 @@
   async function loadExistingSession(sessionId){
     const db = getDatabase()
     sessionRef = ref(db, `/project-bunluck/sessions/${sessionId}/players`)
-  
     try{
       const snapshot = await get(sessionRef)
       if (snapshot.exists()){
         return snapshot.val()
       } 
     } catch (error) {
-      console.log('[Error] {loadExistingSession}')
+      console.error('[Error] {loadExistingSession}')
       throw error
     }
   }
@@ -291,7 +290,7 @@
         return snapshot.val()
       } 
     } catch (error) {
-      console.log('[Error] {loadExistingSession}')
+      console.error('[Error] {loadExistingSession}')
       throw error
     }
   }
@@ -307,7 +306,7 @@
       }
   
     } catch (error){
-      console.log('[Error] {getPartyLeader}')
+      console.error('[Error] {getPartyLeader}')
       throw error  
     }
   
@@ -324,7 +323,7 @@
       }
   
     } catch (error){
-      console.log('[Error] {getOrder}')
+      console.error('[Error] {getOrder}')
       throw error
     }
   }
@@ -339,7 +338,7 @@
       }
   
     } catch (error){
-      console.log('[Error] {getOrder}')
+      console.error('[Error] {getOrder}')
       throw error
     }
   }
@@ -424,7 +423,6 @@
   
     set(deckRef, deck)
       .then(() => {
-        // console.log('Deck data written to the database under session ID:', sessionId);
       })
       .catch((error) => {
         console.error('[/playerHit] Error writing deck data to the database:', error);
@@ -437,7 +435,6 @@
   
     set(handRef, data)
       .then( () => {
-        // console.log(`Data written to the database under: /${sessionId}/${playerId}`);
       })
       .catch( (error) => {
         console.error('[/playerHit] Error writing hand data to the database:', error);
@@ -450,7 +447,6 @@
   
     set(valueRef, value)
       .then( () => {
-        // console.log(`Value written to the database under: /${sessionId}/${playerId}`);
       })
       .catch( (error) => {
         console.error('[Write Value] Error writing hand data to the database:', error);
@@ -468,7 +464,6 @@
       if (snapshot.val() == 'True'){
         set(ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/readyStatus`), 'False')
         .then( () => {
-          // console.log(`Data written to the database under: /${sessionId}/${playerId}`);
         })
         .catch( (error) => {
           console.error('[/playerHit] Error writing hand data to the database:', error);
@@ -477,7 +472,6 @@
       else{
         set(ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/readyStatus`), 'True')
         .then( () => {
-          // console.log(`Data written to the database under: /${sessionId}/${playerId}`);
         })
         .catch( (error) => {
           console.error('[/playerHit] Error writing hand data to the database:', error);
@@ -587,8 +581,6 @@
   // 4) WU LONG 5 Card
   
   function changeCompetedWithBankerStatus(sessionId, playerId, status){
-    console.log(playerId)
-    console.log(status)
     const db = getDatabase()
     dbRef = ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/competedWithBanker`)
     try{
@@ -650,8 +642,6 @@
       }
       
 
-      console.log(banker)
-      console.log(players)
 
       console.log('================')
       // comparison logic
@@ -703,7 +693,7 @@
 
     // toggle competedWithBankerStatus
     for (let player in players) {
-      await changeCompetedWithBankerStatus(sessionId, player, 'true')
+      changeCompetedWithBankerStatus(sessionId, player, 'true')
     }
 
     const outcome = await comparisonLogic(banker, players)
@@ -833,7 +823,7 @@
       const snapshot = await get(sessionRef)
       return snapshot.val()
     } catch (error) {
-      console.log('[Error] {loadExistingSession}')
+      console.error('[Error] {loadExistingSession}')
       throw error
     }
   }
@@ -867,13 +857,14 @@
           updates[`players/${playerId}/bets/currentBet`] = 0; // [IMPT] suppose to be "gameEnd", but if user does not place bet, will result in error as gameEnd is NaN
           updates[`players/${playerId}/currentHand`] = 'undefined'; // [IMPT] suppose to be "gameEnd", but if user does not place bet, will result in error as gameEnd is NaN
           updates[`players/${playerId}/value`] = 'undefined'; // [IMPT] suppose to be "gameEnd", but if user does not place bet, will result in error as gameEnd is NaN
+          updates[`players/${playerId}/competedWithBanker`] = false
         }
       }
       await update(sessionRef, updates);
 
 
     } catch (e){
-      console.log('[gameEndResetDB] Error: ', e)
+      console.error('[gameEndResetDB] Error: ', e)
     }
 
   }
@@ -902,7 +893,7 @@
         return Object.keys(snapshot.val())
       } 
     } catch (error) {
-      console.log('[Error] {loadExistingSession}')
+      console.error('[Error] {loadExistingSession}')
       throw error
     }
   }
@@ -1064,11 +1055,11 @@
         return snapshot.val()
       }
       else{
-        console.log('[NO DATA] @ FUNCTION [checkBettingPhaseTimer]')
+        console.error('[NO DATA] @ FUNCTION [checkBettingPhaseTimer]')
       }
     }
     catch (error) {
-      console.log('[Error] @ FUNCTION [checkBettingPhaseTimer]')
+      console.error('[Error] @ FUNCTION [checkBettingPhaseTimer]')
     }
   }
   
@@ -1144,9 +1135,10 @@
         // get currentPlayer's turn
         let currentOrderIndex = await getCurrentOrder(sessionId)
         let currentOrder = fullOrder[currentOrderIndex];
+        let renderBCdata = await loadExistingSession(sessionId); // main purpose is for rendering bankerChallenge
 
         // socket broadcast current client's turn
-        io.to(sessionId).emit('assignPlayerTurn', currentOrder);
+        io.to(sessionId).emit('assignPlayerTurn', currentOrder, renderBCdata);
   
         // Remove existing listeners BEFORE adding new ones
         socket.removeAllListeners('playerHit');
@@ -1215,10 +1207,6 @@
           // change competedWithBankerStatus
           changeCompetedWithBankerStatus(sessionId, targetPlayerId)
 
-
-          // [CAB]
-          // Make another socket.on function at client to handle this info
-          // socket.emit('endGameBankerSingle')
 
           const competedWithBankerStatus = await getAllCompetedWithBankerStatus
           for (let playerId in competedWithBankerStatus) {
@@ -1333,7 +1321,7 @@
     // check if session already exist: 
     let sessionCheck = await checkExistingSession(sessionId)
     if (!sessionCheck){
-      console.log("[ DO SOMETHING ]")
+      console.error("[ DO SOMETHING ]")
       // should not run for now!!!
     }
     else{
@@ -1355,7 +1343,6 @@
 
       }
       else{
-        // console.log("[ Load Existing Session ]")
         let sessionData = await loadExistingSession(sessionId)
         socket.emit('loadExistingSession', sessionData)
         assignPlayerTurn(socket, sessionId)
@@ -1437,7 +1424,7 @@
       }
     } catch (e){
       io.to(sessionId).emit('error', 'Oops! Something bad happened.')
-      console.log(e)
+      console.error(e)
     }
   
   })
@@ -1455,7 +1442,7 @@
       res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId, sessionCode: data.sessionCode, role: data.role});
     }
     catch(e){
-      console.log(e)
+      console.error(e)
       res.status(400).json({ success: false, message: 'Failed to create session.'})
     }
   
@@ -1466,21 +1453,17 @@
     const username = req.body.username;
     const sessionCode = req.body.sessionCode;
   
-    // try{
-      const sessionId = await getSessionId(sessionCode)
-  
-      if (sessionId != false){
-        // add player into database
-        data = writePlayerToSession(sessionId, username)
-  
-        res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId, sessionCode: sessionCode, role: data.role});
-      }
-      else{
-        res.status(404).json({ success: false, message: "Session not found" });
-      }
-    // } catch (error){
-    //   console.log(error)
-    // }
+    const sessionId = await getSessionId(sessionCode)
+    if (sessionId != false){
+      // add player into database
+      data = writePlayerToSession(sessionId, username)
+
+      res.status(200).json({ success: true, sessionId: data.sessionId , playerId: data.playerId, sessionCode: sessionCode, role: data.role});
+    }
+    else{
+      res.status(404).json({ success: false, message: "Session not found" });
+    }
+
   })
   
   

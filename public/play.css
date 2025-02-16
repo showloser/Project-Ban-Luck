@@ -343,44 +343,69 @@ body {
     color: darkred;
 }
 
-/* BankerChallenge */
 
+
+/* bankerChallenge */
 .bankerChallenge {
+    background-color: #ff4757; 
+    border: 4px solid #2f3542; 
+    color: #ffffff; /* White text */
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    visibility: hidden;
+    opacity: 0;
+    font-size: 20px;
+    font-family: 'Press Start 2P', cursive; 
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 0; /* Sharp corners for pixelated style */
+    box-shadow: 3px 3px 0px 0px #2f3542; /* Pixelated shadow */
+    transition: all 0.1s ease;
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 10px 20px;
-    background-color: #ef5349;
-    color: black;
-    font-family: cursive;
-    font-size: 20px;
-    font-weight: 600;
-    border: 2px solid black;
-    cursor: pointer;
-    text-align: center;
-    border-radius: 5px;
-    box-shadow: 3px 3px 0 black;
-    transition: opacity 300ms ease-out, transform 300ms ease-out;
-    z-index: 999999;
+    transform: translate(-50%, -50%); 
+    overflow: hidden;
+    z-index: 998;
+    margin: 0; /* Remove margin to avoid skewing */
+    transition: opacity 0.5s ease-in;
 }
-
 .bankerChallenge:hover {
-    background-color: #ee4035;
-    box-shadow: 5px 5px 0 black;
+    background-color: #ff6b81; 
+    box-shadow: 2px 2px 0px 0px #2f3542; 
+    transform: translate(-50%, -50%) translate(2px, 2px); 
+}
+.bankerChallenge:active {
+    background-color: #ff4757; 
+    box-shadow: 1px 1px 0px 0px #2f3542; 
+    transform: translate(-50%, -50%) translate(4px, 4px); /
+}
+.bankerChallenge::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300%;
+    height: 300%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 70%);
+    transform: translate(-50%, -50%) scale(0); /* Center and scale down initially */
+    transition: transform 0.5s ease;
+    pointer-events: none;
+}
+.bankerChallenge:hover::before {
+    transform: translate(-50%, -50%) scale(1); /* Expand the gradient on hover */
+}
+.bankerChallenge span {
+    position: relative;
+    z-index: 999;
+    text-shadow: 0 0 5px #ff4757, 0 0 10px #ff4757; /* Glow effect */
 }
 
-/* Fade-out effect */
-.bankerChallenge.fade-out {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-    visibility: hidden;
-    transition: opacity 300ms ease-out, transform 300ms ease-out, visibility 0s 300ms;
-} 
 
 
-
-/* your turn banner */
+/* turn banner */
 .turn-banner {
     position: fixed;
     top: 50%;
@@ -389,6 +414,7 @@ body {
     z-index: 1000;
     display: none;
     pointer-events: auto;
+
   }
   
   .pixel-border {
