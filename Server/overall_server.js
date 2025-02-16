@@ -591,16 +591,6 @@
     }
   }
 
-  async function getCompetedWithBankerStatus(sessionId, playerId){
-    const db = getDatabase()
-    try{
-      const snapshot = await get(ref(db, `/project-bunluck/sessions/${sessionId}/players/${playerId}/competedWithBanker`))
-      return snapshot.val()
-    } catch(error) {
-      console.error('[Error] {getCompetedWithBankerStatus}')
-    }
-  }
-
   async function getAllCompetedWithBankerStatus(sessionId){
     const db = getDatabase()
     
@@ -640,32 +630,28 @@
       if(key == targetPlayerId){
         players[`${key}`] = data[key]
       }
-      
-
-
-      console.log('================')
-      // comparison logic
-      const outcome = await comparisonLogic(banker, players)
-    
-    
-      // update db
-      writeOutcome(sessionId, outcome);
-
-
-      io.to(sessionId).emit('endGameSingle', outcome)
-
-
-      // reload session
-      // const sessionInfo = await getSessionInfo(sessionId)
-      // io.to(sessionId, sessionInfo)
-
     } 
+
+
+    // comparison logic
+    const outcome = await comparisonLogic(banker, players)
+    console.log(outcome)
+    // update db
+    // writeOutcome(sessionId, outcome);
+
+
+    // io.to(sessionId).emit('endGameSingle', outcome)
+
+
+    // reload session
+    // const sessionInfo = await getSessionInfo(sessionId)
+    // io.to(sessionId, sessionInfo)
     
     
     
     
-    
-    
+    // change competedWithBankerStatus
+    changeCompetedWithBankerStatus(sessionId, targetPlayerId, true)
     
     
   }
@@ -693,7 +679,7 @@
 
     // toggle competedWithBankerStatus
     for (let player in players) {
-      changeCompetedWithBankerStatus(sessionId, player, 'true')
+      changeCompetedWithBankerStatus(sessionId, player, true)
     }
 
     const outcome = await comparisonLogic(banker, players)
@@ -1204,8 +1190,7 @@
           // [CAB]
           // loadExistingSession should have sent [getCompetedWithBankerStatus]. Client should hide/display elements as shown there but here i will do simple check
           const result = await endGameOpenSingle(sessionId, targetPlayerId)
-          // change competedWithBankerStatus
-          changeCompetedWithBankerStatus(sessionId, targetPlayerId)
+
 
 
           const competedWithBankerStatus = await getAllCompetedWithBankerStatus

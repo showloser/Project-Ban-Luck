@@ -211,7 +211,7 @@ function loadGameElements_NEW(gameData, role) {
                     playerDiv.id = playerId;
 
                     playerDiv.innerHTML = `
-                    <button id="bankerChallenge_${playerId}" class="bankerChallenge">
+                    <button id="bankerChallenge_${playerId}" class="bankerChallenge" onclick='endGameOpenSingle(sessionId, this.id)'>
                         <span>开</span>
                     </button>
                     <div class="betAmount"></div>
@@ -419,17 +419,7 @@ function playerHit() {
 }
 
 function playerStand(){
-    if (role == 'player'){
-        socket.emit('playerStand', sessionId, clientPlayerId)
-    }
-    else if (role == 'banker'){
-        // socket.emit('endGameOpenSingle', sessionId, clientPlayerId, 'openPLayuer1')
-        socket.emit('playerStand', sessionId, clientPlayerId)
-
-    }
-    else{
-        window.alert('something went wrong with the playerStand() button')
-    }
+    socket.emit('playerStand', sessionId, clientPlayerId)
 }
 
 function restart(){
@@ -580,17 +570,16 @@ function hideAllChallengeButton(playerData){
 }
 
 function renderBankerChallengeButtons(playerData){
+
     for (let player in playerData){
         if (player == clientPlayerId){continue}
         if (playerData[player].competedWithBanker == false){
             const temptBankerChallengeBtn = document.getElementById(`bankerChallenge_${player}`)
-            temptBankerChallengeBtn.style.visibility = 'visible';
-            temptBankerChallengeBtn.style.opacity = 1;
+            temptBankerChallengeBtn.classList.add("show");
         }
         else if (playerData[player].competedWithBanker == true){
             const temptBankerChallengeBtn = document.getElementById(`bankerChallenge_${player}`)
-            temptBankerChallengeBtn.style.visibility = 'hidden';
-            temptBankerChallengeBtn.style.opacity = 0;
+            temptBankerChallengeBtn.classList.remove("show");
         }
     }
 }
@@ -619,7 +608,8 @@ function showTurnBanner() {
 
 
 function endGameOpenSingle(sessionId, targetPlayerId){
-    socket.emit('endGameOpenSingle', sessionId, targetPlayerId)
+    targetPlayerId = targetPlayerId.replace('bankerChallenge_', '')
+    socket.emit('endGameOpenSingle', sessionId, clientPlayerId, targetPlayerId)
 
     socket.on('error', (err) => {
         window.alert(err)
@@ -633,16 +623,8 @@ const clientPlayerId = localStorage.getItem('playerId')
 const username = localStorage.getItem('username')
 const role = localStorage.getItem('role')
 const socket = io(); // Connect to the server
-let lastTurnOrder = null // for turnBanner (so that multiple assignPlayerTurn does not trigger animation)
-
+let lastTurnOrder = null // for turnBanner (so that multiple assignPlayerTurn does not trigger animation due to playerHit)
 loadUI(role)
-
-document.getElementById("playersContainer").addEventListener("click", function(event) {
-    if (event.target.className === "bankerChallenge") {
-        endGameOpenSingle(sessionId, event.target.id)
-    }
-});
-
 
 
 socket.on('connect', () => {
@@ -654,17 +636,18 @@ socket.on('connect', () => {
 
     socket.on('loadExistingSession', (player_data) => {
         loadGameElements_NEW(player_data, role)
-        if (role === 'banker'){hideAllChallengeButton(player_data)}
-
     })
     
     socket.on('assignPlayerTurn', (currentOrder, renderBCdata) => {
         if (clientPlayerId == currentOrder){
             activateButtons()
+
+            if (role === 'banker'){
+                renderBankerChallengeButtons(renderBCdata)
+            }
+
             if (lastTurnOrder != currentOrder){
                 showTurnBanner();
-
-                if (role === 'banker'){renderBankerChallengeButtons(renderBCdata)}
 
                 document.body.addEventListener('click', () => { // disable animation (click anywhere)
                     turnBanner.style.animation = 'bannerExit 0.5s forwards';

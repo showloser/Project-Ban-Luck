@@ -354,8 +354,6 @@ body {
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    visibility: hidden;
-    opacity: 0;
     font-size: 20px;
     font-family: 'Press Start 2P', cursive; 
     font-weight: bold;
@@ -370,8 +368,18 @@ body {
     overflow: hidden;
     z-index: 998;
     margin: 0; /* Remove margin to avoid skewing */
-    transition: opacity 0.5s ease-in;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s; /* Delays visibility hiding */
 }
+
+.bankerChallenge.show{
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease-in-out;
+}
+
+
 .bankerChallenge:hover {
     background-color: #ff6b81; 
     box-shadow: 2px 2px 0px 0px #2f3542; 
