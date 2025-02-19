@@ -608,6 +608,53 @@
       console.error('[Error] {getAllCompetedWithBankerStatus}')
     }
   }
+  
+  
+  [TBC]
+  async function wuLong(sessionId, playerId){
+    // client sends WL instead of PH (client-side js)
+    // playerHit and updateDB accordingly
+    // write outcome * 2
+    // set competedWithBanker True
+    // break from AssignPlayerTurn loop
+
+    
+    let playerHand = (await getHand(sessionId, playerId)).split(',');
+  
+    if (playerHand.length == 4) {
+      await playerHit(sessionId, playerId)
+      
+      const playerValue = await calculatePlayerCardValue(sessionId, PlayerId)
+      
+      if (playerValue[0] <= 20){
+        // win 2*
+
+      }
+      else if (playerValue[0] == 21){
+        // win 3*
+      }
+      else{
+        // lose 2*
+      }
+      
+      writeOutcome()
+      changeCompetedWithBankerStatus(sessionId, playerId)
+      return 
+      
+    }
+    
+    else{
+      socket.emit("error", "unable to process request")
+    }
+    
+    
+    
+    
+    
+    
+  }
+  
+  
 
   async function endGameOpenSingle(sessionId, targetPlayerId){
     // [CAW]
@@ -1197,7 +1244,6 @@
           const competedWithBankerStatus = await getAllCompetedWithBankerStatus
           for (let playerId in competedWithBankerStatus) {
             if (competedWithBankerStatus[playerId].competedWithBanker === true) {
-                console.log(`Player ${playerId} has competed with the banker. Exiting loop.`);
                 break infiniteLoop; // Exit the loop immediately
             }
         }
