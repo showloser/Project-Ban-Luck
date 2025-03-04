@@ -290,11 +290,20 @@ function addCards(playerId, cardData, facedUpOrDown) {
         });
     } else {
         cardsToAdd.forEach((card, index) => {
-            // {facedUpOrDown} Set to false, (Back Image will appear instead)
-            setTimeout(() => {
-                dealCard(playerId, card, false, cardContainer);
-            }, index * 500); // Delay each card by 500ms
+            const promise = new Promise((resolve) => {
+                setTimeout(() => {
+                    dealCard(playerId, card, false, cardContainer).then(resolve);
+                }, index * 500); // Delay each card by 500ms
+            });
+            promises.push(promise);
         });
+
+        // Wait for all promises to resolve before running cardFan
+        Promise.all(promises).then(() => {
+            cardFan(playerId);
+        });
+
+
         const emptyDiv = document.createElement('div');
         emptyDiv.classList.add('emptyDiv');
         cardContainer.append(emptyDiv);
@@ -611,6 +620,21 @@ function showTurnBanner() {
     }, 3000);
 }
 
+function showHand(playerId, cardData){
+
+    const fakeData = {playerId: '-OKWJ9R6oxCeldaJIOss', betAmount: 0, playerBalance: 1000, currentHand: '7_of_spades,8_of_spades', value: Array(1)}
+
+    const playerDiv = document.getElementById(playerId)
+    const playerCards = playerDiv.querySelectorAll('.currentPlayerImgElement')
+    
+    playerCards.forEach(card => {
+        console.log(card)
+        card.src = `images/pixelCards/7_of_spades.png`
+        card.style.transition = 'transform 0.5s ease-in-out'; // Smooth flipping animation
+        card.style.transform = 'rotateY(0deg)'; // Flip to the back side
+    });
+
+}
 
 
 function endGameOpenSingle(sessionId, targetPlayerId){
@@ -671,20 +695,36 @@ socket.on('connect', () => {
 
     })
 
-    socket.on('gameEnd' , (outcome) => {
+    // socket.on('gameEnd' , (outcome) => {
+    //     console.log(outcome)
 
+    //     // showBanner(outcome)
 
-        // showBanner(outcome)
-
-        //function to move cards back to deck
-        GameEndCardAnimation()
+    //     //function to move cards back to deck
+    //     GameEndCardAnimation()
         
-        //[CAB] TO BE REDONE 
-        updateBalance(outcome)
+    //     updateBalance(outcome)
 
+    //     socket.emit('restartGame', sessionId, clientPlayerId)
+    // })
+
+
+    // gameEnd version 2 (merge expected data from endGame and endGameSingle into 1 api)
+    socket.on('endGameUpdates', (outcome) => {
+        for (const obj of outcome){
+            console.log(obj)
+            if (obj.playerId != clientPlayerId){
+                showHand(obj.playerId, obj)
+            }
+        }
+
+    })
+
+
+    //  current workaround for sending restartGame cue to server
+    socket.on('RESTARTGAME', () => {
         socket.emit('restartGame', sessionId, clientPlayerId)
-
-        
+        console.log('RESTART GAME TRIGGERRED')
     })
 })
 

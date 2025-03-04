@@ -610,7 +610,7 @@
   }
   
   
-  [TBC]
+
   async function wuLong(sessionId, playerId){
     // client sends WL instead of PH (client-side js)
     // playerHit and updateDB accordingly
@@ -679,28 +679,32 @@
       }
     } 
 
+    changeCompetedWithBankerStatus(sessionId, targetPlayerId, true)
 
     // comparison logic
     const outcome = await comparisonLogic(banker, players)
-    console.log(outcome)
     // update db
     writeOutcome(sessionId, outcome);
 
+    // Merging data using a for loop
+    const finalOutcome = [];
+    for (const obj of outcome) {
+      const playerId = Object.keys(obj)[0]; // Get the key (playerId)
+      const outcomeData = obj[playerId]; // Get the data from outcome
+      const playerData = data[playerId]; // Get the corresponding data from data
 
-    // io.to(sessionId).emit('endGameSingle', outcome)
+      if (playerData) {
+        finalOutcome.push({
+          playerId: playerId,
+          betAmount: outcomeData.betAmount,
+          playerBalance: outcomeData.playerBalance,
+          currentHand: playerData.currentHand,
+          value: playerData.value,
+        });
+      }
+    }
 
-
-    // reload session
-    // const sessionInfo = await getSessionInfo(sessionId)
-    // io.to(sessionId, sessionInfo)
-    
-    
-    
-    
-    // change competedWithBankerStatus
-    changeCompetedWithBankerStatus(sessionId, targetPlayerId, true)
-    
-    
+    return finalOutcome 
   }
   
   async function endGameOpenAll(sessionId){
@@ -721,9 +725,6 @@
       else{continue}
     }
 
-
-    console.log(players)
-
     // toggle competedWithBankerStatus
     for (let player in players) {
       changeCompetedWithBankerStatus(sessionId, player, true)
@@ -733,7 +734,25 @@
     const outcome = await comparisonLogic(banker, players)
     writeOutcome(sessionId, outcome);
 
-    return outcome
+    // Merging data using a for loop
+    const finalOutcome = [];
+    for (const obj of outcome) {
+      const playerId = Object.keys(obj)[0]; // Get the key (playerId)
+      const outcomeData = obj[playerId]; // Get the data from outcome
+      const playerData = data[playerId]; // Get the corresponding data from data
+
+      if (playerData) {
+        finalOutcome.push({
+          playerId: playerId,
+          betAmount: outcomeData.betAmount,
+          playerBalance: outcomeData.playerBalance,
+          currentHand: playerData.currentHand,
+          value: playerData.value,
+        });
+      }
+    }
+
+    return finalOutcome 
   }
 
   function comparisonLogic(banker, players){
@@ -752,7 +771,8 @@
                 outcome.push({
                     [key]: {
                         betAmount: players[`${player}`].bets.currentBet,
-                        playerBalance: (parseInt(players[`${player}`].bets.playerBalance) - parseInt(players[`${player}`].bets.currentBet * multiplier))
+                        playerBalance: (parseInt(players[`${player}`].bets.playerBalance) - parseInt(players[`${player}`].bets.currentBet * multiplier)),
+                        outcome: "lose"
                     }
                 });
             } else if (banker.cardValue === "BanLuck" && players[`${player}`].value[0] === "BanBan") {
@@ -762,7 +782,8 @@
                 outcome.push({
                     [`${player}`]: {
                         betAmount: players[`${player}`].bets.currentBet,
-                        playerBalance: (parseInt(players[`${player}`].bets.playerBalance) + parseInt(players[`${player}`].bets.currentBet * multiplier))
+                        playerBalance: (parseInt(players[`${player}`].bets.playerBalance) + parseInt(players[`${player}`].bets.currentBet * multiplier)),
+                        outcome: "win"
                     }
                 });
             } else {
@@ -770,7 +791,8 @@
                 outcome.push({
                     [`${player}`]: {
                         betAmount: players[`${player}`].bets.currentBet,
-                        playerBalance: players[`${player}`].bets.playerBalance
+                        playerBalance: players[`${player}`].bets.playerBalance,
+                        outcome: "draw"
                     }
                 });
             }
@@ -781,7 +803,8 @@
             outcome.push({
                 [`${player}`]: {
                     betAmount: players[`${player}`].bets.currentBet,
-                    playerBalance: (parseInt(players[`${player}`].bets.playerBalance) + parseInt(players[`${player}`].bets.currentBet * multiplier))
+                    playerBalance: (parseInt(players[`${player}`].bets.playerBalance) + parseInt(players[`${player}`].bets.currentBet * multiplier)),
+                    outcome: "win"
                 }
             });
         }
@@ -792,7 +815,8 @@
         outcome.push({
             [`${player}`]: {
                 betAmount: players[`${player}`].bets.currentBet,
-                playerBalance: (parseInt(players[`${player}`].bets.playerBalance) - parseInt(players[`${player}`].bets.currentBet * multiplier))
+                playerBalance: (parseInt(players[`${player}`].bets.playerBalance) - parseInt(players[`${player}`].bets.currentBet * multiplier)),
+                outcome: "lose"
             }
         });
       } else if (players[`${player}`].value[0] > 21) {
@@ -801,7 +825,8 @@
             outcome.push({
                 [`${player}`]: {
                     betAmount: players[`${player}`].bets.currentBet,
-                    playerBalance: players[`${player}`].bets.playerBalance
+                    playerBalance: players[`${player}`].bets.playerBalance,
+                    outcome: "draw"
                 }
             });
         } else {
@@ -809,7 +834,8 @@
             outcome.push({
                 [`${player}`]: {
                     betAmount: players[`${player}`].bets.currentBet,
-                    playerBalance: (parseInt(players[`${player}`].bets.playerBalance) - parseInt(players[`${player}`].bets.currentBet))
+                    playerBalance: (parseInt(players[`${player}`].bets.playerBalance) - parseInt(players[`${player}`].bets.currentBet)),
+                    outcome: "lose"
                 }
             });
         }
@@ -818,7 +844,8 @@
         outcome.push({
             [`${player}`]: {
                 betAmount: players[`${player}`].bets.currentBet,
-                playerBalance: (parseInt(players[`${player}`].bets.playerBalance) + parseInt(players[`${player}`].bets.currentBet))
+                playerBalance: (parseInt(players[`${player}`].bets.playerBalance) + parseInt(players[`${player}`].bets.currentBet)),
+                outcome: "win"
             }
         });
       } else if (players[`${player}`].value[0] < banker.cardValue) {
@@ -826,7 +853,8 @@
         outcome.push({
             [`${player}`]: {
                 betAmount: players[`${player}`].bets.currentBet,
-                playerBalance: (parseInt(players[`${player}`].bets.playerBalance) - parseInt(players[`${player}`].bets.currentBet))
+                playerBalance: (parseInt(players[`${player}`].bets.playerBalance) - parseInt(players[`${player}`].bets.currentBet)),
+                outcome: "lose"
             }
         });
       } else {
@@ -834,7 +862,8 @@
         outcome.push({
             [`${player}`]: {
                 betAmount: players[`${player}`].bets.currentBet,
-                playerBalance: players[`${player}`].bets.playerBalance
+                playerBalance: players[`${player}`].bets.playerBalance,
+                outcome: "draw"
             }
         });
       }
@@ -843,8 +872,8 @@
     outcome.push({
       [banker.bankerId] : {
         playerBalance: (parseInt(banker.bankerBalance) + parseInt(tempt_totalBetAmount)),
-        betAmount: "playerIsBanker"
-        
+        betAmount: "playerIsBanker",
+        outcome: 'NIL'
       }
     })
 
@@ -871,6 +900,9 @@
 
       const dbRef = ref(db,`/project-bunluck/sessions/${sessionId}/players/${key}/bets/playerBalance`)
       set(dbRef, value.playerBalance)
+      const outcomeRef = ref(db,`/project-bunluck/sessions/${sessionId}/players/${key}/bets/outcome`)
+      set(outcomeRef, value.outcome)
+
     })
   }
 
@@ -1225,7 +1257,8 @@
               const outcome = await endGameOpenAll(sessionId);  
               gameEndResetDB(sessionId);
               changeGameStatus(sessionId, 'completed');
-              io.to(sessionId).emit('gameEnd', outcome);
+              io.to(sessionId).emit('endGameUpdates', outcome);
+              io.to(sessionId).emit('RESTARTGAME')
               break;
             } else {
               // Change order to next person
@@ -1237,14 +1270,16 @@
         } else if (event == 'endGameOpenSingle'){
           // [CAB]
           // loadExistingSession should have sent [getCompetedWithBankerStatus]. Client should hide/display elements as shown there but here i will do simple check
-          const result = await endGameOpenSingle(sessionId, targetPlayerId)
+          const outcome = await endGameOpenSingle(sessionId, targetPlayerId)
+          io.to(sessionId).emit('endGameUpdates', outcome);
 
 
 
           const competedWithBankerStatus = await getAllCompetedWithBankerStatus
           for (let playerId in competedWithBankerStatus) {
             if (competedWithBankerStatus[playerId].competedWithBanker === true) {
-                break infiniteLoop; // Exit the loop immediately
+              io.to(sessionId).emit('RESTARTGAME');
+              break infiniteLoop; // Exit the loop immediately
             }
         }
 
@@ -1416,9 +1451,9 @@
   })
   
   
-  socket.once('restartGame', async (sessionId, playerId) => {
-      restartGame(sessionId) //erase all relevant data from db
-  })
+  // socket.once('restartGame', async (sessionId, playerId) => {
+  //     restartGame(sessionId) //erase all relevant data from db
+  // })
   
   socket.on('waitingRoom', async (sessionId) => {
     // should put socket.join upper in the hierarchy [IMPT]
