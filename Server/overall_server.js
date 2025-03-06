@@ -700,6 +700,7 @@
           playerBalance: outcomeData.playerBalance,
           currentHand: playerData.currentHand,
           value: playerData.value,
+          outcome: outcomeData.outcome
         });
       }
     }
@@ -748,6 +749,7 @@
           playerBalance: outcomeData.playerBalance,
           currentHand: playerData.currentHand,
           value: playerData.value,
+          outcome: outcomeData.outcome
         });
       }
     }
@@ -1184,7 +1186,7 @@
         orderRef = ref(db, `/project-bunluck/sessions/${sessionId}/gameState/Order`)
         set(orderRef, orderObj)
       } catch (error){
-        console.log('[Error] {setOrderOfPlayers}')
+        console.error('[Error] {setOrderOfPlayers}')
         throw error
       }
     }
@@ -1258,7 +1260,15 @@
               gameEndResetDB(sessionId);
               changeGameStatus(sessionId, 'completed');
               io.to(sessionId).emit('endGameUpdates', outcome);
-              io.to(sessionId).emit('RESTARTGAME')
+              
+              // temporary delay (test)
+              setTimeout(() => {
+                console.log('3-second delay completed');
+                // Emit RESTARTGAME after the delay
+                io.to(sessionId).emit('RESTARTGAME');
+              }, 3000);
+              
+              // io.to(sessionId).emit('RESTARTGAME')
               break;
             } else {
               // Change order to next person
@@ -1278,7 +1288,14 @@
           const competedWithBankerStatus = await getAllCompetedWithBankerStatus
           for (let playerId in competedWithBankerStatus) {
             if (competedWithBankerStatus[playerId].competedWithBanker === true) {
-              io.to(sessionId).emit('RESTARTGAME');
+              // io.to(sessionId).emit('RESTARTGAME');
+              // temporary delay (test)
+              setTimeout(() => {
+                console.log('3-second delay completed');
+                // Emit RESTARTGAME after the delay
+                io.to(sessionId).emit('RESTARTGAME');
+              }, 3000);
+
               break infiniteLoop; // Exit the loop immediately
             }
         }

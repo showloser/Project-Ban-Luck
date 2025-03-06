@@ -105,6 +105,11 @@ function loadGameElements_NEW(gameData, role) {
                         <div class="playerUsername">${playerInfo.username}</div>
                     </div>
                     <div class="betAmount"></div>
+                    <div class="arrow-container_opposite" id="${playerId}_arrowContainer" style="display: none;">
+                        <div class="arrow_opposite"></div>
+                        <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
+                    </div>
+
                     `
                     bankerContainer.appendChild(bankerDiv)
                 } 
@@ -120,7 +125,7 @@ function loadGameElements_NEW(gameData, role) {
                         // Current player's UI structure
                         playerDiv.innerHTML = `
                             <div class="betAmount"></div>
-                            <div class="arrow-container">
+                            <div class="arrow-container" id="${playerId}_arrowContainer">
                                 <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
                                 <div class="arrow"></div>
                             </div>
@@ -137,6 +142,10 @@ function loadGameElements_NEW(gameData, role) {
                     else{
                         playerDiv.innerHTML = `
                         <div class="betAmount"></div>
+                        <div class="arrow-container" id="${playerId}_arrowContainer" style="display: none;">
+                            <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
+                            <div class="arrow"></div>
+                        </div>
                         <div class="cards"></div>
                         <div class="profile">
                             <img class="playerIcon" src="images/profile_icons/1.png" alt="">
@@ -189,7 +198,7 @@ function loadGameElements_NEW(gameData, role) {
                     bankerDiv.className = 'banker'
                     bankerDiv.id = playerId
                     bankerDiv.innerHTML = `
-                    <div class="arrow-container">
+                    <div class="arrow-container" id="${playerId}_arrowContainer">
                         <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
                         <div class="arrow"></div>
                     </div>
@@ -219,6 +228,10 @@ function loadGameElements_NEW(gameData, role) {
                     <div class="profile">
                         <img class="playerIcon" src="images/profile_icons/1.png" alt="">
                         <div class="playerUsername">${playerInfo.username}</div>
+                    </div>
+                        <div class="arrow-container_opposite" id="${playerId}_arrowContainer" style="display: none;">
+                        <div class="arrow_opposite"></div>
+                        <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
                     </div>
                 `;
                     
@@ -327,7 +340,6 @@ function dealCard(playerId, card, facedUpOrDown, cardContainer) {
         const cardPileRect = cardPile.getBoundingClientRect();
         const playerRect = player.getBoundingClientRect();
     
-    
         const temptCardContainer = document.createElement('div');
         temptCardContainer.classList.add('currentPlayerImgElement');
         temptCardContainer.style.position = 'absolute';
@@ -340,19 +352,25 @@ function dealCard(playerId, card, facedUpOrDown, cardContainer) {
         const backImage = document.createElement('img');
         backImage.src = 'images/pixelCards/Back1.png'; // Placeholder back image
         backImage.classList.add('back');
-        
-        temptCardContainer.appendChild(backImage);
     
         // Add front image temporarily
         const frontImage = document.createElement('img');
         frontImage.src = facedUpOrDown ? `images/pixelCards/${card}.png` : 'images/pixelCards/Back1.png';
         frontImage.classList.add('front');
+
         temptCardContainer.appendChild(frontImage);
-    
+        temptCardContainer.appendChild(backImage);
         cardPile.appendChild(temptCardContainer); // Stack the card on top of the card pile
     
-    
-    
+        if (facedUpOrDown) {
+            frontImage.style.zIndex = '1';
+            backImage.style.zIndex = '0';
+        }
+        else{
+            frontImage.style.zIndex = '0';
+            backImage.style.zIndex = '1';
+        }
+        
         // Calculate destination position
         const destLeft = playerRect.left + (playerRect.width / 2) - (temptCardContainer.clientWidth / 2);
         const destTop = playerRect.top + (playerRect.height / 2) - (temptCardContainer.clientHeight / 2);
@@ -360,13 +378,15 @@ function dealCard(playerId, card, facedUpOrDown, cardContainer) {
         // Apply movement animation
         temptCardContainer.style.setProperty('--move-x', `${destLeft - cardPileRect.left}px`);
         temptCardContainer.style.setProperty('--move-y', `${destTop - cardPileRect.top}px`);
-        temptCardContainer.style.animation = 'moveCard 1.5s forwards';
-    
-        // Trigger flip animation after a delay
-        setTimeout(() => {
-            temptCardContainer.classList.add('flip');
-        }, 500); // Delay to sync with the moveCard animation
-    
+
+        if (facedUpOrDown) {
+            temptCardContainer.style.animation = 'moveCardWithFlip 1.5s forwards';
+        }
+        else{
+            temptCardContainer.style.animation = 'moveCardWithoutFlip 1s forwards';
+
+        }
+
         // Move the card to the player's card container after animations
         setTimeout(() => {
             cardContainer.appendChild(temptCardContainer);
@@ -399,7 +419,11 @@ function cardFan(playerId) {
             const leftOffset = index === 0 ? -card.clientWidth / 4 : card.clientWidth / 4;
 
             card.style.left = `calc(50% - ${card.clientWidth / 2}px + ${leftOffset}px)`;
-            card.style.transform = `rotate(${rotationAngle}deg) rotateY(180deg)`;
+            
+            // for some fked up reason smt is causing the card to flip back to front. tempt soln rotateY(180deg) if hand belongs client (will fix soon)
+            if (playerId == clientPlayerId){card.style.transform = `rotate(${rotationAngle}deg) rotateY(180deg)`;}
+            else{card.style.transform = `rotate(${rotationAngle}deg)`;}
+            
         } else {
             const increment = spread / (count - 1);
             const rotationAngle = -baseRotationAngle + increment * index;
@@ -411,7 +435,9 @@ function cardFan(playerId) {
                 card.style.left = `calc(50% - ${card.clientWidth / 2}px + ${leftOffset}px)`;
             }
 
-            card.style.transform = `rotate(${rotationAngle}deg) rotateY(180deg)`;
+            // for some fked up reason smt is causing the card to flip back to front. tempt soln rotateY(180deg) if hand belongs client (will fix soon)
+            if (playerId == clientPlayerId){card.style.transform = `rotate(${rotationAngle}deg) rotateY(180deg)`;}
+            else{card.style.transform = `rotate(${rotationAngle}deg)`;}
         }
     });
 }
@@ -622,19 +648,25 @@ function showTurnBanner() {
 
 function showHand(playerId, cardData){
 
-    const fakeData = {playerId: '-OKWJ9R6oxCeldaJIOss', betAmount: 0, playerBalance: 1000, currentHand: '7_of_spades,8_of_spades', value: Array(1)}
-
+    const currentHand = cardData.currentHand.split(',')
     const playerDiv = document.getElementById(playerId)
+    // remove display = none for arrows(just for show)
+    const arrow = document.getElementById(`${playerId}_arrowContainer`)
+    arrow.style.display = 'flex'
     const playerCards = playerDiv.querySelectorAll('.currentPlayerImgElement')
-    
-    playerCards.forEach(card => {
-        console.log(card)
-        card.src = `images/pixelCards/7_of_spades.png`
+    playerCards.forEach((card, index) => {
+        const frontCard = card.querySelector('.front')
+        frontCard.src = `images/pixelCards/${currentHand[index]}.png`
         card.style.transition = 'transform 0.5s ease-in-out'; // Smooth flipping animation
-        card.style.transform = 'rotateY(0deg)'; // Flip to the back side
+        card.style.transform = 'rotateY(180deg)'; // Flip to the back side
     });
 
+    
+
 }
+
+
+
 
 
 function endGameOpenSingle(sessionId, targetPlayerId){
@@ -712,17 +744,25 @@ socket.on('connect', () => {
     // gameEnd version 2 (merge expected data from endGame and endGameSingle into 1 api)
     socket.on('endGameUpdates', (outcome) => {
         for (const obj of outcome){
-            console.log(obj)
             if (obj.playerId != clientPlayerId){
                 showHand(obj.playerId, obj)
             }
+            else{
+                showBanner(obj)
+            }
         }
-
     })
 
+    function showBanner(obj){
+        window.alert(obj.outcome)
+
+    }
 
     //  current workaround for sending restartGame cue to server
     socket.on('RESTARTGAME', () => {
+        //function to move cards back to deck
+        GameEndCardAnimation()
+
         socket.emit('restartGame', sessionId, clientPlayerId)
         console.log('RESTART GAME TRIGGERRED')
     })

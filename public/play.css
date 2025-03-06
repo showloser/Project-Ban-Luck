@@ -183,6 +183,29 @@ body {
     border-top: 10px solid yellow; /* Retro yellow arrow */
 }
 
+
+.arrow_opposite{
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid yellow; /* Retro yellow arrow */
+}
+
+.arrow-container_opposite {
+    position: absolute;
+    left: 50%;
+    bottom: -30%;
+    transform: translate(-50%, -50%);
+    font-family: 'Press Start 2P', monospace; /* Example of a retro font */
+}
+
+
+
 /* Card Value (Arrow) [End] */
 
 
@@ -454,16 +477,6 @@ body {
     color: #ffffff;
     font-size: 0.8rem;
     margin-top: 1rem;
-  }
-  
-  .card-flip {
-    font-size: 3rem;
-    animation: flip 1.5s ease-in-out infinite;
-  }
-  
-  @keyframes flip {
-    0%, 100% { transform: rotateY(0deg); }
-    50% { transform: rotateY(180deg); }
   }
   
   @keyframes text-glitch {
