@@ -875,7 +875,8 @@
       [banker.bankerId] : {
         playerBalance: (parseInt(banker.bankerBalance) + parseInt(tempt_totalBetAmount)),
         betAmount: "playerIsBanker",
-        outcome: 'NIL'
+        outcome:  (parseInt(banker.bankerBalance) + parseInt(tempt_totalBetAmount)) > parseInt(banker.bankerBalance) ? 'win' : (parseInt(banker.bankerBalance) + parseInt(tempt_totalBetAmount)) === parseInt(banker.bankerBalance) ? 'draw' : 'lose'
+
       }
     })
 
@@ -1266,7 +1267,7 @@
                 console.log('3-second delay completed');
                 // Emit RESTARTGAME after the delay
                 io.to(sessionId).emit('RESTARTGAME');
-              }, 3000);
+              }, 5000);
               
               // io.to(sessionId).emit('RESTARTGAME')
               break;
@@ -1294,7 +1295,7 @@
                 console.log('3-second delay completed');
                 // Emit RESTARTGAME after the delay
                 io.to(sessionId).emit('RESTARTGAME');
-              }, 3000);
+              }, 5000);
 
               break infiniteLoop; // Exit the loop immediately
             }

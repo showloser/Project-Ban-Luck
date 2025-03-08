@@ -679,6 +679,116 @@ function endGameOpenSingle(sessionId, targetPlayerId){
 
 }
 
+
+
+
+
+
+function showBanner(outcome){
+    console.log(outcome)
+    console.log(clientPlayerId)
+
+    const amount = outcome.betAmount;
+
+    if (outcome.outcome == 'win'){isWin = true}
+    else if(outcome.outcome == 'lose'){isWin = false}
+    else{isWin = null}
+
+
+    const existingBanner = document.querySelector('.result-banner');
+    if (existingBanner) {
+        existingBanner.remove();
+    }
+
+    const bannerTemplate = `
+        <div class="result-banner">
+        <div class="content-container">
+          <div class="result-pixel-border result-pixel-border-top"></div>
+          <h2 class="result-text">${isWin ? 'YOU WIN!' : 'YOU LOSE!'}</h2>
+          <div class="amount-text">${isWin ? `+$${amount}` : `-$${amount}`}</div>
+            <button class="close-button">CONTINUE</button>
+          <div class="result-pixel-border result-pixel-border-bottom"></div>
+        </div>
+      </div>
+      `
+
+    document.body.insertAdjacentHTML('beforeend', bannerTemplate);
+    const banner = document.querySelector('.result-banner');
+    // Apply dynamic CSS variables
+    banner.style.setProperty('--banner-color', isWin ? '#44ff44' : '#ff4444');
+    banner.style.setProperty('--banner-bg', isWin ? 'rgba(0, 100, 0, 0.8)' : 'rgba(100, 0, 0, 0.8)');
+    banner.style.animation = 'fadeIn 0.5s forwards';
+
+    const closeButton = document.querySelector('.close-button');
+    // Close the banner when clicking the button
+    closeButton.addEventListener('click', () => {
+        banner.style.animation = 'fadeOut 0.5s';
+        setTimeout(() => {
+        banner.remove();
+        }, 480);
+    });
+
+    // Play sound effect based on win/lose
+    playSound(isWin);
+
+    // Auto-remove after 5 seconds if user doesn't click
+    setTimeout(() => {
+        if (document.body.contains(banner)) {
+            banner.style.animation = 'fadeOut 0.5s forwards';
+            setTimeout(() => {
+                if (document.body.contains(banner)) {
+                    banner.remove();
+                }
+            }, 480);
+        }
+    }, 5000);
+
+    // simple sound effect
+    function playSound(isWin) {
+        // Create audio context
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        
+        // Create oscillator
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        // Connect nodes
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        // Set properties based on win/lose
+        if (isWin) {
+            // Win sound: ascending notes
+            oscillator.type = 'square';
+            oscillator.frequency.setValueAtTime(220, audioCtx.currentTime);
+            oscillator.frequency.linearRampToValueAtTime(440, audioCtx.currentTime + 0.1);
+            oscillator.frequency.linearRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+            
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        } else {
+            // Lose sound: descending notes
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+            oscillator.frequency.linearRampToValueAtTime(220, audioCtx.currentTime + 0.1);
+            oscillator.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.3);
+            
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.4);
+        }
+    }
+}
+
+
+
+
 // socket.io connections.
 const sessionId = localStorage.getItem('sessionId')
 const clientPlayerId = localStorage.getItem('playerId')
@@ -741,6 +851,8 @@ socket.on('connect', () => {
     // })
 
 
+
+
     // gameEnd version 2 (merge expected data from endGame and endGameSingle into 1 api)
     socket.on('endGameUpdates', (outcome) => {
         for (const obj of outcome){
@@ -753,10 +865,6 @@ socket.on('connect', () => {
         }
     })
 
-    function showBanner(obj){
-        window.alert(obj.outcome)
-
-    }
 
     //  current workaround for sending restartGame cue to server
     socket.on('RESTARTGAME', () => {
