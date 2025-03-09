@@ -105,7 +105,7 @@ function loadGameElements_NEW(gameData, role) {
                         <div class="playerUsername">${playerInfo.username}</div>
                     </div>
                     <div class="betAmount"></div>
-                    <div class="arrow-container_opposite" id="${playerId}_arrowContainer" style="display: none;">
+                    <div class="arrow-container_opposite nonPlayerArrows" id="${playerId}_arrowContainer" style="display: none;">
                         <div class="arrow_opposite"></div>
                         <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
                     </div>
@@ -142,7 +142,7 @@ function loadGameElements_NEW(gameData, role) {
                     else{
                         playerDiv.innerHTML = `
                         <div class="betAmount"></div>
-                        <div class="arrow-container" id="${playerId}_arrowContainer" style="display: none;">
+                        <div class="arrow-container nonPlayerArrows" id="${playerId}_arrowContainer" style="display: none;">
                             <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
                             <div class="arrow"></div>
                         </div>
@@ -229,7 +229,7 @@ function loadGameElements_NEW(gameData, role) {
                         <img class="playerIcon" src="images/profile_icons/1.png" alt="">
                         <div class="playerUsername">${playerInfo.username}</div>
                     </div>
-                        <div class="arrow-container_opposite" id="${playerId}_arrowContainer" style="display: none;">
+                        <div class="arrow-container_opposite nonPlayerArrows" id="${playerId}_arrowContainer" style="display: none;">
                         <div class="arrow_opposite"></div>
                         <div class="arrow-label" id = '${playerId}_arrow'>${playerInfo.value}</div>
                     </div>
@@ -474,14 +474,20 @@ function restart(){
 
 
 function gameEnd(){
+    removeArrow()
     GameEndCardAnimation()
     cardShuffleAnimation()
 }
 
-function GameEndCardAnimation() {
-    // remove arrow container
-    // document.querySelectorAll(".arrow-container").forEach(el => el.remove());
+function removeArrow(){
+    const allArrows = document.querySelectorAll('.nonPlayerArrows')
+    allArrows.forEach(arrow => {
+        arrow.style.display = 'none'
+    })
+}
 
+function GameEndCardAnimation() {
+    removeArrow()
     const bankerContainer = document.getElementById('bankerContainer');
     const bankerCards = bankerContainer.querySelectorAll('.currentPlayerImgElement');
 
@@ -588,19 +594,6 @@ function activateButtons(){
     standButton.style.pointerEvents = 'auto'
 }
 
-
-
-//[CAB] TO BE REDONE
-function updateBalance(outcome){
-    const balanceElement = document.getElementById("playerBalance")
-    
-    outcome.forEach((data) => {
-        const key = Object.keys(data)[0]; // Get the key of the object
-        if (key == clientPlayerId){
-            balanceElement.innerText = data[key].playerBalance
-        }
-    })
-}
  
 function hideAllChallengeButton(playerData){
     for (let player in playerData){
@@ -647,7 +640,6 @@ function showTurnBanner() {
 }
 
 function showHand(playerId, cardData){
-
     const currentHand = cardData.currentHand.split(',')
     const playerDiv = document.getElementById(playerId)
     // remove display = none for arrows(just for show)
@@ -667,8 +659,6 @@ function showHand(playerId, cardData){
 
 
 
-
-
 function endGameOpenSingle(sessionId, targetPlayerId){
     targetPlayerId = targetPlayerId.replace('bankerChallenge_', '')
     socket.emit('endGameOpenSingle', sessionId, clientPlayerId, targetPlayerId)
@@ -685,16 +675,29 @@ function endGameOpenSingle(sessionId, targetPlayerId){
 
 
 function showBanner(outcome){
-    console.log(outcome)
-    console.log(clientPlayerId)
-
     const amount = outcome.betAmount;
+    let outcomeText, amountText, bannerColor, bannerBg;
 
-    if (outcome.outcome == 'win'){isWin = true}
-    else if(outcome.outcome == 'lose'){isWin = false}
-    else{isWin = null}
-
-
+    if (outcome.outcome === 'win') {
+        isWin = 'win';
+        outcomeText = 'YOU WIN!';
+        amountText = `+$${amount}`;
+        bannerColor = '#4cd137'; 
+        bannerBg = 'rgba(46, 174, 52, 0.7)'; // Darker green for background
+    } else if (outcome.outcome === 'lose') {
+        isWin = 'lose';
+        outcomeText = 'YOU LOSE!';
+        amountText = `-$${amount}`;
+        bannerColor = '#ff3838'; 
+        bannerBg = 'rgba(214, 48, 49, 0.7)'; // Darker red for background
+    } else {
+        isWin = 'draw';
+        outcomeText = 'DRAW!';
+        amountText = `$${amount}`;
+        bannerColor = '#ffa502'; 
+        bannerBg = 'rgba(225, 112, 0, 0.7)'; // Darker yellow for background
+    }
+    
     const existingBanner = document.querySelector('.result-banner');
     if (existingBanner) {
         existingBanner.remove();
@@ -702,21 +705,23 @@ function showBanner(outcome){
 
     const bannerTemplate = `
         <div class="result-banner">
-        <div class="content-container">
-          <div class="result-pixel-border result-pixel-border-top"></div>
-          <h2 class="result-text">${isWin ? 'YOU WIN!' : 'YOU LOSE!'}</h2>
-          <div class="amount-text">${isWin ? `+$${amount}` : `-$${amount}`}</div>
-            <button class="close-button">CONTINUE</button>
-          <div class="result-pixel-border result-pixel-border-bottom"></div>
+            <div class="content-container">
+                <div class="result-pixel-border result-pixel-border-top"></div>
+                <h2 class="result-text">${outcomeText}</h2>
+                <div class="amount-text">${amountText}</div>
+                <button class="close-button">CONTINUE</button>
+                <div class="result-pixel-border result-pixel-border-bottom"></div>
+            </div>
         </div>
-      </div>
-      `
+    `;
+
 
     document.body.insertAdjacentHTML('beforeend', bannerTemplate);
     const banner = document.querySelector('.result-banner');
+
     // Apply dynamic CSS variables
-    banner.style.setProperty('--banner-color', isWin ? '#44ff44' : '#ff4444');
-    banner.style.setProperty('--banner-bg', isWin ? 'rgba(0, 100, 0, 0.8)' : 'rgba(100, 0, 0, 0.8)');
+    banner.style.setProperty('--banner-color', bannerColor);
+    banner.style.setProperty('--banner-bg', bannerBg);
     banner.style.animation = 'fadeIn 0.5s forwards';
 
     const closeButton = document.querySelector('.close-button');
@@ -758,7 +763,7 @@ function showBanner(outcome){
         gainNode.connect(audioCtx.destination);
         
         // Set properties based on win/lose
-        if (isWin) {
+        if (isWin === 'win') {
             // Win sound: ascending notes
             oscillator.type = 'square';
             oscillator.frequency.setValueAtTime(220, audioCtx.currentTime);
@@ -770,7 +775,7 @@ function showBanner(outcome){
             
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + 0.3);
-        } else {
+        } else if (isWin === 'lose'){
             // Lose sound: descending notes
             oscillator.type = 'sawtooth';
             oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
@@ -782,8 +787,327 @@ function showBanner(outcome){
             
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + 0.4);
+        } else if (isWin === 'draw') {
+            // Draw sound: alternating notes
+            oscillator.type = 'triangle';
+            // Start time
+            oscillator.frequency.setValueAtTime(330, audioCtx.currentTime);
+            // Alternate between two tones
+            oscillator.frequency.setValueAtTime(330, audioCtx.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime + 0.2);
+            oscillator.frequency.setValueAtTime(330, audioCtx.currentTime + 0.3);
+            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime + 0.4);
+            
+            // Set volume
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 0.2);
+            gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.5);
         }
     }
+
+    // Function to animate balance changes with enhanced visual effects
+    function animateBalanceChange(result, amount, currentBalance) {
+        // Get the balance element
+        const balanceEl = document.getElementById("playerBalance");
+        const originalPosition = balanceEl.getBoundingClientRect();
+        
+        // Create overlay for more dramatic effects
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1000;
+        `;
+        document.body.appendChild(overlay);
+        
+        if (result === 'win') {            
+            // Create a floating amount element for wins with enhanced styling
+            const floatingAmount = document.createElement('div');
+            floatingAmount.textContent = `+$${amount}`;
+            floatingAmount.style.cssText = `
+                position: absolute;
+                color: #2ecc71;
+                font-weight: bold;
+                left: ${originalPosition.left + originalPosition.width / 2}px;
+                top: ${originalPosition.top - 60}px;
+                transform: translateX(-50%);
+                opacity: 0;
+                font-size: 32px;
+                text-shadow: 0 0 10px rgba(46, 204, 113, 0.8), 0 0 20px rgba(46, 204, 113, 0.5);
+                z-index: 1001;
+                font-family: Arial, sans-serif;
+            `;
+            overlay.appendChild(floatingAmount);
+            
+            // Add a glow effect to the balance
+            balanceEl.style.transition = 'all 0.3s ease';
+            balanceEl.style.textShadow = '0 0 15px rgba(46, 204, 113, 0.8)';
+            balanceEl.style.color = '#2ecc71';
+            
+            // Add particles for more dramatic effect
+            for (let i = 0; i < 20; i++) {
+                createParticle(originalPosition, '#2ecc71', overlay);
+            }
+            
+            // Animate the floating amount
+            let startTime = null;
+            const duration = 2000;
+            
+            function animateWin(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Animate size and position
+                const scale = progress < 0.4 ? 1 + progress : 1 + 0.4 - (progress - 0.4) * 0.5;
+                const moveProgress = Math.min(progress * 1.5, 1);
+                
+                // Enhanced movement and fading
+                floatingAmount.style.opacity = progress < 0.7 ? progress * 1.4 : (1 - (progress - 0.7) * 3);
+                floatingAmount.style.top = `${originalPosition.top - 60 + (moveProgress * 70)}px`;
+                floatingAmount.style.transform = `translateX(-50%) scale(${scale})`;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateWin);
+                } else {
+                    // Update the final balance when animation completes
+                    setTimeout(() => {
+                        balanceEl.textContent = `${currentBalance + amount}`;
+                        balanceEl.style.textShadow = '';
+                        balanceEl.style.color = '';
+                        overlay.remove();
+                    }, 200);
+                }
+            }
+            
+            requestAnimationFrame(animateWin);
+            
+        } else if (result === 'lose') {            
+            // Create a floating amount element for losses with enhanced styling
+            const floatingAmount = document.createElement('div');
+            floatingAmount.textContent = `-$${amount}`;
+            floatingAmount.style.cssText = `
+                position: absolute;
+                color: #e74c3c;
+                font-weight: bold;
+                left: ${originalPosition.left + originalPosition.width / 2}px;
+                top: ${originalPosition.top + originalPosition.height / 2 - 10}px;
+                transform: translateX(-50%) translateY(-50%) scale(1);
+                opacity: 0;
+                font-size: 32px;
+                text-shadow: 0 0 10px rgba(231, 76, 60, 0.8), 0 0 20px rgba(231, 76, 60, 0.5);
+                z-index: 1001;
+                font-family: Arial, sans-serif;
+            `;
+            overlay.appendChild(floatingAmount);
+            
+            // Add a flash effect to the balance
+            balanceEl.style.transition = 'all 0.3s ease';
+            balanceEl.style.textShadow = '0 0 15px rgba(231, 76, 60, 0.8)';
+            balanceEl.style.color = '#e74c3c';
+            
+            // Add particles for more dramatic effect
+            for (let i = 0; i < 15; i++) {
+                createParticle(originalPosition, '#e74c3c', overlay);
+            }
+            
+            // Animate the floating amount
+            let startTime = null;
+            const duration = 2000;
+            
+            function animateLose(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Enhanced pulsing effect
+                const pulseScale = 1 + Math.sin(progress * Math.PI * 3) * 0.2 * (1 - progress);
+                
+                // Fade in then out with movement
+                if (progress < 0.3) {
+                    floatingAmount.style.opacity = progress * 3;
+                    floatingAmount.style.transform = `translateX(-50%) translateY(-50%) scale(${1 + progress})`;
+                } else {
+                    floatingAmount.style.opacity = 1 - ((progress - 0.3) * 1.4);
+                    floatingAmount.style.top = `${originalPosition.top + originalPosition.height / 2 + ((progress - 0.3) * 60)}px`;
+                    floatingAmount.style.transform = `translateX(-50%) translateY(-50%) scale(${pulseScale})`;
+                }
+                
+                // Shake the balance text during animation
+                if (progress < 0.7) {
+                    const shake = Math.sin(progress * 40) * 4 * (0.7 - progress);
+                    balanceEl.style.transform = `translateX(${shake}px)`;
+                } else {
+                    balanceEl.style.transform = 'translateX(0)';
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateLose);
+                } else {
+                    // Update the final balance when animation completes
+                    setTimeout(() => {
+                        balanceEl.textContent = `${currentBalance - amount}`;
+                        balanceEl.style.textShadow = '';
+                        balanceEl.style.color = '';
+                        balanceEl.style.transform = '';
+                        overlay.remove();
+                    }, 200);
+                }
+            }
+            
+            requestAnimationFrame(animateLose);
+            
+        } else if (result === 'draw') {            
+            let startTime = null;
+            const duration = 1500;
+            
+            // Create "DRAW" text that pops up briefly
+            const drawText = document.createElement('div');
+            drawText.textContent = 'DRAW';
+            drawText.style.cssText = `
+                position: absolute;
+                color: #f39c12;
+                font-weight: bold;
+                left: ${originalPosition.left + originalPosition.width / 2}px;
+                top: ${originalPosition.top - 40}px;
+                transform: translateX(-50%) scale(0);
+                opacity: 0;
+                font-size: 28px;
+                text-shadow: 0 0 10px rgba(243, 156, 18, 0.6);
+                z-index: 1001;
+                font-family: Arial, sans-serif;
+            `;
+            overlay.appendChild(drawText);
+            
+            // Add a yellow glow to the balance
+            balanceEl.style.transition = 'color 0.2s ease';
+            balanceEl.style.textShadow = '0 0 8px rgba(243, 156, 18, 0.7)';
+            
+            function animateDraw(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Enhanced vibration effect with varying amplitude and frequency
+                if (progress < 0.8) {
+                    // Generate a more intense shake effect
+                    const frequency = 25 + Math.sin(progress * 10) * 10;
+                    const amplitude = 7 * (1 - progress * 1.25);
+                    const vibration = Math.sin(progress * frequency) * amplitude;
+                    balanceEl.style.transform = `translateX(${vibration}px)`;
+                    
+                    // Make balance pulse in size slightly
+                    const pulseScale = 1 + Math.sin(progress * Math.PI * 4) * 0.05;
+                    balanceEl.style.scale = pulseScale;
+                    
+                    // Alternate color slightly
+                    if (Math.sin(progress * 30) > 0) {
+                        balanceEl.style.color = '#f39c12';
+                    } else {
+                        balanceEl.style.color = '';
+                    }
+                } else {
+                    // Gradually stop the effect
+                    const easeOutProgress = (progress - 0.8) * 5; // 0 to 1 in the last 20% of time
+                    const finalVibration = Math.sin((0.8 + easeOutProgress * 0.2) * 25) * (1 - easeOutProgress) * 2;
+                    balanceEl.style.transform = `translateX(${finalVibration}px)`;
+                    balanceEl.style.scale = 1;
+                    balanceEl.style.color = '';
+                }
+                
+                // Animate the "DRAW" text
+                if (progress < 0.15) {
+                    // Pop in
+                    drawText.style.opacity = progress / 0.15;
+                    drawText.style.transform = `translateX(-50%) scale(${progress / 0.15})`;
+                } else if (progress < 0.7) {
+                    // Stay visible and pulse
+                    drawText.style.opacity = 1;
+                    const pulseScale = 1 + Math.sin((progress - 0.15) * 15) * 0.1;
+                    drawText.style.transform = `translateX(-50%) scale(${pulseScale})`;
+                } else {
+                    // Fade out
+                    drawText.style.opacity = Math.max(0, 1 - ((progress - 0.7) / 0.3));
+                    drawText.style.transform = `translateX(-50%) scale(${1 + (progress - 0.7)})`;
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateDraw);
+                } else {
+                    // Reset position when done
+                    balanceEl.style.transform = 'translateX(0)';
+                    balanceEl.style.scale = '1';
+                    balanceEl.style.color = '';
+                    balanceEl.style.textShadow = '';
+                    overlay.remove();
+                }
+            }
+            
+            requestAnimationFrame(animateDraw);
+        }
+    }
+
+    // Helper function to create particle effects
+    function createParticle(origin, color, container) {
+        const particle = document.createElement('div');
+        const size = 5 + Math.random() * 15;
+        
+        particle.style.cssText = `
+            position: absolute;
+            width: ${size}px;
+            height: ${size}px;
+            background-color: ${color};
+            border-radius: 50%;
+            left: ${origin.left + origin.width / 2 + (Math.random() - 0.5) * 20}px;
+            top: ${origin.top + origin.height / 2 + (Math.random() - 0.5) * 20}px;
+            opacity: ${0.5 + Math.random() * 0.5};
+            pointer-events: none;
+        `;
+        
+        container.appendChild(particle);
+        
+        // Random velocity
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 4;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed - 2; // Slight upward bias
+        
+        let startTime = null;
+        const duration = 1000 + Math.random() * 1000;
+        
+        function animateParticle(timestamp) {
+            if (!startTime) startTime = timestamp;
+            const elapsed = timestamp - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Update position
+            const newLeft = parseFloat(particle.style.left) + vx;
+            const newTop = parseFloat(particle.style.top) + vy + progress * 2; // Add gravity
+            
+            particle.style.left = `${newLeft}px`;
+            particle.style.top = `${newTop}px`;
+            
+            // Fade out
+            particle.style.opacity = (1 - progress) * (0.5 + Math.random() * 0.5);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animateParticle);
+            } else {
+                container.removeChild(particle);
+            }
+        }
+        
+        requestAnimationFrame(animateParticle);
+    }
+
+    animateBalanceChange(outcome.outcome, amount, parseInt(localStorage.getItem('balance')))
 }
 
 

@@ -874,7 +874,7 @@
     outcome.push({
       [banker.bankerId] : {
         playerBalance: (parseInt(banker.bankerBalance) + parseInt(tempt_totalBetAmount)),
-        betAmount: "playerIsBanker",
+        betAmount: Math.abs(parseInt(tempt_totalBetAmount)),
         outcome:  (parseInt(banker.bankerBalance) + parseInt(tempt_totalBetAmount)) > parseInt(banker.bankerBalance) ? 'win' : (parseInt(banker.bankerBalance) + parseInt(tempt_totalBetAmount)) === parseInt(banker.bankerBalance) ? 'draw' : 'lose'
 
       }
@@ -1264,7 +1264,7 @@
               
               // temporary delay (test)
               setTimeout(() => {
-                console.log('3-second delay completed');
+                console.log('3-second delay completed (endGameOpenAll)');
                 // Emit RESTARTGAME after the delay
                 io.to(sessionId).emit('RESTARTGAME');
               }, 5000);
@@ -1279,32 +1279,31 @@
             socket.emit('error', 'This is not your turn');
           }
         } else if (event == 'endGameOpenSingle'){
-          // [CAB]
           // loadExistingSession should have sent [getCompetedWithBankerStatus]. Client should hide/display elements as shown there but here i will do simple check
           const outcome = await endGameOpenSingle(sessionId, targetPlayerId)
           io.to(sessionId).emit('endGameUpdates', outcome);
 
-
-
-          const competedWithBankerStatus = await getAllCompetedWithBankerStatus
+          const competedWithBankerStatus = await getAllCompetedWithBankerStatus(sessionId)
+          let allPlayersCompleted = true // flag to check all player has completed
           for (let playerId in competedWithBankerStatus) {
-            if (competedWithBankerStatus[playerId].competedWithBanker === true) {
-              // io.to(sessionId).emit('RESTARTGAME');
-              // temporary delay (test)
-              setTimeout(() => {
-                console.log('3-second delay completed');
-                // Emit RESTARTGAME after the delay
-                io.to(sessionId).emit('RESTARTGAME');
-              }, 5000);
-
-              break infiniteLoop; // Exit the loop immediately
+            if (competedWithBankerStatus[playerId].competedWithBanker === false) {
+              allPlayersCompleted = false; // set flag to be false if one player has not completed
+              break
             }
-        }
+          }
 
+          if (allPlayersCompleted){
+            // io.to(sessionId).emit('RESTARTGAME');
+            // temporary delay (test)
+            setTimeout(() => {
+              console.log('3-second delay completed (endGameOpenSingle)');
+              // Emit RESTARTGAME after the delay
+              io.to(sessionId).emit('RESTARTGAME');
+            }, 5000);
 
-
-
-
+            break infiniteLoop; // Exit the loop immediately
+          }
+        
         }
         else{
           console.error('something went wrong')

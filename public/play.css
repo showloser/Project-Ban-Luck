@@ -242,6 +242,7 @@ body {
 
 .cards img{
     height: 150px;
+    cursor: pointer;
 }
 
 /* Player section [Start] */
@@ -513,6 +514,7 @@ body {
 }
 .result-pixel-border-bottom {
     margin-top: 10px;
+
 }
 
 .result-text {
